@@ -12,7 +12,6 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Скрытие полосы прокрутки для панели городов, чтобы интерфейс выглядел аккуратно */
         .scrollbar-none::-webkit-scrollbar {
             display: none;
         }
@@ -36,12 +35,11 @@
             </div>
         </div>
 
-        <!-- Переключатель городов (со стабильными классами против глича смещения) -->
+        <!-- Переключатель городов -->
         <div class="flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none" id="cities-container"></div>
 
         <!-- Кнопки управления и Язык -->
         <div class="flex items-center gap-2">
-            <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ЯЗЫКА -->
             <button onclick="toggleLanguage()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg border border-slate-700 text-indigo-400 transition" id="lang-btn">
                 FR
             </button>
@@ -50,7 +48,6 @@
                 <i class="fa-solid fa-plus text-indigo-400 mr-1"></i> <span data-i18n="btn_city">Город</span>
             </button>
             
-            <!-- Меню редактирования города -->
             <div class="relative">
                 <button onclick="toggleCityMenu(event)" title="Управление городом" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-300 hover:text-white transition">
                     <i class="fa-solid fa-pen"></i>
@@ -70,7 +67,6 @@
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-6xl mx-auto space-y-6">
 
-        <!-- Статистика, Кнопки скачивания и Общая карта -->
         <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg">
             <div class="flex items-center space-x-4 text-xs">
                 <span><span data-i18n="st_free_label">🟢 Свободно</span>: <strong id="st-free" class="text-white">0</strong></span>
@@ -79,12 +75,10 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <!-- КНОПКА СКАЧИВАНИЯ БЛАНКА S-13 ДЛЯ MS WORD -->
                 <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition border border-slate-700 shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-download"></i>
                 </button>
 
-                <!-- Ссылка на общую карту активного города -->
                 <a id="map-link" href="#" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
                     <i class="fa-solid fa-location-dot"></i> <span data-i18n="btn_general_map">Общая карта</span>
                 </a>
@@ -95,11 +89,10 @@
             </div>
         </section>
 
-        <!-- Сетка карточек -->
         <section id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></section>
     </main>
 
-    <!-- МОДАЛЬНОЕ ОКНО ИСТОРИИ И ССЫЛКИ -->
+    <!-- МОДАЛЬНОЕ ОКНО -->
     <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -109,7 +102,6 @@
                 </button>
             </div>
 
-            <!-- Блок настройки персональной ссылки участка -->
             <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
                 <label class="text-[10px] text-indigo-400 font-bold uppercase block" data-i18n="modal_map_label">Ссылка на карту участка</label>
                 <div class="flex gap-2">
@@ -129,14 +121,13 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK И ОСНОВНОЙ СКРИПТ -->
+    <!-- FIREBASE SDK И СКРИПТ -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { 
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- СЛОВАРЬ ПЕРЕВОДОВ ИНТЕРФЕЙСА ---
         const translations = {
             ru: {
                 app_title: "Помощник по участкам",
@@ -253,7 +244,6 @@
             return translations[currentLang][key] || key;
         }
 
-        // --- ФУНКЦИЯ ГЕНЕРАЦИИ ОФИЦИАЛЬНОГО БЛАНКА S-13 ДЛЯ MS WORD (.doc) ---
         window.exportOfficialRegister = () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
@@ -377,7 +367,6 @@
             document.body.removeChild(link);
         };
 
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
             authDomain: "fir-13-app.firebaseapp.com",
@@ -434,7 +423,10 @@
                 citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 document.getElementById('db-status').innerText = t('db_connected');
 
-                let valenceCity = citiesData.find(c => c.name === "Valence");
+                // Безопасная проверка названий городов (с нормализацией для предотвращения проблем с кодировкой é)
+                const findCity = (searchName) => citiesData.find(c => c.name && c.name.normalize("NFC") === searchName.normalize("NFC"));
+
+                let valenceCity = findCity("Valence");
                 if (!valenceCity) {
                     const valenceRef = await addDoc(collection(db, "cities"), { 
                         name: "Valence",
@@ -446,7 +438,7 @@
                     return; 
                 }
 
-                let guilherandCity = citiesData.find(c => c.name === "Guilherand-Granges");
+                let guilherandCity = findCity("Guilherand-Granges");
                 if (!guilherandCity) {
                     const guilherandRef = await addDoc(collection(db, "cities"), { 
                         name: "Guilherand-Granges",
@@ -458,7 +450,7 @@
                     return; 
                 }
 
-                let saintMarcelCity = citiesData.find(c => c.name === "Saint-Marcel-lès-Valence");
+                let saintMarcelCity = findCity("Saint-Marcel-lès-Valence");
                 if (!saintMarcelCity) {
                     const saintMarcelRef = await addDoc(collection(db, "cities"), { 
                         name: "Saint-Marcel-lès-Valence",
@@ -470,7 +462,7 @@
                     return; 
                 }
 
-                let saintPerayCity = citiesData.find(c => c.name === "Saint-Péray");
+                let saintPerayCity = findCity("Saint-Péray");
                 if (!saintPerayCity) {
                     const saintPerayRef = await addDoc(collection(db, "cities"), { 
                         name: "Saint-Péray",
@@ -685,7 +677,6 @@
         function renderCities() {
             const container = document.getElementById('cities-container');
             
-            // Создаем кнопки только при самом первом запуске или изменении состава городов
             if (container.children.length === 0 || container.children.length !== citiesData.length) {
                 container.innerHTML = '';
                 citiesData.forEach(c => {
@@ -705,7 +696,6 @@
             
             updateActiveCityStyles();
 
-            // Управление ссылкой на карту активного города
             const activeCity = citiesData.find(c => c.id === activeCityId);
             const mapLinkBtn = document.getElementById('map-link');
             if (activeCity && activeCity.mapUrl) {
@@ -716,7 +706,6 @@
             }
         }
 
-        // Точечное обновление стилей активной кнопки без пересоздания элементов (устраняет любые рывки)
         function updateActiveCityStyles() {
             const container = document.getElementById('cities-container');
             Array.from(container.children).forEach(btn => {
