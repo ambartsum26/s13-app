@@ -29,7 +29,7 @@
             <button onclick="addCity()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
                 <i class="fa-solid fa-plus text-indigo-400 mr-1"></i> Город
             </button>
-            <button onclick="editCity()" title="Переименовать город" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700">
+            <button onclick="editCity()" title="Изменить название и карту города" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700">
                 <i class="fa-solid fa-pen"></i>
             </button>
         </div>
@@ -38,11 +38,14 @@
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-6xl mx-auto space-y-6">
 
-        <!-- Карта города -->
+        <!-- Карта города Валанс -->
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
             <div class="flex justify-between items-center mb-3">
-                <h2 class="font-bold text-sm text-slate-300" id="city-title">Карта</h2>
-                <a id="city-map-link" href="#" target="_blank" class="text-xs text-indigo-400 hover:underline">Открыть в Google Maps <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <h2 class="font-bold text-sm text-slate-300" id="city-title">Карта города: Валанс</h2>
+                <!-- Кнопка для открытия режима редактирования карты в Google My Maps -->
+                <a id="city-edit-map-btn" href="https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-pen-to-square"></i> Редактировать карту в Google
+                </a>
             </div>
             <div class="w-full h-48 bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
                 <iframe id="city-iframe" class="w-full h-full border-0" src=""></iframe>
@@ -199,9 +202,10 @@
                 document.getElementById('db-status').innerText = '● Firebase подключен';
 
                 if (citiesData.length === 0) {
+                    const defaultMapUrl = "https://www.google.com/maps/d/embed?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw";
                     const newCityRef = await addDoc(collection(db, "cities"), { 
                         name: "Valence", 
-                        mapUrl: "https://maps.google.com/maps?q=Valence,France&t=&z=13&ie=UTF8&iwloc=&output=embed" 
+                        mapUrl: defaultMapUrl 
                     });
                     activeCityId = newCityRef.id;
                     
@@ -241,7 +245,6 @@
                 territoriesData.sort((a, b) => parseInt(a.number) - parseInt(b.number) || a.number.localeCompare(b.number));
                 renderTerritories();
                 
-                // Если открыто модальное окно истории, обновляем его на лету
                 if (currentEditingTerritoryId) {
                     window.showHistory(currentEditingTerritoryId);
                 }
@@ -252,17 +255,26 @@
         window.addCity = async () => {
             const name = prompt('Название нового города:');
             if (!name) return;
-            const docRef = await addDoc(collection(db, "cities"), { name: name.trim(), mapUrl: "" });
-            activeCityId = docRef.id;
+            const map = prompt('Ссылка на карту (вставьте URL встраивания Google Maps или оставьте пустой):', '');
+            await addDoc(collection(db, "cities"), { 
+                name: name.trim(), 
+                mapUrl: map ? map.trim() : "" 
+            });
         };
 
         window.editCity = async () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
             const newName = prompt('Новое название города:', city.name);
-            if (newName) {
-                await updateDoc(doc(db, "cities", activeCityId), { name: newName.trim() });
-            }
+            if (newName === null) return;
+
+            const newMap = prompt('Ссылка для встраивания карты (iframe src):', city.mapUrl || '');
+            if (newMap === null) return;
+
+            await updateDoc(doc(db, "cities", activeCityId), { 
+                name: newName.trim(),
+                mapUrl: newMap.trim()
+            });
         };
 
         // --- УПРАВЛЕНИЕ УЧАСТКАМИ ---
@@ -447,7 +459,15 @@
             const current = citiesData.find(c => c.id === activeCityId);
             if (current) {
                 document.getElementById('city-title').innerText = `Карта города: ${current.name}`;
-                document.getElementById('city-iframe').src = current.mapUrl || `https://maps.google.com/maps?q=${encodeURIComponent(current.name)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+                const defaultEmbed = "https://www.google.com/maps/d/embed?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw";
+                const mapSrc = current.mapUrl && current.mapUrl.trim() !== "" ? current.mapUrl : defaultEmbed;
+                document.getElementById('city-iframe').src = mapSrc;
+
+                // Кнопка перехода в редактор Google My Maps для Валанса
+                const editButton = document.getElementById('city-edit-map-btn');
+                if (editButton) {
+                    editButton.href = "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13";
+                }
             }
         }
 
