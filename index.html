@@ -47,8 +47,8 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Кнопка карты с иконкой локации -->
-                <a href="https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
+                <!-- Динамическая кнопка карты -->
+                <a id="map-link" href="#" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
                     <i class="fa-solid fa-location-dot"></i> Карта
                 </a>
                 <button onclick="addTerritory()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold rounded-lg transition shadow-md">
@@ -102,7 +102,7 @@
         let territoriesData = [];
         let currentEditingTerritoryId = null;
 
-        const initialTerritoriesData = [
+        const valenceTerritories = [
             {number: "1", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
             {number: "2", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]},
             {number: "3", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-10", returnedAt: "2024-04-10"}, {publisher: "Alla Tyrii", issuedAt: "2025-03-16", returnedAt: "2025-03-28"}, {publisher: "Lilia Madunceva", issuedAt: "2026-03-15", returnedAt: null}]},
@@ -182,20 +182,57 @@
             {number: "77", history: [{publisher: "Katerina Mykytyuk", issuedAt: "2026-03-21", returnedAt: null}]}
         ];
 
+        const guilherandTerritories = [
+            {number: "1", history: [{publisher: "Stella", issuedAt: "2025-04-27", returnedAt: null}]},
+            {number: "2", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-02", returnedAt: "2025-05-17"}]},
+            {number: "3", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-02", returnedAt: "2025-05-17"}]},
+            {number: "4", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-02", returnedAt: "2025-05-17"}]},
+            {number: "5", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-17", returnedAt: "2025-07-11"}]},
+            {number: "6", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-17", returnedAt: "2025-07-11"}]},
+            {number: "7", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-17", returnedAt: "2025-07-11"}]},
+            {number: "8", history: [{publisher: "Yaroslav Romano", issuedAt: "2025-10-03", returnedAt: "2025-10-11"}]},
+            {number: "9", history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-10-13", returnedAt: "2025-11-09"}]},
+            {number: "10", history: [{publisher: "Brozik Zinaida", issuedAt: "2025-10-13", returnedAt: "2025-11-24"}]},
+            {number: "11", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-10-19", returnedAt: "2025-10-24"}]},
+            {number: "12", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-10-19", returnedAt: "2025-10-24"}]},
+            {number: "13", history: [{publisher: "Alena Beruso", issuedAt: "2025-10-20", returnedAt: null}]},
+            {number: "14", history: [{publisher: "Valentina Ermolayva", issuedAt: "2025-04-22", returnedAt: "2025-05-01"}]},
+            {number: "15", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-10-19", returnedAt: "2025-10-24"}]},
+            {number: "16", history: [{publisher: "Valera", issuedAt: "2025-10-24", returnedAt: "2025-10-27"}]},
+            {number: "17", history: [{publisher: "Kravtsov O.", issuedAt: "2025-10-24", returnedAt: "2025-10-24"}]},
+            {number: "18", history: [{publisher: "Kravtsov O.", issuedAt: "2025-10-24", returnedAt: "2025-10-24"}]},
+            {number: "19", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-10-24", returnedAt: "2025-11-06"}]},
+            {number: "20", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-10-24", returnedAt: "2025-11-06"}]}
+        ];
+
         function initApp() {
             onSnapshot(collection(db, "cities"), async (snapshot) => {
                 citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 document.getElementById('db-status').innerText = '● Firebase подключен';
 
                 if (citiesData.length === 0) {
-                    const newCityRef = await addDoc(collection(db, "cities"), { 
-                        name: "Valence"
+                    // Создаем Валенс
+                    const valenceRef = await addDoc(collection(db, "cities"), { 
+                        name: "Valence",
+                        mapUrl: "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13"
                     });
-                    activeCityId = newCityRef.id;
-                    
-                    for (const item of initialTerritoriesData) {
+                    for (const item of valenceTerritories) {
                         await addDoc(collection(db, "territories"), {
-                            cityId: activeCityId,
+                            cityId: valenceRef.id,
+                            number: item.number,
+                            isArchived: false,
+                            history: item.history
+                        });
+                    }
+
+                    // Создаем Гийеран-Гранж[cite: 2, 3]
+                    const guilherandRef = await addDoc(collection(db, "cities"), { 
+                        name: "Guilherand-Granges",
+                        mapUrl: "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low"
+                    });
+                    for (const item of guilherandTerritories) {
+                        await addDoc(collection(db, "territories"), {
+                            cityId: guilherandRef.id,
                             number: item.number,
                             isArchived: false,
                             history: item.history
@@ -238,8 +275,10 @@
         window.addCity = async () => {
             const name = prompt('Название нового города:');
             if (!name) return;
+            const mapLink = prompt('Ссылка на Google My Maps для этого города:', 'https://www.google.com/maps/d/');
             await addDoc(collection(db, "cities"), { 
-                name: name.trim()
+                name: name.trim(),
+                mapUrl: mapLink ? mapLink.trim() : '#'
             });
         };
 
@@ -249,8 +288,12 @@
             const newName = prompt('Новое название города:', city.name);
             if (newName === null) return;
 
+            const newMapUrl = prompt('Ссылка на Google My Maps:', city.mapUrl || '');
+            if (newMapUrl === null) return;
+
             await updateDoc(doc(db, "cities", activeCityId), { 
-                name: newName.trim()
+                name: newName.trim(),
+                mapUrl: newMapUrl.trim()
             });
         };
 
@@ -393,6 +436,17 @@
                 btn.innerText = c.name;
                 btn.onclick = () => { activeCityId = c.id; renderCities(); subscribeToTerritories(); };
                 container.appendChild(btn);
+
+                // Обновляем ссылку на карту для активного города
+                if (c.id === activeCityId) {
+                    const mapLinkBtn = document.getElementById('map-link');
+                    if (c.mapUrl) {
+                        mapLinkBtn.href = c.mapUrl;
+                        mapLinkBtn.style.display = 'flex';
+                    } else {
+                        mapLinkBtn.style.display = 'none';
+                    }
+                }
             });
         }
 
