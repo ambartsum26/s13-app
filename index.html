@@ -6,10 +6,9 @@
     <title>Регистр Учета Участков (S-13)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
         @keyframes highlight {
-            0% { transform: scale(1); ring: 0px; }
+            0% { transform: scale(1); }
             50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
             100% { transform: scale(1); }
         }
@@ -20,6 +19,34 @@
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col md:flex-row">
+
+    <!-- Auth Screen Overlay -->
+    <div id="auth-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 shadow-2xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-white text-base">Регистр S-13</h2>
+                    <p class="text-xs text-slate-400">Вход для постоянного использования</p>
+                </div>
+            </div>
+            <div class="space-y-3 pt-2">
+                <div>
+                    <label class="text-xs font-semibold text-slate-400">Email</label>
+                    <input type="email" id="auth-email" placeholder="admin@s13.com" class="w-full mt-1 p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-400">Пароль</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" class="w-full mt-1 p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <button onclick="handleLogin()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Войти в систему
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-2 translate-y-20 opacity-0 transition-all duration-300 z-50">
@@ -42,15 +69,23 @@
                 </a>
             </nav>
         </div>
+        <button onclick="handleLogout()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors">
+            <i class="fa-solid fa-right-from-bracket"></i> Выйти из аккаунта
+        </button>
     </aside>
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col min-w-0">
         <header class="h-16 bg-slate-900 border-b border-slate-800 px-4 md:px-6 flex items-center justify-between">
             <span class="font-bold text-sm text-white md:hidden">Регистр S-13</span>
-            <button onclick="openModal('city-modal')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 ml-auto">
-                <i class="fa-solid fa-plus"></i> Добавить город
-            </button>
+            <div class="flex items-center gap-2 ml-auto">
+                <button onclick="openModal('city-modal')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> Добавить город
+                </button>
+                <button onclick="handleLogout()" class="md:hidden p-2 text-slate-400 hover:text-rose-400">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
         </header>
 
         <main class="p-4 md:p-6 space-y-6 flex-1 overflow-y-auto">
@@ -164,37 +199,12 @@
         </div>
     </div>
 
-    <!-- Modal: Редактирование записи истории -->
-    <div id="edit-history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-            <h3 class="font-bold text-white border-b border-slate-800 pb-2 text-base">Редактировать запись</h3>
-            <input type="hidden" id="edit-h-tid">
-            <input type="hidden" id="edit-h-idx">
-            <div>
-                <label class="text-xs font-semibold text-slate-400">Возвещатель</label>
-                <input type="text" id="edit-h-publisher" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
-            </div>
-            <div>
-                <label class="text-xs font-semibold text-slate-400">Дата выдачи (ГГГГ-ММ-ДД)</label>
-                <input type="date" id="edit-h-issued" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
-            </div>
-            <div>
-                <label class="text-xs font-semibold text-slate-400">Дата сдачи (оставьте пустым, если на руках)</label>
-                <input type="date" id="edit-h-returned" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button onclick="closeModal('edit-history-modal')" class="flex-1 py-2 border border-slate-800 rounded-lg text-xs font-semibold text-slate-400">Отмена</button>
-                <button onclick="saveHistoryRecordEdit()" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">Сохранить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDK Integration -->
+    <!-- Firebase Integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Ваши ключи проекта fir-13-app
         const firebaseConfig = {
             apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
             authDomain: "fir-13-app.firebaseapp.com",
@@ -206,33 +216,57 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
-        const docRef = doc(db, "app_data", "s13_registry");
+        // Путь изменен на s13_main
+        const docRef = doc(db, "app_data", "s13_main");
 
         const DEFAULT_MAP_LINK = 'https://www.google.com/maps/d/edit?mid=1Z8LxzoUjVqJx-8QikyySVlmPmNd4x6c&usp=drive_link';
-
-        const defaultValenceData = {
-            cities: [{ id: 101, name: 'Valence' }],
-            territories: [
-                { id: 1001, cityId: 101, number: '1', mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: 'Kravtsov Oleksandr', issuedAt: '2024-01-28', returnedAt: '2025-08-23' }] },
-                { id: 1002, cityId: 101, number: '2', mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: 'Edmond Maduncev', issuedAt: '2024-02-02', returnedAt: '2024-04-10' }, { publisher: 'Brozik Zinaida', issuedAt: '2025-03-30', returnedAt: '2025-08-28' }] }
-            ]
-        };
 
         window.appData = { cities: [], territories: [] };
         window.currentTab = 'dashboard';
         window.activeCityId = null;
 
-        // Синхронизация данных из Firestore в реальном времени
-        onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                window.appData = docSnap.data();
+        let unsubscribeSnapshot = null;
+
+        onAuthStateChanged(auth, (user) => {
+            const authScreen = document.getElementById('auth-screen');
+            if (user) {
+                authScreen.classList.add('hidden');
+                unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        window.appData = docSnap.data();
+                    } else {
+                        const defaultValenceData = {
+                            cities: [{ id: 101, name: 'Valence' }],
+                            territories: []
+                        };
+                        window.appData = defaultValenceData;
+                        setDoc(docRef, defaultValenceData);
+                    }
+                    renderUI();
+                });
             } else {
-                window.appData = defaultValenceData;
-                setDoc(docRef, defaultValenceData);
+                authScreen.classList.remove('hidden');
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
             }
-            renderUI();
         });
+
+        window.handleLogin = async function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                alert("Ошибка входа: проверьте Email и пароль!");
+            }
+        };
+
+        window.handleLogout = function() {
+            if (confirm("Выйти из аккаунта?")) {
+                signOut(auth);
+            }
+        };
 
         window.saveData = async function() {
             try {
@@ -240,29 +274,7 @@
                 renderUI();
             } catch (e) {
                 console.error("Ошибка сохранения в Firebase:", e);
-                alert("Ошибка сохранения. Убедитесь, что правила Firestore разрешают запись (Rules -> allow read, write: if true;).");
-            }
-        };
-
-        window.checkUrlParams = function() {
-            const params = new URLSearchParams(window.location.search);
-            const cityId = parseInt(params.get('city'));
-            const territoryId = parseInt(params.get('territory'));
-
-            if (cityId) {
-                switchTab('city-detail', cityId);
-                if (territoryId) {
-                    setTimeout(() => {
-                        const targetCard = document.getElementById(`territory-card-${territoryId}`);
-                        if (targetCard) {
-                            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            targetCard.classList.add('highlight-card');
-                            setTimeout(() => {
-                                targetCard.classList.remove('highlight-card');
-                            }, 4000);
-                        }
-                    }, 200);
-                }
+                alert("Ошибка доступа. Убедитесь, что вы вошли в систему.");
             }
         };
 
@@ -271,8 +283,6 @@
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(linkToCopy).then(() => {
                     showToast(`Ссылка на карту участка №${territoryNum} скопирована!`);
-                }).catch(() => {
-                    prompt(`Скопируйте ссылку на карту участка №${territoryNum}:`, linkToCopy);
                 });
             } else {
                 prompt(`Скопируйте ссылку на карту участка №${territoryNum}:`, linkToCopy);
@@ -398,7 +408,7 @@
 
             if (city.name.toLowerCase() === 'valence') {
                 mapFrame.src = "https://www.google.com/maps/d/embed?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw";
-                mapLink.href = "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13";
+                mapLink.href = "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw";
                 mapLink.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Редактировать карту Валанса`;
             } else {
                 const encodedCity = encodeURIComponent(city.name);
@@ -437,13 +447,13 @@
                                 <span class="truncate">Карта участка</span>
                             </div>
                             <div class="flex items-center gap-1">
-                                <button onclick="shareMapLink('${t.number}', '${mapUrl}')" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 transition-colors" title="Отправить ссылку на карту возвещателю">
-                                    <i class="fa-solid fa-share-nodes"></i> Отправить карту
+                                <button onclick="shareMapLink('${t.number}', '${mapUrl}')" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 transition-colors">
+                                    <i class="fa-solid fa-share-nodes"></i> Отправить
                                 </button>
-                                <a href="${mapUrl}" target="_blank" class="p-1 text-slate-400 hover:text-white" title="Открыть карту на Google">
+                                <a href="${mapUrl}" target="_blank" class="p-1 text-slate-400 hover:text-white">
                                     <i class="fa-solid fa-up-right-from-square"></i>
                                 </a>
-                                <button onclick="editMapLink(${t.id})" class="p-1 text-slate-500 hover:text-indigo-400" title="Изменить ссылку участка на карту">
+                                <button onclick="editMapLink(${t.id})" class="p-1 text-slate-500 hover:text-indigo-400">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
                             </div>
@@ -452,7 +462,7 @@
 
                     <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
                         <button onclick="openHistory(${t.id})" class="text-indigo-400 hover:underline font-semibold flex items-center gap-1">
-                            <i class="fa-solid fa-clock-rotate-left"></i> История (${t.history.length})
+                            <i class="fa-solid fa-clock-rotate-left"></i> История (${t.history ? t.history.length : 0})
                         </button>
                         <div class="flex gap-1.5">
                             ${!status.isIssued ? `<button onclick="issueTerritory(${t.id})" class="px-2.5 py-1 bg-indigo-500/10 text-indigo-400 rounded font-bold hover:bg-indigo-500/20">Выдать</button>` : ''}
@@ -479,7 +489,7 @@
 
         window.deleteCity = function(cityId) {
             const city = window.appData.cities.find(c => c.id === cityId);
-            if (!confirm(`Удалить город "${city ? city.name : ''}" и все его участки с историей?`)) return;
+            if (!confirm(`Удалить город "${city ? city.name : ''}" и все его участки?`)) return;
             window.appData.cities = window.appData.cities.filter(c => c.id !== cityId);
             window.appData.territories = window.appData.territories.filter(t => t.cityId !== cityId);
             if (window.activeCityId === cityId) switchTab('dashboard');
@@ -549,14 +559,6 @@
                         <div class="text-right flex-shrink-0">
                             ${h.returnedAt ? `<span class="text-emerald-400 font-semibold">Сдан: ${h.returnedAt}</span>` : '<span class="text-blue-400 font-bold">На руках</span>'}
                         </div>
-                        <div class="flex items-center gap-1 ml-2 flex-shrink-0">
-                            <button onclick="openEditHistoryModal(${t.id}, ${index})" class="p-1.5 text-slate-500 hover:text-indigo-400 transition-colors" title="Редактировать запись">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </button>
-                            <button onclick="deleteHistoryRecord(${t.id}, ${index})" class="p-1.5 text-slate-500 hover:text-rose-400 transition-colors" title="Удалить запись">
-                                <i class="fa-solid fa-trash text-xs"></i>
-                            </button>
-                        </div>
                     `;
                     container.appendChild(row);
                 });
@@ -564,59 +566,11 @@
             openModal('history-modal');
         };
 
-        window.openEditHistoryModal = function(territoryId, historyIndex) {
-            const t = window.appData.territories.find(x => x.id === territoryId);
-            if (!t || !t.history[historyIndex]) return;
-            const rec = t.history[historyIndex];
-
-            document.getElementById('edit-h-tid').value = territoryId;
-            document.getElementById('edit-h-idx').value = historyIndex;
-            document.getElementById('edit-h-publisher').value = rec.publisher || '';
-            document.getElementById('edit-h-issued').value = rec.issuedAt || '';
-            document.getElementById('edit-h-returned').value = rec.returnedAt || '';
-
-            openModal('edit-history-modal');
-        };
-
-        window.saveHistoryRecordEdit = function() {
-            const territoryId = parseInt(document.getElementById('edit-h-tid').value);
-            const historyIndex = parseInt(document.getElementById('edit-h-idx').value);
-            const publisher = document.getElementById('edit-h-publisher').value.trim();
-            const issuedAt = document.getElementById('edit-h-issued').value;
-            const returnedAt = document.getElementById('edit-h-returned').value || null;
-
-            if (!publisher || !issuedAt) {
-                return alert("Укажите имя возвещателя и дату выдачи!");
-            }
-
-            const t = window.appData.territories.find(x => x.id === territoryId);
-            if (t && t.history[historyIndex]) {
-                t.history[historyIndex] = { publisher, issuedAt, returnedAt };
-                saveData();
-                closeModal('edit-history-modal');
-                openHistory(territoryId);
-            }
-        };
-
-        window.deleteHistoryRecord = function(territoryId, historyIndex) {
-            if (!confirm("Вы действительно хотите удалить эту запись из истории?")) return;
-            const t = window.appData.territories.find(x => x.id === territoryId);
-            if (t && t.history) {
-                t.history.splice(historyIndex, 1);
-                saveData();
-                openHistory(territoryId);
-            }
-        };
-
         window.deleteTerritory = function(id) {
             if (!confirm("Удалить участок?")) return;
             window.appData.territories = window.appData.territories.filter(x => x.id !== id);
             saveData();
         };
-
-        document.addEventListener("DOMContentLoaded", () => {
-            checkUrlParams();
-        });
     </script>
 </body>
 </html>
