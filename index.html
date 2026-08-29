@@ -11,6 +11,16 @@
     </script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Скрытие полосы прокрутки для панели городов, чтобы интерфейс выглядел аккуратно */
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-6">
 
@@ -26,8 +36,8 @@
             </div>
         </div>
 
-        <!-- Переключатель городов -->
-        <div class="flex items-center gap-2 overflow-x-auto py-1" id="cities-container"></div>
+        <!-- Переключатель городов (с фиксированным поведением против глича) -->
+        <div class="flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none max-w-[50vw]" id="cities-container"></div>
 
         <!-- Кнопки управления и Язык -->
         <div class="flex items-center gap-2">
@@ -674,24 +684,47 @@
 
         function renderCities() {
             const container = document.getElementById('cities-container');
-            container.innerHTML = '';
-            citiesData.forEach(c => {
-                const btn = document.createElement('button');
-                btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition ${c.id === activeCityId ? 'bg-indigo-600 text-white font-semibold shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`;
-                btn.innerText = c.name;
-                btn.onclick = () => { activeCityId = c.id; renderCities(); subscribeToTerritories(); };
-                container.appendChild(btn);
+            const currentCityIds = Array.from(container.children).map(btn => btn.dataset.cityId);
+            const newCityIds = citiesData.map(c => c.id);
+            
+            const isSameStructure = currentCityIds.length === newCityIds.length && 
+                                    currentCityIds.every((id, index) => id === newCityIds[index]);
 
-                if (c.id === activeCityId) {
-                    const mapLinkBtn = document.getElementById('map-link');
-                    if (c.mapUrl) {
-                        mapLinkBtn.href = c.mapUrl;
-                        mapLinkBtn.style.display = 'flex';
+            if (isSameStructure) {
+                Array.from(container.children).forEach(btn => {
+                    const cId = btn.dataset.cityId;
+                    if (cId === activeCityId) {
+                        btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block bg-indigo-600 text-white font-semibold shadow-md";
                     } else {
-                        mapLinkBtn.style.display = 'none';
+                        btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium";
                     }
-                }
-            });
+                });
+            } else {
+                container.innerHTML = '';
+                citiesData.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.dataset.cityId = c.id;
+                    btn.className = `px-3 py-1.5 rounded-lg text-xs transition inline-block ${c.id === activeCityId ? 'bg-indigo-600 text-white font-semibold shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium'}`;
+                    btn.innerText = c.name;
+                    btn.onclick = () => { 
+                        if (activeCityId !== c.id) {
+                            activeCityId = c.id; 
+                            renderCities(); 
+                            subscribeToTerritories(); 
+                        }
+                    };
+                    container.appendChild(btn);
+                });
+            }
+
+            const activeCity = citiesData.find(c => c.id === activeCityId);
+            const mapLinkBtn = document.getElementById('map-link');
+            if (activeCity && activeCity.mapUrl) {
+                mapLinkBtn.href = activeCity.mapUrl;
+                mapLinkBtn.style.display = 'flex';
+            } else {
+                mapLinkBtn.style.display = 'none';
+            }
         }
 
         function renderTerritories() {
