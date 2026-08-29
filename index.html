@@ -175,7 +175,7 @@
                 <input type="text" id="t-num-input" placeholder="78" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
             </div>
             <div>
-                <label class="text-xs font-semibold text-slate-400">Ссылка на Google Карту (для возвещателя)</label>
+                <label class="text-xs font-semibold text-slate-400">Ссылка на Google Карту</label>
                 <input type="text" id="t-map-input" placeholder="https://www.google.com/maps/d/edit?mid=..." class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
             </div>
             <div class="flex gap-2 pt-2">
@@ -218,10 +218,90 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        // Путь изменен на s13_main
         const docRef = doc(db, "app_data", "s13_main");
 
         const DEFAULT_MAP_LINK = 'https://www.google.com/maps/d/edit?mid=1Z8LxzoUjVqJx-8QikyySVlmPmNd4x6c&usp=drive_link';
+
+        // Исходные данные со всеми 77 участками из Валанса
+        const initialValenceTerritories = [
+            { id: 1, cityId: 101, number: "1", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23" }] },
+            { id: 2, cityId: 101, number: "2", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10" }, { publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28" }] },
+            { id: 3, cityId: 101, number: "3", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-04-10", returnedAt: "2024-04-10" }, { publisher: "Alla Tyrii", issuedAt: "2025-03-16", returnedAt: "2025-03-28" }, { publisher: "Lilia Madunceva", issuedAt: "2026-03-15", returnedAt: null }] },
+            { id: 4, cityId: 101, number: "4", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumov Boris", issuedAt: "2024-02-16", returnedAt: "2024-02-16" }, { publisher: "Anna", issuedAt: "2025-03-28", returnedAt: "2025-05-30" }, { publisher: "Valentina", issuedAt: "2026-06-30", returnedAt: null }] },
+            { id: 5, cityId: 101, number: "5", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Kravtsov Alexandr", issuedAt: "2024-02-16", returnedAt: "2025-04-09" }, { publisher: "Larisa Velcheva", issuedAt: "2026-03-21", returnedAt: "2026-05-17" }] },
+            { id: 6, cityId: 101, number: "6", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-03-09", returnedAt: "2024-03-09" }, { publisher: "Anna", issuedAt: "2025-03-28", returnedAt: "2025-05-30" }, { publisher: "Larisa Velcheva", issuedAt: "2026-05-17", returnedAt: null }] },
+            { id: 7, cityId: 101, number: "7", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Naida Artem", issuedAt: "2024-02-22", returnedAt: "2024-04-20" }, { publisher: "Valera", issuedAt: "2025-03-30", returnedAt: "2025-04-11" }] },
+            { id: 8, cityId: 101, number: "8", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-03-16", returnedAt: "2024-05-17" }, { publisher: "Alla Tyrii", issuedAt: "2025-03-28", returnedAt: "2025-10-19" }] },
+            { id: 9, cityId: 101, number: "9", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Yaroslav Romanov", issuedAt: "2024-03-16", returnedAt: "2024-05-04" }, { publisher: "Valera", issuedAt: "2025-05-09", returnedAt: "2025-06-06" }, { publisher: "Ivan", issuedAt: "2026-06-30", returnedAt: "2026-08-29" }] },
+            { id: 10, cityId: 101, number: "10", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumov Boris", issuedAt: "2024-03-16", returnedAt: "2024-06-07" }, { publisher: "Brozik Svetlana", issuedAt: "2025-03-31", returnedAt: "2025-10-10" }] },
+            { id: 11, cityId: 101, number: "11", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Naida Artem", issuedAt: "2024-04-11", returnedAt: "2024-04-19" }, { publisher: "Edmond Maduncev", issuedAt: "2025-03-16", returnedAt: "2025-05-17" }, { publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null }] },
+            { id: 12, cityId: 101, number: "12", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Naida Artem", issuedAt: "2024-04-11", returnedAt: "2024-04-19" }, { publisher: "Valera", issuedAt: "2025-03-30", returnedAt: "2025-04-11" }, { publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null }] },
+            { id: 13, cityId: 101, number: "13", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Kravtsova Irina", issuedAt: "2024-01-01", returnedAt: "2024-04-01" }, { publisher: "Lilia Maduncev", issuedAt: "2025-03-23", returnedAt: "2025-05-30" }, { publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null }] },
+            { id: 14, cityId: 101, number: "14", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valeria Mykytyuk", issuedAt: "2024-04-01", returnedAt: "2024-05-01" }, { publisher: "Katerina Mykytyuk", issuedAt: "2025-03-28", returnedAt: "2025-10-20" }] },
+            { id: 15, cityId: 101, number: "15", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-04-26" }, { publisher: "Stella", issuedAt: "2025-03-23", returnedAt: "2025-05-09" }, { publisher: "Vlad", issuedAt: "2026-05-23", returnedAt: null }] },
+            { id: 16, cityId: 101, number: "16", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-04-26" }, { publisher: "Valera", issuedAt: "2025-04-11", returnedAt: "2025-04-13" }] },
+            { id: 17, cityId: 101, number: "17", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-05-05" }, { publisher: "Valera", issuedAt: "2025-05-09", returnedAt: "2025-06-06" }, { publisher: "Yarik", issuedAt: "2026-08-08", returnedAt: null }] },
+            { id: 18, cityId: 101, number: "18", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Naida Artem", issuedAt: "2024-04-20", returnedAt: "2024-04-29" }, { publisher: "Valera", issuedAt: "2025-04-11", returnedAt: "2025-04-13" }, { publisher: "Valentina Ermolayva", issuedAt: "2026-05-24", returnedAt: "2026-06-30" }] },
+            { id: 19, cityId: 101, number: "19", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-04-20", returnedAt: "2024-06-22" }, { publisher: "Edmond Maduncev", issuedAt: "2025-06-28", returnedAt: "2025-07-27" }] },
+            { id: 20, cityId: 101, number: "20", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumov Boris", issuedAt: "2024-04-20", returnedAt: "2024-06-08" }, { publisher: "Valera", issuedAt: "2025-06-06", returnedAt: "2025-09-12" }] },
+            { id: 21, cityId: 101, number: "21", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-04-26", returnedAt: "2024-08-02" }, { publisher: "Brozik Zinaida", issuedAt: "2025-09-04", returnedAt: "2025-10-12" }] },
+            { id: 22, cityId: 101, number: "22", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-04-26", returnedAt: "2024-06-22" }, { publisher: "Alena Beruso", issuedAt: "2025-08-25", returnedAt: "2025-10-20" }] },
+            { id: 23, cityId: 101, number: "23", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Yaroslav Romanov", issuedAt: "2024-05-01", returnedAt: "2024-06-03" }, { publisher: "Brozik Svetlana", issuedAt: "2025-03-31", returnedAt: "2025-04-25" }, { publisher: "Edmond Maduncev", issuedAt: "2026-06-12", returnedAt: "2026-06-19" }] },
+            { id: 24, cityId: 101, number: "24", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valeria Mykytyuk", issuedAt: "2024-05-01", returnedAt: "2024-06-06" }, { publisher: "Valera", issuedAt: "2025-06-06", returnedAt: "2025-09-12" }] },
+            { id: 25, cityId: 101, number: "25", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Yaroslav Romanov", issuedAt: "2024-05-26", returnedAt: "2024-07-15" }, { publisher: "Edmond Maduncev", issuedAt: "2025-07-25", returnedAt: "2025-08-16" }] },
+            { id: 26, cityId: 101, number: "26", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-05-30", returnedAt: "2024-06-22" }, { publisher: "Edmond Maduncev", issuedAt: "2025-08-18", returnedAt: "2025-09-04" }] },
+            { id: 27, cityId: 101, number: "27", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valeria Mykytyuk", issuedAt: "2024-06-06", returnedAt: "2024-06-06" }, { publisher: "Liliya Madunceva", issuedAt: "2025-09-01", returnedAt: "2025-10-02" }] },
+            { id: 28, cityId: 101, number: "28", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Katerina Mykytyuk", issuedAt: "2024-05-04", returnedAt: "2024-07-03" }, { publisher: "Yaroslav Romanov", issuedAt: "2025-08-28", returnedAt: "2025-10-11" }] },
+            { id: 29, cityId: 101, number: "29", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-05-16", returnedAt: "2024-12-19" }, { publisher: "Vova", issuedAt: "2025-12-16", returnedAt: "2025-12-21" }] },
+            { id: 30, cityId: 101, number: "30", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-06-07", returnedAt: "2025-01-05" }, { publisher: "Kovalchyk Valerii", issuedAt: "2025-12-16", returnedAt: "2025-12-21" }] },
+            { id: 31, cityId: 101, number: "31", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumov Boris", issuedAt: "2024-06-07", returnedAt: "2024-07-20" }, { publisher: "Edmond Maduncev", issuedAt: "2025-09-10", returnedAt: "2025-09-13" }] },
+            { id: 32, cityId: 101, number: "32", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valeria Mykytyuk", issuedAt: "2024-06-08", returnedAt: "2024-12-07" }, { publisher: "Kovalchyk Valerii", issuedAt: "2025-12-16", returnedAt: "2026-02-16" }] },
+            { id: 33, cityId: 101, number: "33", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-06-22", returnedAt: "2024-08-02" }, { publisher: "Valera", issuedAt: "2025-09-12", returnedAt: "2025-09-19" }] },
+            { id: 34, cityId: 101, number: "34", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Svitlana Brozik", issuedAt: "2024-06-22", returnedAt: "2024-08-16" }, { publisher: "Liliya Madunceva", issuedAt: "2025-09-01", returnedAt: "2025-09-18" }] },
+            { id: 35, cityId: 101, number: "35", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Kravtsov Alexandr", issuedAt: "2024-06-23", returnedAt: "2024-08-10" }, { publisher: "Valera", issuedAt: "2025-09-12", returnedAt: "2025-09-19" }] },
+            { id: 36, cityId: 101, number: "36", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-06-27", returnedAt: "2024-09-12" }, { publisher: "Valera", issuedAt: "2025-09-26", returnedAt: "2025-10-24" }] },
+            { id: 37, cityId: 101, number: "37", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-06-27", returnedAt: "2024-09-12" }, { publisher: "Valentina Ermolayva", issuedAt: "2025-09-23", returnedAt: "2025-10-26" }] },
+            { id: 38, cityId: 101, number: "38", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valentina Ermolayva", issuedAt: "2024-06-28", returnedAt: "2024-12-07" }, { publisher: "Yaroslav Romanov", issuedAt: "2025-12-20", returnedAt: "2026-03-08" }] },
+            { id: 39, cityId: 101, number: "39", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Yaroslav Romanov", issuedAt: "2024-07-21", returnedAt: "2024-07-25" }, { publisher: "Kovalchyk Valerii", issuedAt: "2025-09-15", returnedAt: "2025-09-28" }] },
+            { id: 40, cityId: 101, number: "40", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumov Boris", issuedAt: "2024-07-25", returnedAt: "2024-08-05" }, { publisher: "Valera", issuedAt: "2025-09-19", returnedAt: "2025-09-26" }] },
+            { id: 41, cityId: 101, number: "41", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-08-02", returnedAt: "2024-08-29" }, { publisher: "Kovalchyk Valerii", issuedAt: "2025-09-28", returnedAt: "2025-10-19" }] },
+            { id: 42, cityId: 101, number: "42", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Stella", issuedAt: "2024-12-20", returnedAt: "2025-03-28" }, { publisher: "Loktionova Tatiana", issuedAt: "2026-03-26", returnedAt: "2026-05-12" }] },
+            { id: 43, cityId: 101, number: "43", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2024-08-29", returnedAt: "2024-12-20" }, { publisher: "Artem Nayda", issuedAt: "2025-12-21", returnedAt: null }] },
+            { id: 44, cityId: 101, number: "44", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Stella", issuedAt: "2024-09-04", returnedAt: "2024-09-29" }, { publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24" }, { publisher: "Alena", issuedAt: "2026-08-22", returnedAt: null }] },
+            { id: 45, cityId: 101, number: "45", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Kravtsov Oleksandr", issuedAt: "2024-08-09", returnedAt: "2024-09-07" }, { publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24" }] },
+            { id: 46, cityId: 101, number: "46", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumova Elena", issuedAt: "2024-09-08", returnedAt: "2024-09-15" }, { publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24" }] },
+            { id: 47, cityId: 101, number: "47", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Yaroslav Romanov", issuedAt: "2024-09-11", returnedAt: "2024-12-21" }, { publisher: "Valentina Ermolayva", issuedAt: "2025-12-31", returnedAt: "2026-05-24" }] },
+            { id: 48, cityId: 101, number: "48", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-09-13", returnedAt: "2024-12-19" }, { publisher: "Kovalchyk Valerii", issuedAt: "2025-12-20", returnedAt: "2026-01-24" }] },
+            { id: 49, cityId: 101, number: "49", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumova Elena", issuedAt: "2024-09-15", returnedAt: "2024-11-24" }, { publisher: "Valera", issuedAt: "2025-12-26", returnedAt: "2026-01-16" }] },
+            { id: 50, cityId: 101, number: "50", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Loktionova Tatiana", issuedAt: "2025-04-04", returnedAt: "2025-04-10" }, { publisher: "Edmond Maduncev", issuedAt: "2026-07-17", returnedAt: "2026-07-18" }] },
+            { id: 51, cityId: 101, number: "51", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Kravtsov O.", issuedAt: "2024-10-20", returnedAt: "2024-11-08" }, { publisher: "Kovalchyk Valerii", issuedAt: "2025-11-28", returnedAt: "2026-07-19" }] },
+            { id: 52, cityId: 101, number: "52", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Otinova Olena", issuedAt: "2025-04-06", returnedAt: "2025-05-06" }, { publisher: "Edmond Maduncev", issuedAt: "2026-06-19", returnedAt: "2026-07-17" }] },
+            { id: 53, cityId: 101, number: "53", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-11-12", returnedAt: "2024-11-29" }, { publisher: "Yaroslav Romanov", issuedAt: "2025-12-26", returnedAt: "2026-01-16" }] },
+            { id: 54, cityId: 101, number: "54", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2024-11-12", returnedAt: "2025-02-15" }, { publisher: "Yaroslav", issuedAt: "2026-06-12", returnedAt: "2026-06-13" }] },
+            { id: 55, cityId: 101, number: "55", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07" }] },
+            { id: 56, cityId: 101, number: "56", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15" }, { publisher: "Vitalii Litvinchyk", issuedAt: "2026-03-07", returnedAt: "2026-07-18" }] },
+            { id: 57, cityId: 101, number: "57", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15" }, { publisher: "Vitalii Litvinchyk", issuedAt: "2026-03-07", returnedAt: "2026-07-18" }] },
+            { id: 58, cityId: 101, number: "58", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Skorodumov Boris", issuedAt: "2024-11-29", returnedAt: "2024-12-19" }, { publisher: "Larysa Velcheva", issuedAt: "2026-01-10", returnedAt: "2026-01-24" }] },
+            { id: 59, cityId: 101, number: "59", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2025-01-05", returnedAt: "2025-03-15" }] },
+            { id: 60, cityId: 101, number: "60", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Kravtsov Oleksandr", issuedAt: "2024-11-08", returnedAt: "2025-06-14" }, { publisher: "Edmond Maduncev", issuedAt: "2026-07-24", returnedAt: "2026-08-28" }] },
+            { id: 61, cityId: 101, number: "61", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15" }, { publisher: "Larisa Velcheva", issuedAt: "2026-02-21", returnedAt: "2026-03-21" }] },
+            { id: 62, cityId: 101, number: "62", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07" }] },
+            { id: 63, cityId: 101, number: "63", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-02-15", returnedAt: "2025-03-28" }] },
+            { id: 64, cityId: 101, number: "64", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-02-15", returnedAt: "2025-03-28" }] },
+            { id: 65, cityId: 101, number: "65", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-21", returnedAt: "2025-02-15" }, { publisher: "Larisa Velcheva", issuedAt: "2026-02-21", returnedAt: "2026-03-21" }] },
+            { id: 66, cityId: 101, number: "66", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-21", returnedAt: "2025-02-15" }, { publisher: "Valerii Kovalchyk", issuedAt: "2026-02-28", returnedAt: null }] },
+            { id: 67, cityId: 101, number: "67", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-25", returnedAt: "2025-02-15" }, { publisher: "Lilia Maduntseva", issuedAt: "2026-02-28", returnedAt: "2026-03-15" }] },
+            { id: 68, cityId: 101, number: "68", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Natela Mazanashvili", issuedAt: "2025-03-16", returnedAt: "2025-04-04" }] },
+            { id: 69, cityId: 101, number: "69", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-26", returnedAt: "2025-02-15" }, { publisher: "Kravtsov Oleksandr", issuedAt: "2026-02-20", returnedAt: "2026-02-20" }] },
+            { id: 70, cityId: 101, number: "70", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Katerina Mykytyuk", issuedAt: "2024-11-29", returnedAt: "2025-03-28" }] },
+            { id: 71, cityId: 101, number: "71", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28" }] },
+            { id: 72, cityId: 101, number: "72", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28" }] },
+            { id: 73, cityId: 101, number: "73", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28" }] },
+            { id: 74, cityId: 101, number: "74", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-04-06" }] },
+            { id: 75, cityId: 101, number: "75", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Edmond Maduncev", issuedAt: "2025-03-03", returnedAt: "2025-03-15" }] },
+            { id: 76, cityId: 101, number: "76", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07" }] },
+            { id: 77, cityId: 101, number: "77", mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: "Katerina Mykytyuk", issuedAt: "2026-03-21", returnedAt: null }] }
+        ];
 
         window.appData = { cities: [], territories: [] };
         window.currentTab = 'dashboard';
@@ -239,7 +319,7 @@
                     } else {
                         const defaultValenceData = {
                             cities: [{ id: 101, name: 'Valence' }],
-                            territories: []
+                            territories: initialValenceTerritories
                         };
                         window.appData = defaultValenceData;
                         setDoc(docRef, defaultValenceData);
