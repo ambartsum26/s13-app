@@ -60,7 +60,7 @@
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-6xl mx-auto space-y-6">
 
-        <!-- Статистика, Кнопка скачивания отчета (иконка) и Общая карта -->
+        <!-- Статистика, Кнопки скачивания и Общая карта -->
         <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg">
             <div class="flex items-center space-x-4 text-xs">
                 <span><span data-i18n="st_free_label">🟢 Свободно</span>: <strong id="st-free" class="text-white">0</strong></span>
@@ -69,9 +69,14 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Кнопка скачивания отчета (иконка слева от общей карты, строго на французском) -->
-                <button onclick="exportCityReport()" title="Télécharger le rapport (FR)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition border border-slate-700 shadow-md flex items-center justify-center">
+                <!-- Кнопка скачивания стандартного CSV-отчета -->
+                <button onclick="exportCityReport()" title="Télécharger le rapport (CSV)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition border border-slate-700 shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-download"></i>
+                </button>
+
+                <!-- КНОПКА ГЕНЕРАЦИИ ОФИЦИАЛЬНОГО ЗАПОЛНЕННОГО БЛАНКА (Registre officiel S-13) -->
+                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded-lg text-xs font-semibold transition border border-slate-700 shadow-md flex items-center gap-1">
+                    <i class="fa-solid fa-table"></i> <span class="text-[10px]">S-13</span>
                 </button>
 
                 <!-- Ссылка на общую карту активного города -->
@@ -243,7 +248,7 @@
             return translations[currentLang][key] || key;
         }
 
-        // --- ФУНКЦИЯ ЭКСПОРТА ОТЧЕТА ПО ТЕКУЩЕМУ ГОРОДУ (СТРОГО НА ФРАНЦУЗСКОМ) ---
+        // --- ФУНКЦИЯ ЭКСПОРТА CSV (СТРОГО НА ФРАНЦУЗСКОМ) ---
         window.exportCityReport = () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
@@ -284,6 +289,112 @@
             document.body.removeChild(link);
         };
 
+        // --- ФУНКЦИЯ ГЕНЕРАЦИИ ОФИЦИАЛЬНОГО БЛАНКА (REGISTRE D'ATTRIBUTION S-13) ДЛЯ КАЖДОГО ГОРОДА ---
+        window.exportOfficialRegister = () => {
+            const city = citiesData.find(c => c.id === activeCityId);
+            if (!city) return;
+
+            let htmlContent = `
+            <html lang="fr">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; font-size: 11px; margin: 15px; color: #000; }
+                    h2 { text-align: center; margin-bottom: 2px; font-size: 16px; }
+                    .subtitle { text-align: center; font-weight: bold; margin-bottom: 15px; font-size: 13px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th, td { border: 1px solid #000; padding: 5px; text-align: center; vertical-align: middle; }
+                    th { background-color: #eaeaea; font-weight: bold; }
+                    .note { font-size: 9px; margin-top: 15px; font-style: italic; }
+                    .left-text { text-align: left; padding-left: 8px; }
+                </style>
+            </head>
+            <body>
+                <h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2>
+                <div class="subtitle">Ville : ${city.name} &nbsp;|&nbsp; Année de service : ${new Date().getFullYear()}</div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 60px;">Terr. no</th>
+                            <th rowspan="2" style="width: 130px;">Parcouru pour la dernière fois le*</th>
+                            <th colspan="2">Attribué à</th>
+                            <th colspan="2">Attribué à</th>
+                            <th colspan="2">Attribué à</th>
+                            <th colspan="2">Attribué à</th>
+                        </tr>
+                        <tr>
+                            <th>Attribué le</th>
+                            <th>Entièrement parcouru le</th>
+                            <th>Attribué le</th>
+                            <th>Entièrement parcouru le</th>
+                            <th>Attribué le</th>
+                            <th>Entièrement parcouru le</th>
+                            <th>Attribué le</th>
+                            <th>Entièrement parcouru le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            territoriesData.forEach(tObj => {
+                const history = tObj.history || [];
+                let columnsHtml = "";
+                
+                // Берем до 4 последних выдач для заполнения колонок бланка
+                for (let i = 0; i < 4; i++) {
+                    const h = history[i];
+                    if (h) {
+                        const issued = h.issuedAt || "";
+                        const returned = h.returnedAt ? h.returnedAt : "En cours";
+                        columnsHtml += `
+                            <td>${issued}<br><span style="font-size:8px; color:#444;">(${h.publisher})</span></td>
+                            <td>${returned}</td>
+                        `;
+                    } else {
+                        columnsHtml += `<td></td><td></td>`;
+                    }
+                }
+
+                // Дата последнего прохождения (берем дату возврата из самой ранней истории или оставляем пустой)
+                let lastWalkedDate = "";
+                if (history.length > 0) {
+                    const completedItems = history.filter(h => h.returnedAt);
+                    if (completedItems.length > 0) {
+                        lastWalkedDate = completedItems[completedItems.length - 1].returnedAt;
+                    }
+                }
+
+                htmlContent += `
+                    <tr>
+                        <td><b>${tObj.number}</b></td>
+                        <td>${lastWalkedDate}</td>
+                        ${columnsHtml}
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                    </tbody>
+                </table>
+                <div class="note">
+                    * Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.
+                </div>
+            </body>
+            </html>
+            `;
+
+            // Скачивание файла бланка с привязкой к конкретному городу
+            const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `registre_S13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.xls`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
         // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
@@ -303,7 +414,6 @@
         let territoriesData = [];
         let currentEditingTerritoryId = null;
 
-        // Предзаполненные массивы данных
         const valenceTerritories = [
             {number: "1", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
             {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]}
