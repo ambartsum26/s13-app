@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Учёт территорий (Firebase)</title>
+    <title>Учёт территорий - Валанс</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -58,9 +58,10 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <button onclick="quickImport()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
-                    <i class="fa-solid fa-file-import mr-1"></i> Быстрый импорт
-                </button>
+                <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition cursor-pointer">
+                    <i class="fa-solid fa-file-arrow-up mr-1 text-indigo-400"></i> Импорт из TXT
+                    <input type="file" id="file-input" accept=".txt,.csv" class="hidden" onchange="importFromFile(event)">
+                </label>
                 <button onclick="addTerritory()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-xs font-semibold rounded-lg transition shadow-md">
                     <i class="fa-solid fa-plus mr-1"></i> Участок
                 </button>
@@ -78,14 +79,15 @@
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ⚠️ ВСТАВЬ СВОИ ДАННЫЕ ИЗ КОНСОЛИ FIREBASE ⚠️
+        // Твои реальные данные конфигурации Firebase
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
+            authDomain: "fir-13-app.firebaseapp.com",
+            projectId: "fir-13-app",
+            storageBucket: "fir-13-app.firebasestorage.app",
+            messagingSenderId: "1080215970738",
+            appId: "1:1080215970738:web:2d66b3b8a9ea26f1e6baab",
+            measurementId: "G-70HBSY6MC6"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -95,13 +97,108 @@
         let citiesData = [];
         let territoriesData = [];
 
+        // Предзагруженные данные участков Валанса (с 1 по 77)
+        const initialTerritoriesData = [
+            {number: "1", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
+            {number: "2", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]},
+            {number: "3", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-10", returnedAt: "2024-04-10"}, {publisher: "Alla Tyrii", issuedAt: "2025-03-16", returnedAt: "2025-03-28"}, {publisher: "Lilia Madunceva", issuedAt: "2026-03-15", returnedAt: null}]},
+            {number: "4", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-02-16", returnedAt: "2024-02-16"}, {publisher: "Anna", issuedAt: "2025-03-28", returnedAt: "2025-05-30"}, {publisher: "Valentina", issuedAt: "2026-06-30", returnedAt: null}]},
+            {number: "5", history: [{publisher: "Kravtsov Alexandr", issuedAt: "2024-02-16", returnedAt: "2025-04-09"}, {publisher: "Larisa Velcheva", issuedAt: "2026-03-21", returnedAt: "2026-05-17"}]},
+            {number: "6", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-03-09", returnedAt: "2024-03-09"}, {publisher: "Anna", issuedAt: "2025-03-28", returnedAt: "2025-05-30"}, {publisher: "Larisa Velcheva", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "7", history: [{publisher: "Naida Artem", issuedAt: "2024-02-22", returnedAt: "2024-04-20"}, {publisher: "Valera", issuedAt: "2025-03-30", returnedAt: "2025-04-11"}]},
+            {number: "8", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-03-16", returnedAt: "2024-05-17"}, {publisher: "Alla Tyrii", issuedAt: "2025-03-28", returnedAt: "2025-10-19"}]},
+            {number: "9", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-03-16", returnedAt: "2024-05-04"}, {publisher: "Valera", issuedAt: "2025-05-09", returnedAt: "2025-06-06"}, {publisher: "Ivan", issuedAt: "2026-06-30", returnedAt: "2026-08-29"}]},
+            {number: "10", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-03-16", returnedAt: "2024-06-07"}, {publisher: "Brozik Svetlana", issuedAt: "2025-03-31", returnedAt: "2025-10-10"}]},
+            {number: "11", history: [{publisher: "Naida Artem", issuedAt: "2024-04-11", returnedAt: "2024-04-19"}, {publisher: "Edmond Maduncev", issuedAt: "2025-03-16", returnedAt: "2025-05-17"}, {publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "12", history: [{publisher: "Naida Artem", issuedAt: "2024-04-11", returnedAt: "2024-04-19"}, {publisher: "Valera", issuedAt: "2025-03-30", returnedAt: "2025-04-11"}, {publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "13", history: [{publisher: "Kravtsova Irina", issuedAt: "2024-04-01", returnedAt: "2024-04-01"}, {publisher: "Lilia Maduncev", issuedAt: "2025-03-23", returnedAt: "2025-05-30"}, {publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "14", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-04-01", returnedAt: "2024-05-01"}, {publisher: "Katerina Mykytyuk", issuedAt: "2025-03-28", returnedAt: "2025-10-20"}]},
+            {number: "15", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-04-26"}, {publisher: "Stella", issuedAt: "2025-03-23", returnedAt: "2025-05-09"}, {publisher: "Vlad", issuedAt: "2026-05-23", returnedAt: null}]},
+            {number: "16", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-04-26"}, {publisher: "Valera", issuedAt: "2025-04-11", returnedAt: "2025-04-13"}]},
+            {number: "17", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-05-05"}, {publisher: "Valera", issuedAt: "2025-05-09", returnedAt: "2025-06-06"}, {publisher: "Yarik", issuedAt: "2026-08-08", returnedAt: null}]},
+            {number: "18", history: [{publisher: "Naida Artem", issuedAt: "2024-04-20", returnedAt: "2024-04-29"}, {publisher: "Valera", issuedAt: "2025-04-11", returnedAt: "2025-04-13"}, {publisher: "Valentina Ermolayva", issuedAt: "2026-05-24", returnedAt: "2026-06-30"}]},
+            {number: "19", history: [{publisher: "Valera", issuedAt: "2024-04-20", returnedAt: "2024-06-22"}, {publisher: "Edmond Maduncev", issuedAt: "2025-06-28", returnedAt: "2025-07-27"}]},
+            {number: "20", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-04-20", returnedAt: "2024-06-08"}, {publisher: "Valera", issuedAt: "2025-06-06", returnedAt: "2025-09-12"}]},
+            {number: "21", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-26", returnedAt: "2024-08-02"}, {publisher: "Brozik Zinaida", issuedAt: "2025-09-04", returnedAt: "2025-10-12"}]},
+            {number: "22", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-26", returnedAt: "2024-06-22"}, {publisher: "Alena Beruso", issuedAt: "2025-08-25", returnedAt: "2025-10-20"}]},
+            {number: "23", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-05-01", returnedAt: "2024-06-03"}, {publisher: "Brozik Svetlana", issuedAt: "2025-03-31", returnedAt: "2025-04-25"}, {publisher: "Edmond Maduncev", issuedAt: "2026-06-12", returnedAt: "2026-06-19"}]},
+            {number: "24", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-05-01", returnedAt: "2024-06-06"}, {publisher: "Valera", issuedAt: "2025-06-06", returnedAt: "2025-09-12"}]},
+            {number: "25", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-05-26", returnedAt: "2024-07-15"}, {publisher: "Edmond Maduncev", issuedAt: "2025-07-25", returnedAt: "2025-08-16"}]},
+            {number: "26", history: [{publisher: "Valera", issuedAt: "2024-05-30", returnedAt: "2024-06-22"}, {publisher: "Edmond Maduncev", issuedAt: "2025-08-18", returnedAt: "2025-09-04"}]},
+            {number: "27", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-06-06", returnedAt: "2024-06-06"}, {publisher: "Liliya Madunceva", issuedAt: "2025-09-01", returnedAt: "2025-10-02"}]},
+            {number: "28", history: [{publisher: "Katerina Mykytyuk", issuedAt: "2024-05-04", returnedAt: "2024-07-03"}, {publisher: "Yaroslav Romanov", issuedAt: "2025-08-28", returnedAt: "2025-10-11"}]},
+            {number: "29", history: [{publisher: "Valera", issuedAt: "2024-05-16", returnedAt: "2024-12-19"}, {publisher: "Vova", issuedAt: "2025-12-16", returnedAt: "2025-12-21"}]},
+            {number: "30", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-06-07", returnedAt: "2025-01-05"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-12-16", returnedAt: "2025-12-21"}]},
+            {number: "31", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-06-07", returnedAt: "2024-07-20"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-10", returnedAt: "2025-09-13"}]},
+            {number: "32", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-06-08", returnedAt: "2024-12-07"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-12-16", returnedAt: "2026-02-16"}]},
+            {number: "33", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-06-22", returnedAt: "2024-08-02"}, {publisher: "Valera", issuedAt: "2025-09-12", returnedAt: "2025-09-19"}]},
+            {number: "34", history: [{publisher: "Svitlana Brozik", issuedAt: "2024-06-22", returnedAt: "2024-08-16"}, {publisher: "Liliya Madunceva", issuedAt: "2025-09-01", returnedAt: "2025-09-18"}]},
+            {number: "35", history: [{publisher: "Kravtsov Alexandr", issuedAt: "2024-06-23", returnedAt: "2024-08-10"}, {publisher: "Valera", issuedAt: "2025-09-12", returnedAt: "2025-09-19"}]},
+            {number: "36", history: [{publisher: "Valera", issuedAt: "2024-06-27", returnedAt: "2024-09-12"}, {publisher: "Valera", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}]},
+            {number: "37", history: [{publisher: "Valera", issuedAt: "2024-06-27", returnedAt: "2024-09-12"}, {publisher: "Valentina Ermolayva", issuedAt: "2025-09-23", returnedAt: "2025-10-26"}]},
+            {number: "38", history: [{publisher: "Valentina Ermolayva", issuedAt: "2024-06-28", returnedAt: "2024-12-07"}, {publisher: "Yaroslav Romanov", issuedAt: "2025-12-20", returnedAt: "2026-03-08"}]},
+            {number: "39", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-07-21", returnedAt: "2024-07-25"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-09-15", returnedAt: "2025-09-28"}]},
+            {number: "40", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-07-25", returnedAt: "2024-08-05"}, {publisher: "Valera", issuedAt: "2025-09-19", returnedAt: "2025-09-26"}]},
+            {number: "41", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-08-02", returnedAt: "2024-08-29"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-09-28", returnedAt: "2025-10-19"}]},
+            {number: "42", history: [{publisher: "Stella", issuedAt: "2024-12-20", returnedAt: "2025-03-28"}, {publisher: "Loktionova Tatiana", issuedAt: "2026-03-26", returnedAt: "2026-05-12"}]},
+            {number: "43", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-08-29", returnedAt: "2024-12-20"}, {publisher: "Artem Nayda", issuedAt: "2025-12-21", returnedAt: null}]},
+            {number: "44", history: [{publisher: "Stella", issuedAt: "2024-09-04", returnedAt: "2024-09-29"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}, {publisher: "Alena", issuedAt: "2026-08-22", returnedAt: null}]},
+            {number: "45", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-08-09", returnedAt: "2024-09-07"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}]},
+            {number: "46", history: [{publisher: "Skorodumova Elena", issuedAt: "2024-09-08", returnedAt: "2024-09-15"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}]},
+            {number: "47", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-09-11", returnedAt: "2024-12-21"}, {publisher: "Valentina Ermolayva", issuedAt: "2025-12-31", returnedAt: "2026-05-24"}]},
+            {number: "48", history: [{publisher: "Valera", issuedAt: "2024-09-13", returnedAt: "2024-12-19"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-12-20", returnedAt: "2026-01-24"}]},
+            {number: "49", history: [{publisher: "Skorodumova Elena", issuedAt: "2024-09-15", returnedAt: "2024-11-24"}, {publisher: "Valera", issuedAt: "2025-12-26", returnedAt: "2026-01-16"}]},
+            {number: "50", history: [{publisher: "Loktionova Tatiana", issuedAt: "2025-04-04", returnedAt: "2025-04-10"}, {publisher: "Edmond Maduncev", issuedAt: "2026-07-17", returnedAt: "2026-07-18"}]},
+            {number: "51", history: [{publisher: "Kravtsov O.", issuedAt: "2024-10-20", returnedAt: "2024-11-08"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-11-28", returnedAt: "2026-07-19"}]},
+            {number: "52", history: [{publisher: "Otinova Olena", issuedAt: "2025-04-06", returnedAt: "2025-05-06"}, {publisher: "Edmond Maduncev", issuedAt: "2026-06-19", returnedAt: "2026-07-17"}]},
+            {number: "53", history: [{publisher: "Valera", issuedAt: "2024-11-12", returnedAt: "2024-11-29"}, {publisher: "Yaroslav Romanov", issuedAt: "2025-12-26", returnedAt: "2026-01-16"}]},
+            {number: "54", history: [{publisher: "Valera", issuedAt: "2024-11-12", returnedAt: "2025-02-15"}, {publisher: "Yaroslav", issuedAt: "2026-06-12", returnedAt: "2026-06-13"}]},
+            {number: "55", history: [{publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07"}]},
+            {number: "56", history: [{publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15"}, {publisher: "Vitalii Litvinchyk", issuedAt: "2026-03-07", returnedAt: "2026-07-18"}]},
+            {number: "57", history: [{publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15"}, {publisher: "Vitalii Litvinchyk", issuedAt: "2026-03-07", returnedAt: "2026-07-18"}]},
+            {number: "58", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-11-29", returnedAt: "2024-12-19"}, {publisher: "Larysa Velcheva", issuedAt: "2026-01-10", returnedAt: "2026-01-24"}]},
+            {number: "59", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-01-05", returnedAt: "2025-03-15"}]},
+            {number: "60", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-11-08", returnedAt: "2025-06-14"}, {publisher: "Edmond Maduncev", issuedAt: "2026-07-24", returnedAt: "2026-08-28"}]},
+            {number: "61", history: [{publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15"}, {publisher: "Larisa Velcheva", issuedAt: "2026-02-21", returnedAt: "2026-03-21"}]},
+            {number: "62", history: [{publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07"}]},
+            {number: "63", history: [{publisher: "Valera", issuedAt: "2025-02-15", returnedAt: "2025-03-28"}]},
+            {number: "64", history: [{publisher: "Valera", issuedAt: "2025-02-15", returnedAt: "2025-03-28"}]},
+            {number: "65", history: [{publisher: "Valera", issuedAt: "2025-01-21", returnedAt: "2025-02-15"}, {publisher: "Larisa Velcheva", issuedAt: "2026-02-21", returnedAt: "2026-03-21"}]},
+            {number: "66", history: [{publisher: "Valera", issuedAt: "2025-01-21", returnedAt: "2025-02-15"}, {publisher: "Valerii Kovalchyk", issuedAt: "2026-02-28", returnedAt: null}]},
+            {number: "67", history: [{publisher: "Valera", issuedAt: "2025-01-25", returnedAt: "2025-02-15"}, {publisher: "Lilia Maduntseva", issuedAt: "2026-02-28", returnedAt: "2026-03-15"}]},
+            {number: "68", history: [{publisher: "Natela Mazanashvili", issuedAt: "2025-03-16", returnedAt: "2025-04-04"}]},
+            {number: "69", history: [{publisher: "Valera", issuedAt: "2025-01-26", returnedAt: "2025-02-15"}, {publisher: "Kravtsov Oleksandr", issuedAt: "2026-02-20", returnedAt: "2026-02-20"}]},
+            {number: "70", history: [{publisher: "Katerina Mykytyuk", issuedAt: "2024-11-29", returnedAt: "2025-03-28"}]},
+            {number: "71", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28"}]},
+            {number: "72", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28"}]},
+            {number: "73", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28"}]},
+            {number: "74", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-04-06"}]},
+            {number: "75", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-03-03", returnedAt: "2025-03-15"}]},
+            {number: "76", history: [{publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07"}]},
+            {number: "77", history: [{publisher: "Katerina Mykytyuk", issuedAt: "2026-03-21", returnedAt: null}]}
+        ];
+
         function initApp() {
-            onSnapshot(collection(db, "cities"), (snapshot) => {
+            onSnapshot(collection(db, "cities"), async (snapshot) => {
                 citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 document.getElementById('db-status').innerText = '● Firebase подключен';
 
                 if (citiesData.length === 0) {
-                    addDoc(collection(db, "cities"), { name: "Valence", mapUrl: "" });
+                    const newCityRef = await addDoc(collection(db, "cities"), { 
+                        name: "Valence", 
+                        mapUrl: "https://maps.google.com/maps?q=Valence,France&t=&z=13&ie=UTF8&iwloc=&output=embed" 
+                    });
+                    activeCityId = newCityRef.id;
+                    
+                    for (const item of initialTerritoriesData) {
+                        await addDoc(collection(db, "territories"), {
+                            cityId: activeCityId,
+                            number: item.number,
+                            mapUrl: "",
+                            isArchived: false,
+                            history: item.history
+                        });
+                    }
                     return;
                 }
 
@@ -126,6 +223,7 @@
 
             unsubscribeTerritories = onSnapshot(q, (snapshot) => {
                 territoriesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                territoriesData.sort((a, b) => parseInt(a.number) - parseInt(b.number) || a.number.localeCompare(b.number));
                 renderTerritories();
             });
         }
@@ -149,7 +247,7 @@
 
         // --- УПРАВЛЕНИЕ УЧАСТКАМИ ---
         window.addTerritory = async () => {
-            const num = prompt('Номер участка (например: 01 или 12-А):');
+            const num = prompt('Номер участка (например: 78 или 12-А):');
             if (!num) return;
             const map = prompt('Ссылка на карту участка (необязательно):', '');
 
@@ -214,26 +312,38 @@
             alert(text);
         };
 
-        window.quickImport = async () => {
-            const input = prompt('Вставьте список номеров участков через запятую или с новой строки:');
-            if (!input) return;
-            const numbers = input.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
-            
-            let added = 0;
-            for (const num of numbers) {
-                const exists = territoriesData.some(t => t.number === num);
-                if (!exists) {
-                    await addDoc(collection(db, "territories"), {
-                        cityId: activeCityId,
-                        number: num,
-                        mapUrl: "",
-                        isArchived: false,
-                        history: []
-                    });
-                    added++;
+        window.importFromFile = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const content = e.target.result;
+                const numbers = content.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+                
+                if (numbers.length === 0) {
+                    alert('Файл пустой или имеет неверный формат.');
+                    return;
                 }
-            }
-            alert(`Успешно добавлено участков в базу: ${added}`);
+
+                let added = 0;
+                for (const num of numbers) {
+                    const exists = territoriesData.some(t => t.number === num);
+                    if (!exists) {
+                        await addDoc(collection(db, "territories"), {
+                            cityId: activeCityId,
+                            number: num,
+                            mapUrl: "",
+                            isArchived: false,
+                            history: []
+                        });
+                        added++;
+                    }
+                }
+                alert(`Успешно импортировано новых участков: ${added}`);
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         };
 
         // --- ОТРИСОВКА ---
