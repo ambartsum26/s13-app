@@ -396,6 +396,28 @@
         const saintMarcelTerritories = [
             {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]}
         ];
+        const saintPerayTerritories = [
+            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
+            {number: "2", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
+            {number: "3", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
+            {number: "4", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
+            {number: "5", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-10-31", returnedAt: "2025-11-23"}]},
+            {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "7", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-11", returnedAt: "2025-12-14"}]},
+            {number: "8", mapUrl: "", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-11-07", returnedAt: "2026-01-10"}]},
+            {number: "9", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-06", returnedAt: "2025-11-08"}]},
+            {number: "10", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-05", returnedAt: "2025-12-14"}]},
+            {number: "11", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "12", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "13", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
+            {number: "14", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
+            {number: "15", mapUrl: "", history: [{publisher: "Valera (+участок 21)", issuedAt: "2026-01-16", returnedAt: "2026-05-24"}]},
+            {number: "16", mapUrl: "", history: [{publisher: "Brozik Zinaida", issuedAt: "2025-11-24", returnedAt: "2025-12-21"}]},
+            {number: "17", mapUrl: "", history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-11-24", returnedAt: "2026-01-03"}]},
+            {number: "18", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
+            {number: "19", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
+            {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
+        ];
 
         function initApp() {
             onSnapshot(collection(db, "cities"), async (snapshot) => {
@@ -434,6 +456,24 @@
                     });
                     for (const item of saintMarcelTerritories) {
                         await addDoc(collection(db, "territories"), { cityId: saintMarcelRef.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                    }
+                    return; 
+                }
+
+                let saintPerayCity = citiesData.find(c => c.name === "Saint-Péray");
+                if (!saintPerayCity) {
+                    const saintPerayRef = await addDoc(collection(db, "cities"), { 
+                        name: "Saint-Péray",
+                        mapUrl: ""
+                    });
+                    for (const item of saintPerayTerritories) {
+                        await addDoc(collection(db, "territories"), { 
+                            cityId: saintPerayRef.id, 
+                            number: item.number, 
+                            mapUrl: item.mapUrl || "", 
+                            isArchived: false, 
+                            history: item.history 
+                        });
                     }
                     return; 
                 }
