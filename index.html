@@ -29,9 +29,23 @@
             <button onclick="addCity()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
                 <i class="fa-solid fa-plus text-indigo-400 mr-1"></i> Город
             </button>
-            <button onclick="editCity()" title="Изменить название города" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700">
-                <i class="fa-solid fa-pen"></i>
-            </button>
+            
+            <!-- Кнопка с выпадающим меню (карандаш) -->
+            <div class="relative">
+                <button onclick="toggleCityMenu(event)" title="Управление городом" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-300 hover:text-white transition">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                
+                <!-- Выпадающее меню -->
+                <div id="city-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
+                    <button onclick="editCityName(); closeCityMenu();" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
+                        <i class="fa-solid fa-signature text-indigo-400 w-4"></i> Изменить название
+                    </button>
+                    <button onclick="editCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
+                        <i class="fa-solid fa-map-location-dot text-emerald-400 w-4"></i> Изменить ссылку на карту
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -225,7 +239,7 @@
                             history: item.history
                         });
                     }
-                    return; // Сработает повторный снэпшот после добавления
+                    return; 
                 }
 
                 // Проверяем и создаем Гийеран-Гранж, если его нет
@@ -243,7 +257,7 @@
                             history: item.history
                         });
                     }
-                    return; // Сработает повторный снэпшот после добавления
+                    return; 
                 }
 
                 if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
@@ -276,10 +290,27 @@
             });
         }
 
+        // --- УПРАВЛЕНИЕ МЕНЮ ГОРОДА ---
+        window.toggleCityMenu = (event) => {
+            event.stopPropagation();
+            const menu = document.getElementById('city-dropdown-menu');
+            menu.classList.toggle('hidden');
+        };
+
+        window.closeCityMenu = () => {
+            const menu = document.getElementById('city-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
+        };
+
+        // Закрытие меню при клике в любое другое место экрана
+        document.addEventListener('click', () => {
+            closeCityMenu();
+        });
+
         // --- УПРАВЛЕНИЕ ГОРОДАМИ ---
         window.addCity = async () => {
             const name = prompt('Название нового города:');
-            if (!name) return;
+            if (!name || !name.trim()) return;
             const mapLink = prompt('Ссылка на Google My Maps для этого города:', 'https://www.google.com/maps/d/');
             await addDoc(collection(db, "cities"), { 
                 name: name.trim(),
@@ -287,17 +318,26 @@
             });
         };
 
-        window.editCity = async () => {
+        // Изменение только названия города
+        window.editCityName = async () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
             const newName = prompt('Новое название города:', city.name);
-            if (newName === null) return;
+            if (!newName || newName.trim() === '') return;
 
-            const newMapUrl = prompt('Ссылка на Google My Maps:', city.mapUrl || '');
+            await updateDoc(doc(db, "cities", activeCityId), { 
+                name: newName.trim()
+            });
+        };
+
+        // Изменение только ссылки на карту
+        window.editCityMap = async () => {
+            const city = citiesData.find(c => c.id === activeCityId);
+            if (!city) return;
+            const newMapUrl = prompt('Введите новую ссылку на Google My Maps для этого города:', city.mapUrl || '');
             if (newMapUrl === null) return;
 
             await updateDoc(doc(db, "cities", activeCityId), { 
-                name: newName.trim(),
                 mapUrl: newMapUrl.trim()
             });
         };
