@@ -21,15 +21,8 @@
             </div>
         </div>
 
-        <!-- Переключатель городов и кнопка редактирования карты Валанса -->
-        <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-2 overflow-x-auto py-1" id="cities-container"></div>
-            
-            <!-- Аккуратная кнопка для перехода в редактор Google My Maps -->
-            <a href="https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
-                <i class="fa-solid fa-pen-to-square"></i> Внести изменения в карту Валанса
-            </a>
-        </div>
+        <!-- Переключатель городов -->
+        <div class="flex items-center gap-2 overflow-x-auto py-1" id="cities-container"></div>
 
         <!-- Кнопки управления городами -->
         <div class="flex items-center gap-2">
@@ -45,21 +38,21 @@
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-6xl mx-auto space-y-6">
 
-        <!-- Статистика и Действия -->
+        <!-- Статистика, Кнопка карты и Действия -->
         <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
             <div class="flex items-center space-x-4 text-xs">
                 <span>🟢 Свободно: <strong id="st-free" class="text-white">0</strong></span>
-                <span>🔵 На руках: <strong id="st-busy" class="text-white">0</strong></span>
+                <span>🔵 В обработке: <strong id="st-busy" class="text-white">0</strong></span>
                 <span>🔴 Просрочено: <strong id="st-overdue" class="text-white">0</strong></span>
             </div>
 
-            <div class="flex items-center gap-2">
-                <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition cursor-pointer">
-                    <i class="fa-solid fa-file-arrow-up mr-1 text-indigo-400"></i> Импорт из TXT
-                    <input type="file" id="file-input" accept=".txt,.csv" class="hidden" onchange="importFromFile(event)">
-                </label>
-                <button onclick="addTerritory()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-xs font-semibold rounded-lg transition shadow-md">
-                    <i class="fa-solid fa-plus mr-1"></i> Участок
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Аккуратная кнопка для перехода в редактор Google My Maps вместо импорта -->
+                <a href="https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-pen-to-square"></i> Внести изменения в карту Валанса
+                </a>
+                <button onclick="addTerritory()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold rounded-lg transition shadow-md">
+                    <i class="fa-solid fa-plus mr-1 text-indigo-400"></i> Участок
                 </button>
             </div>
         </section>
@@ -332,7 +325,7 @@
                     itemDiv.innerHTML = `
                         <div class="space-y-1">
                             <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
-                            <p class="text-slate-400">Выдан: <span class="text-slate-200">${h.issuedAt}</span> | Сдан: <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || 'НА РУКАХ'}</span></p>
+                            <p class="text-slate-400">Выдан: <span class="text-slate-200">${h.issuedAt}</span> | Сдан: <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || 'В ОБРАБОТКЕ'}</span></p>
                         </div>
                         <div class="flex items-center gap-1">
                             <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">
@@ -368,7 +361,7 @@
             const newIssued = prompt('Дата выдачи (ГГГГ-ММ-ДД):', h.issuedAt);
             if (newIssued === null) return;
 
-            const newReturned = prompt('Дата возврата (ГГГГ-ММ-ДД или оставьте пустым, если на руках):', h.returnedAt || '');
+            const newReturned = prompt('Дата возврата (ГГГГ-ММ-ДД или оставьте пустым, если в обработке):', h.returnedAt || '');
             if (newReturned === null) return;
 
             t.history[index] = {
@@ -388,39 +381,6 @@
                 t.history.splice(index, 1);
                 await updateDoc(doc(db, "territories", t.id), { history: t.history });
             }
-        };
-
-        window.importFromFile = async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const content = e.target.result;
-                const numbers = content.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
-                
-                if (numbers.length === 0) {
-                    alert('Файл пустой или имеет неверный формат.');
-                    return;
-                }
-
-                let added = 0;
-                for (const num of numbers) {
-                    const exists = territoriesData.some(t => t.number === num);
-                    if (!exists) {
-                        await addDoc(collection(db, "territories"), {
-                            cityId: activeCityId,
-                            number: num,
-                            isArchived: false,
-                            history: []
-                        });
-                        added++;
-                    }
-                }
-                alert(`Успешно импортировано новых участков: ${added}`);
-                event.target.value = '';
-            };
-            reader.readAsText(file);
         };
 
         // --- ОТРИСОВКА ---
@@ -454,7 +414,7 @@
                 if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
 
                 let badge = '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Свободен</span>';
-                if (isBusy && !isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">На руках (${days} дн.)</span>`;
+                if (isBusy && !isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">В обработке (${days} дн.)</span>`;
                 if (isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20">Просрочен (${days} дн.)</span>`;
 
                 const card = document.createElement('div');
