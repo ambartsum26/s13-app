@@ -72,6 +72,22 @@
         <section id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></section>
     </main>
 
+    <!-- МОДАЛЬНОЕ ОКНО ИСТОРИИ -->
+    <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 id="modal-title" class="font-bold text-base text-white">История участка</h3>
+                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white text-sm">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="modal-history-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1"></div>
+            <div class="flex justify-end pt-2 border-t border-slate-800">
+                <button onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
     <!-- FIREBASE SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -79,7 +95,6 @@
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Твои реальные данные конфигурации Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
             authDomain: "fir-13-app.firebaseapp.com",
@@ -96,8 +111,8 @@
         let activeCityId = null;
         let citiesData = [];
         let territoriesData = [];
+        let currentEditingTerritoryId = null;
 
-        // Предзагруженные данные участков Валанса (с 1 по 77)
         const initialTerritoriesData = [
             {number: "1", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
             {number: "2", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]},
@@ -225,6 +240,11 @@
                 territoriesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 territoriesData.sort((a, b) => parseInt(a.number) - parseInt(b.number) || a.number.localeCompare(b.number));
                 renderTerritories();
+                
+                // Если открыто модальное окно истории, обновляем его на лету
+                if (currentEditingTerritoryId) {
+                    window.showHistory(currentEditingTerritoryId);
+                }
             });
         }
 
@@ -301,15 +321,81 @@
             }
         };
 
+        // --- УПРАВЛЕНИЕ ИСТОРИЕЙ (МОДАЛЬНОЕ ОКНО) ---
         window.showHistory = (id) => {
+            currentEditingTerritoryId = id;
             const t = territoriesData.find(item => item.id === id);
-            if (!t.history || t.history.length === 0) return alert(`История участка №${t.number} пуста.`);
+            if (!t) return;
 
-            let text = `История участка №${t.number}:\n\n`;
-            t.history.forEach((h, i) => {
-                text += `${i + 1}. ${h.publisher} | Выдан: ${h.issuedAt} | Сдан: ${h.returnedAt || 'НА РУКАХ'}\n`;
-            });
-            alert(text);
+            document.getElementById('modal-title').innerText = `История участка №${t.number}`;
+            const listContainer = document.getElementById('modal-history-list');
+            listContainer.innerHTML = '';
+
+            if (!t.history || t.history.length === 0) {
+                listContainer.innerHTML = '<p class="text-xs text-slate-500 italic py-2">История пуста.</p>';
+            } else {
+                t.history.forEach((h, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2 text-xs';
+                    itemDiv.innerHTML = `
+                        <div class="space-y-1">
+                            <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
+                            <p class="text-slate-400">Выдан: <span class="text-slate-200">${h.issuedAt}</span> | Сдан: <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || 'НА РУКАХ'}</span></p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    listContainer.appendChild(itemDiv);
+                });
+            }
+
+            document.getElementById('history-modal').classList.remove('hidden');
+            document.getElementById('history-modal').classList.add('flex');
+        };
+
+        window.closeHistoryModal = () => {
+            currentEditingTerritoryId = null;
+            document.getElementById('history-modal').classList.add('hidden');
+            document.getElementById('history-modal').classList.remove('flex');
+        };
+
+        window.editHistoryItem = async (index) => {
+            const t = territoriesData.find(item => item.id === currentEditingTerritoryId);
+            if (!t || !t.history[index]) return;
+            const h = t.history[index];
+
+            const newPub = prompt('ФИО возвещателя:', h.publisher);
+            if (newPub === null) return;
+
+            const newIssued = prompt('Дата выдачи (ГГГГ-ММ-ДД):', h.issuedAt);
+            if (newIssued === null) return;
+
+            const newReturned = prompt('Дата возврата (ГГГГ-ММ-ДД или оставьте пустым, если на руках):', h.returnedAt || '');
+            if (newReturned === null) return;
+
+            t.history[index] = {
+                publisher: newPub.trim(),
+                issuedAt: newIssued.trim(),
+                returnedAt: newReturned.trim() !== '' ? newReturned.trim() : null
+            };
+
+            await updateDoc(doc(db, "territories", t.id), { history: t.history });
+        };
+
+        window.deleteHistoryItem = async (index) => {
+            const t = territoriesData.find(item => item.id === currentEditingTerritoryId);
+            if (!t || !t.history[index]) return;
+
+            if (confirm(`Удалить запись #${index + 1} (${t.history[index].publisher})?`)) {
+                t.history.splice(index, 1);
+                await updateDoc(doc(db, "territories", t.id), { history: t.history });
+            }
         };
 
         window.importFromFile = async (event) => {
