@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Учёт территорий - Валанс</title>
+    <title>Учёт территорий - Валанс и Гийеран-Гранж</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -210,8 +210,9 @@
                 citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 document.getElementById('db-status').innerText = '● Firebase подключен';
 
-                if (citiesData.length === 0) {
-                    // Создаем Валенс
+                // Проверяем и создаем Валенс, если его нет
+                let valenceCity = citiesData.find(c => c.name === "Valence");
+                if (!valenceCity) {
                     const valenceRef = await addDoc(collection(db, "cities"), { 
                         name: "Valence",
                         mapUrl: "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13"
@@ -224,8 +225,12 @@
                             history: item.history
                         });
                     }
+                    return; // Сработает повторный снэпшот после добавления
+                }
 
-                    // Создаем Гийеран-Гранж[cite: 2, 3]
+                // Проверяем и создаем Гийеран-Гранж, если его нет
+                let guilherandCity = citiesData.find(c => c.name === "Guilherand-Granges");
+                if (!guilherandCity) {
                     const guilherandRef = await addDoc(collection(db, "cities"), { 
                         name: "Guilherand-Granges",
                         mapUrl: "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low"
@@ -238,7 +243,7 @@
                             history: item.history
                         });
                     }
-                    return;
+                    return; // Сработает повторный снэпшот после добавления
                 }
 
                 if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
