@@ -459,7 +459,6 @@
             await updateDoc(doc(db, "territories", currentEditingTerritoryId), {
                 mapUrl: newUrl.trim()
             });
-            alert('Ссылка на карту участка успешно сохранена!');
         };
 
         window.editHistoryItem = async (index) => {
@@ -495,15 +494,10 @@
             }
         };
 
-        // --- КОПИРОВАНИЕ ССЫЛКИ ---
+        // --- КОПИРОВАНИЕ ССЫЛКИ (БЕЗ УВЕДОМЛЕНИЙ) ---
         window.copyTerritoryLink = (url, num) => {
-            if (!url) {
-                alert(`У участка №${num} ещё не добавлена ссылка на карту.`);
-                return;
-            }
-            navigator.clipboard.writeText(url).then(() => {
-                alert(`Ссылка на карту участка №${num} скопирована в буфер обмена!`);
-            }).catch(err => {
+            if (!url) return;
+            navigator.clipboard.writeText(url).catch(err => {
                 console.error('Ошибка копирования: ', err);
             });
         };
