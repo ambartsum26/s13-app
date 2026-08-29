@@ -125,7 +125,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { 
-            getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where 
+            getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const translations = {
@@ -418,12 +418,12 @@
             {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
         ];
 
-        function initApp() {
-            onSnapshot(collection(db, "cities"), async (snapshot) => {
-                citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                document.getElementById('db-status').innerText = t('db_connected');
+        async function initApp() {
+            try {
+                // 1. Однократный запрос для проверки и инициализации городов (сберегает чтения)
+                const citiesSnapshot = await getDocs(collection(db, "cities"));
+                citiesData = citiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                // Безопасная проверка названий городов (с нормализацией для предотвращения проблем с кодировкой é)
                 const findCity = (searchName) => citiesData.find(c => c.name && c.name.normalize("NFC") === searchName.normalize("NFC"));
 
                 let valenceCity = findCity("Valence");
@@ -435,6 +435,7 @@
                     for (const item of valenceTerritories) {
                         await addDoc(collection(db, "territories"), { cityId: valenceRef.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
                     }
+                    window.location.reload();
                     return; 
                 }
 
@@ -447,6 +448,7 @@
                     for (const item of guilherandTerritories) {
                         await addDoc(collection(db, "territories"), { cityId: guilherandRef.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
                     }
+                    window.location.reload();
                     return; 
                 }
 
@@ -459,6 +461,7 @@
                     for (const item of saintMarcelTerritories) {
                         await addDoc(collection(db, "territories"), { cityId: saintMarcelRef.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
                     }
+                    window.location.reload();
                     return; 
                 }
 
@@ -477,8 +480,11 @@
                             history: item.history 
                         });
                     }
+                    window.location.reload();
                     return; 
                 }
+
+                document.getElementById('db-status').innerText = t('db_connected');
 
                 if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
                     activeCityId = citiesData[0].id;
@@ -486,7 +492,17 @@
 
                 renderCities();
                 subscribeToTerritories();
-            });
+
+                // 2. Включаем легкий слушатель только для обновления списка городов в реальном времени
+                onSnapshot(collection(db, "cities"), (snapshot) => {
+                    citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    renderCities();
+                });
+
+            } catch (error) {
+                console.error("Firebase connection error:", error);
+                document.getElementById('db-status').innerText = "● Ошибка подключения";
+            }
         }
 
         let unsubscribeTerritories = null;
