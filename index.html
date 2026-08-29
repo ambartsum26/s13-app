@@ -3,44 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Учёт территорий - Автоматическая база данных</title>
+    <title>Учёт территорий - Валанс, Гийеран-Гранж и Сент-Марсель</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-6">
 
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ: Управление городами -->
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
     <header class="max-w-6xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-600/30">
-                <i class="fa-solid fa-folder-tree"></i>
+                <i class="fa-solid fa-cloud"></i>
             </div>
             <div>
-                <h1 class="font-bold text-lg leading-tight">Учёт Участков (Firebase)</h1>
-                <p class="text-xs text-emerald-400 font-medium" id="db-status">● Подключение к базе данных...</p>
+                <h1 class="font-bold text-lg leading-tight">Помощник по участкам</h1>
+                <p class="text-xs text-emerald-400 font-medium" id="db-status">● Подключение к Firebase...</p>
             </div>
         </div>
 
-        <!-- Список городов (папки) -->
+        <!-- Переключатель городов -->
         <div class="flex items-center gap-2 overflow-x-auto py-1" id="cities-container"></div>
 
-        <!-- Кнопки управления -->
+        <!-- Кнопки управления городами -->
         <div class="flex items-center gap-2">
             <button onclick="addCity()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
-                <i class="fa-solid fa-folder-plus text-indigo-400 mr-1"></i> Новый город
+                <i class="fa-solid fa-plus text-indigo-400 mr-1"></i> Город
             </button>
             
+            <!-- Кнопка с выпадающим меню (карандаш) -->
             <div class="relative">
-                <button onclick="toggleCityMenu(event)" title="Настройки города" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-300 hover:text-white transition">
-                    <i class="fa-solid fa-gear"></i>
+                <button onclick="toggleCityMenu(event)" title="Управление городом" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-300 hover:text-white transition">
+                    <i class="fa-solid fa-pen"></i>
                 </button>
                 
+                <!-- Выпадающее меню -->
                 <div id="city-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
                     <button onclick="editCityName(); closeCityMenu();" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
-                        <i class="fa-solid fa-pen text-indigo-400 w-4"></i> Изменить название
+                        <i class="fa-solid fa-signature text-indigo-400 w-4"></i> Изменить название
                     </button>
                     <button onclick="editCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
-                        <i class="fa-solid fa-map-location-dot text-emerald-400 w-4"></i> Ссылка на карту города
+                        <i class="fa-solid fa-map-location-dot text-emerald-400 w-4"></i> Изменить ссылку на карту
                     </button>
                 </div>
             </div>
@@ -49,7 +51,8 @@
 
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-6xl mx-auto space-y-6">
-        <!-- Статистика и быстрые действия -->
+
+        <!-- Статистика, Кнопка карты и Действия -->
         <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
             <div class="flex items-center space-x-4 text-xs">
                 <span>🟢 Свободно: <strong id="st-free" class="text-white">0</strong></span>
@@ -58,39 +61,41 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+                <!-- Динамическая кнопка общей карты города -->
                 <a id="map-link" href="#" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
-                    <i class="fa-solid fa-map"></i> Карта города
+                    <i class="fa-solid fa-location-dot"></i> Общая карта
                 </a>
                 <button onclick="addTerritory()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold rounded-lg transition shadow-md">
-                    <i class="fa-solid fa-plus mr-1 text-indigo-400"></i> Добавить участок
+                    <i class="fa-solid fa-plus mr-1 text-indigo-400"></i> Участок
                 </button>
             </div>
         </section>
 
-        <!-- Сетка участков выбранного города -->
+        <!-- Сетка карточек -->
         <section id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></section>
     </main>
 
-    <!-- МОДАЛЬНОЕ ОКНО ИСТОРИИ -->
+    <!-- МОДАЛЬНОЕ ОКНО ИСТОРИИ И ССЫЛКИ -->
     <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 id="modal-title" class="font-bold text-base text-white">История участка</h3>
+                <h3 id="modal-title" class="font-bold text-base text-white">Управление участком</h3>
                 <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white text-sm">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
+            <!-- Блок настройки персональной ссылки участка -->
             <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
-                <label class="text-[10px] text-indigo-400 font-bold uppercase block">Ссылка на онлайн-карту участка</label>
+                <label class="text-[10px] text-indigo-400 font-bold uppercase block">Ссылка на карту участка</label>
                 <div class="flex gap-2">
-                    <input type="text" id="modal-territory-map-url" placeholder="https://..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="modal-territory-map-url" placeholder="https://www.google.com/maps/d/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
                     <button onclick="saveTerritoryMapUrl()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition">Сохранить</button>
                 </div>
             </div>
 
             <div class="space-y-1">
-                <h4 class="text-xs font-bold text-slate-300">Хронология выдач:</h4>
+                <h4 class="text-xs font-bold text-slate-300">История выдач:</h4>
                 <div id="modal-history-list" class="space-y-3 max-h-[40vh] overflow-y-auto pr-1"></div>
             </div>
 
@@ -100,7 +105,7 @@
         </div>
     </div>
 
-    <!-- FIREBASE СКРИПТ -->
+    <!-- FIREBASE SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { 
@@ -125,13 +130,187 @@
         let territoriesData = [];
         let currentEditingTerritoryId = null;
 
-        // Инициализация реального времени для городов
-        function initApp() {
-            onSnapshot(collection(db, "cities"), (snapshot) => {
-                citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                document.getElementById('db-status').innerText = '● База данных активна';
+        const valenceTerritories = [
+            {number: "1", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
+            {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]},
+            {number: "3", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-10", returnedAt: "2024-04-10"}, {publisher: "Alla Tyrii", issuedAt: "2025-03-16", returnedAt: "2025-03-28"}, {publisher: "Lilia Madunceva", issuedAt: "2026-03-15", returnedAt: null}]},
+            {number: "4", mapUrl: "", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-02-16", returnedAt: "2024-02-16"}, {publisher: "Anna", issuedAt: "2025-03-28", returnedAt: "2025-05-30"}, {publisher: "Valentina", issuedAt: "2026-06-30", returnedAt: null}]},
+            {number: "5", mapUrl: "", history: [{publisher: "Kravtsov Alexandr", issuedAt: "2024-02-16", returnedAt: "2025-04-09"}, {publisher: "Larisa Velcheva", issuedAt: "2026-03-21", returnedAt: "2026-05-17"}]},
+            {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-03-09", returnedAt: "2024-03-09"}, {publisher: "Anna", issuedAt: "2025-03-28", returnedAt: "2025-05-30"}, {publisher: "Larisa Velcheva", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "7", mapUrl: "", history: [{publisher: "Naida Artem", issuedAt: "2024-02-22", returnedAt: "2024-04-20"}, {publisher: "Valera", issuedAt: "2025-03-30", returnedAt: "2025-04-11"}]},
+            {number: "8", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-03-16", returnedAt: "2024-05-17"}, {publisher: "Alla Tyrii", issuedAt: "2025-03-28", returnedAt: "2025-10-19"}]},
+            {number: "9", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-03-16", returnedAt: "2024-05-04"}, {publisher: "Valera", issuedAt: "2025-05-09", returnedAt: "2025-06-06"}, {publisher: "Ivan", issuedAt: "2026-06-30", returnedAt: "2026-08-29"}]},
+            {number: "10", mapUrl: "", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-03-16", returnedAt: "2024-06-07"}, {publisher: "Brozik Svetlana", issuedAt: "2025-03-31", returnedAt: "2025-10-10"}]},
+            {number: "11", mapUrl: "", history: [{publisher: "Naida Artem", issuedAt: "2024-04-11", returnedAt: "2024-04-19"}, {publisher: "Edmond Maduncev", issuedAt: "2025-03-16", returnedAt: "2025-05-17"}, {publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "12", mapUrl: "", history: [{publisher: "Naida Artem", issuedAt: "2024-04-11", returnedAt: "2024-04-19"}, {publisher: "Valera", issuedAt: "2025-03-30", returnedAt: "2025-04-11"}, {publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "13", mapUrl: "", history: [{publisher: "Kravtsova Irina", issuedAt: "2024-04-01", returnedAt: "2024-04-01"}, {publisher: "Lilia Maduncev", issuedAt: "2025-03-23", returnedAt: "2025-05-30"}, {publisher: "Valera", issuedAt: "2026-05-17", returnedAt: null}]},
+            {number: "14", mapUrl: "", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-04-01", returnedAt: "2024-05-01"}, {publisher: "Katerina Mykytyuk", issuedAt: "2025-03-28", returnedAt: "2025-10-20"}]},
+            {number: "15", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-04-26"}, {publisher: "Stella", issuedAt: "2025-03-23", returnedAt: "2025-05-09"}, {publisher: "Vlad", issuedAt: "2026-05-23", returnedAt: null}]},
+            {number: "16", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-04-26"}, {publisher: "Valera", issuedAt: "2025-04-11", returnedAt: "2025-04-13"}]},
+            {number: "17", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-13", returnedAt: "2024-05-05"}, {publisher: "Valera", issuedAt: "2025-05-09", returnedAt: "2025-06-06"}, {publisher: "Yarik", issuedAt: "2026-08-08", returnedAt: null}]},
+            {number: "18", mapUrl: "", history: [{publisher: "Naida Artem", issuedAt: "2024-04-20", returnedAt: "2024-04-29"}, {publisher: "Valera", issuedAt: "2025-04-11", returnedAt: "2025-04-13"}, {publisher: "Valentina Ermolayva", issuedAt: "2026-05-24", returnedAt: "2026-06-30"}]},
+            {number: "19", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-04-20", returnedAt: "2024-06-22"}, {publisher: "Edmond Maduncev", issuedAt: "2025-06-28", returnedAt: "2025-07-27"}]},
+            {number: "20", mapUrl: "", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-04-20", returnedAt: "2024-06-08"}, {publisher: "Valera", issuedAt: "2025-06-06", returnedAt: "2025-09-12"}]},
+            {number: "21", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-26", returnedAt: "2024-08-02"}, {publisher: "Brozik Zinaida", issuedAt: "2025-09-04", returnedAt: "2025-10-12"}]},
+            {number: "22", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-04-26", returnedAt: "2024-06-22"}, {publisher: "Alena Beruso", issuedAt: "2025-08-25", returnedAt: "2025-10-20"}]},
+            {number: "23", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-05-01", returnedAt: "2024-06-03"}, {publisher: "Brozik Svetlana", issuedAt: "2025-03-31", returnedAt: "2025-04-25"}, {publisher: "Edmond Maduncev", issuedAt: "2026-06-12", returnedAt: "2026-06-19"}]},
+            {number: "24", mapUrl: "", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-05-01", returnedAt: "2024-06-06"}, {publisher: "Valera", issuedAt: "2025-06-06", returnedAt: "2025-09-12"}]},
+            {number: "25", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-05-26", returnedAt: "2024-07-15"}, {publisher: "Edmond Maduncev", issuedAt: "2025-07-25", returnedAt: "2025-08-16"}]},
+            {number: "26", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-05-30", returnedAt: "2024-06-22"}, {publisher: "Edmond Maduncev", issuedAt: "2025-08-18", returnedAt: "2025-09-04"}]},
+            {number: "27", mapUrl: "", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-06-06", returnedAt: "2024-06-06"}, {publisher: "Liliya Madunceva", issuedAt: "2025-09-01", returnedAt: "2025-10-02"}]},
+            {number: "28", mapUrl: "", history: [{publisher: "Katerina Mykytyuk", issuedAt: "2024-05-04", returnedAt: "2024-07-03"}, {publisher: "Yaroslav Romanov", issuedAt: "2025-08-28", returnedAt: "2025-10-11"}]},
+            {number: "29", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-05-16", returnedAt: "2024-12-19"}, {publisher: "Vova", issuedAt: "2025-12-16", returnedAt: "2025-12-21"}]},
+            {number: "30", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-06-07", returnedAt: "2025-01-05"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-12-16", returnedAt: "2025-12-21"}]},
+            {number: "31", mapUrl: "", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-06-07", returnedAt: "2024-07-20"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-10", returnedAt: "2025-09-13"}]},
+            {number: "32", mapUrl: "", history: [{publisher: "Valeria Mykytyuk", issuedAt: "2024-06-08", returnedAt: "2024-12-07"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-12-16", returnedAt: "2026-02-16"}]},
+            {number: "33", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-06-22", returnedAt: "2024-08-02"}, {publisher: "Valera", issuedAt: "2025-09-12", returnedAt: "2025-09-19"}]},
+            {number: "34", mapUrl: "", history: [{publisher: "Svitlana Brozik", issuedAt: "2024-06-22", returnedAt: "2024-08-16"}, {publisher: "Liliya Madunceva", issuedAt: "2025-09-01", returnedAt: "2025-09-18"}]},
+            {number: "35", mapUrl: "", history: [{publisher: "Kravtsov Alexandr", issuedAt: "2024-06-23", returnedAt: "2024-08-10"}, {publisher: "Valera", issuedAt: "2025-09-12", returnedAt: "2025-09-19"}]},
+            {number: "36", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-06-27", returnedAt: "2024-09-12"}, {publisher: "Valera", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}]},
+            {number: "37", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-06-27", returnedAt: "2024-09-12"}, {publisher: "Valentina Ermolayva", issuedAt: "2025-09-23", returnedAt: "2025-10-26"}]},
+            {number: "38", mapUrl: "", history: [{publisher: "Valentina Ermolayva", issuedAt: "2024-06-28", returnedAt: "2024-12-07"}, {publisher: "Yaroslav Romanov", issuedAt: "2025-12-20", returnedAt: "2026-03-08"}]},
+            {number: "39", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-07-21", returnedAt: "2024-07-25"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-09-15", returnedAt: "2025-09-28"}]},
+            {number: "40", mapUrl: "", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-07-25", returnedAt: "2024-08-05"}, {publisher: "Valera", issuedAt: "2025-09-19", returnedAt: "2025-09-26"}]},
+            {number: "41", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-08-02", returnedAt: "2024-08-29"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-09-28", returnedAt: "2025-10-19"}]},
+            {number: "42", mapUrl: "", history: [{publisher: "Stella", issuedAt: "2024-12-20", returnedAt: "2025-03-28"}, {publisher: "Loktionova Tatiana", issuedAt: "2026-03-26", returnedAt: "2026-05-12"}]},
+            {number: "43", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-08-29", returnedAt: "2024-12-20"}, {publisher: "Artem Nayda", issuedAt: "2025-12-21", returnedAt: null}]},
+            {number: "44", mapUrl: "", history: [{publisher: "Stella", issuedAt: "2024-09-04", returnedAt: "2024-09-29"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}, {publisher: "Alena", issuedAt: "2026-08-22", returnedAt: null}]},
+            {number: "45", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-08-09", returnedAt: "2024-09-07"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}]},
+            {number: "46", mapUrl: "", history: [{publisher: "Skorodumova Elena", issuedAt: "2024-09-08", returnedAt: "2024-09-15"}, {publisher: "Edmond Maduncev", issuedAt: "2025-09-26", returnedAt: "2025-10-24"}]},
+            {number: "47", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2024-09-11", returnedAt: "2024-12-21"}, {publisher: "Valentina Ermolayva", issuedAt: "2025-12-31", returnedAt: "2026-05-24"}]},
+            {number: "48", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-09-13", returnedAt: "2024-12-19"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-12-20", returnedAt: "2026-01-24"}]},
+            {number: "49", mapUrl: "", history: [{publisher: "Skorodumova Elena", issuedAt: "2024-09-15", returnedAt: "2024-11-24"}, {publisher: "Valera", issuedAt: "2025-12-26", returnedAt: "2026-01-16"}]},
+            {number: "50", mapUrl: "", history: [{publisher: "Loktionova Tatiana", issuedAt: "2025-04-04", returnedAt: "2025-04-10"}, {publisher: "Edmond Maduncev", issuedAt: "2026-07-17", returnedAt: "2026-07-18"}]},
+            {number: "51", mapUrl: "", history: [{publisher: "Kravtsov O.", issuedAt: "2024-10-20", returnedAt: "2024-11-08"}, {publisher: "Kovalchyk Valerii", issuedAt: "2025-11-28", returnedAt: "2026-07-19"}]},
+            {number: "52", mapUrl: "", history: [{publisher: "Otinova Olena", issuedAt: "2025-04-06", returnedAt: "2025-05-06"}, {publisher: "Edmond Maduncev", issuedAt: "2026-06-19", returnedAt: "2026-07-17"}]},
+            {number: "53", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-11-12", returnedAt: "2024-11-29"}, {publisher: "Yaroslav Romanov", issuedAt: "2025-12-26", returnedAt: "2026-01-16"}]},
+            {number: "54", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2024-11-12", returnedAt: "2025-02-15"}, {publisher: "Yaroslav", issuedAt: "2026-06-12", returnedAt: "2026-06-13"}]},
+            {number: "55", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07"}]},
+            {number: "56", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15"}, {publisher: "Vitalii Litvinchyk", issuedAt: "2026-03-07", returnedAt: "2026-07-18"}]},
+            {number: "57", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15"}, {publisher: "Vitalii Litvinchyk", issuedAt: "2026-03-07", returnedAt: "2026-07-18"}]},
+            {number: "58", mapUrl: "", history: [{publisher: "Skorodumov Boris", issuedAt: "2024-11-29", returnedAt: "2024-12-19"}, {publisher: "Larysa Velcheva", issuedAt: "2026-01-10", returnedAt: "2026-01-24"}]},
+            {number: "59", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-01-05", returnedAt: "2025-03-15"}]},
+            {number: "60", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-11-08", returnedAt: "2025-06-14"}, {publisher: "Edmond Maduncev", issuedAt: "2026-07-24", returnedAt: "2026-08-28"}]},
+            {number: "61", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-10", returnedAt: "2025-02-15"}, {publisher: "Larisa Velcheva", issuedAt: "2026-02-21", returnedAt: "2026-03-21"}]},
+            {number: "62", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07"}]},
+            {number: "63", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-02-15", returnedAt: "2025-03-28"}]},
+            {number: "64", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-02-15", returnedAt: "2025-03-28"}]},
+            {number: "65", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-21", returnedAt: "2025-02-15"}, {publisher: "Larisa Velcheva", issuedAt: "2026-02-21", returnedAt: "2026-03-21"}]},
+            {number: "66", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-21", returnedAt: "2025-02-15"}, {publisher: "Valerii Kovalchyk", issuedAt: "2026-02-28", returnedAt: null}]},
+            {number: "67", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-25", returnedAt: "2025-02-15"}, {publisher: "Lilia Maduntseva", issuedAt: "2026-02-28", returnedAt: "2026-03-15"}]},
+            {number: "68", mapUrl: "", history: [{publisher: "Natela Mazanashvili", issuedAt: "2025-03-16", returnedAt: "2025-04-04"}]},
+            {number: "69", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-26", returnedAt: "2025-02-15"}, {publisher: "Kravtsov Oleksandr", issuedAt: "2026-02-20", returnedAt: "2026-02-20"}]},
+            {number: "70", mapUrl: "", history: [{publisher: "Katerina Mykytyuk", issuedAt: "2024-11-29", returnedAt: "2025-03-28"}]},
+            {number: "71", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28"}]},
+            {number: "72", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28"}]},
+            {number: "73", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-03-28"}]},
+            {number: "74", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-01-22", returnedAt: "2025-04-06"}]},
+            {number: "75", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-03-03", returnedAt: "2025-03-15"}]},
+            {number: "76", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-04-13", returnedAt: "2025-05-07"}]},
+            {number: "77", mapUrl: "", history: [{publisher: "Katerina Mykytyuk", issuedAt: "2026-03-21", returnedAt: null}]}
+        ];
 
-                if (citiesData.length > 0 && (!activeCityId || !citiesData.find(c => c.id === activeCityId))) {
+        const guilherandTerritories = [
+            {number: "1", mapUrl: "https://www.google.com/maps/d/edit?mid=1lZ2YTYdPAsSnnuqRZm4GojR7UCsr95c&usp=drive_link", history: [{publisher: "Stella", issuedAt: "2025-04-27", returnedAt: null}]},
+            {number: "2", mapUrl: "https://www.google.com/maps/d/edit?mid=1HrhDVMVCoqLsYa6yHHyYVlEMfz1SiCw&usp=drive_link", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-02", returnedAt: "2025-05-17"}]},
+            {number: "3", mapUrl: "https://www.google.com/maps/d/edit?mid=1mi7wFx_9E33hzO8NPofb7J73KRgtVMY&usp=drive_link", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-02", returnedAt: "2025-05-17"}]},
+            {number: "4", mapUrl: "https://www.google.com/maps/d/edit?mid=1hidJ1d7QfSBBDMFnbhauH6MejlDMngM&usp=drive_link", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-02", returnedAt: "2025-05-17"}]},
+            {number: "5", mapUrl: "https://www.google.com/maps/d/edit?mid=1eJP45JNcIWo9FHB10dVLy0MdE8BnsPU&usp=drive_link", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-17", returnedAt: "2025-07-11"}]},
+            {number: "6", mapUrl: "https://www.google.com/maps/d/edit?mid=1WQm8tFZHMGHEz-fOf1AnbKNSDYdEv6Q&usp=drive_link", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-17", returnedAt: "2025-07-11"}]},
+            {number: "7", mapUrl: "https://www.google.com/maps/d/edit?mid=1xCVMqRJWjwlEman3eDLwkrdO6XZ6dks&usp=drive_link", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-05-17", returnedAt: "2025-07-11"}]},
+            {number: "8", mapUrl: "https://www.google.com/maps/d/edit?mid=1BnoRnM4qzDLbzNmM2M813le-KvXhxk4&usp=drive_link", history: [{publisher: "Yaroslav Romano", issuedAt: "2025-10-03", returnedAt: "2025-10-11"}]},
+            {number: "9", mapUrl: "https://www.google.com/maps/d/edit?mid=1C-bGIsaq4FijIs3LK91GXQ1HwqNbCEc&usp=drive_link", history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-10-13", returnedAt: "2025-11-09"}]},
+            {number: "10", mapUrl: "https://www.google.com/maps/d/edit?mid=1JsDXg0C7RCyn9-bT5TrUB24_bFFRLv8&usp=drive_link", history: [{publisher: "Brozik Zinaida", issuedAt: "2025-10-13", returnedAt: "2025-11-24"}]},
+            {number: "11", mapUrl: "https://www.google.com/maps/d/edit?mid=1BeZBxA9mmonWHMl6L5IWhLVfSzfTjZw&usp=drive_link", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-10-19", returnedAt: "2025-10-24"}]},
+            {number: "12", mapUrl: "https://www.google.com/maps/d/edit?mid=16Xb76uYpyJwoxd7mbjiBJ_bG4XKR65U&usp=drive_link", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-10-19", returnedAt: "2025-10-24"}]},
+            {number: "13", mapUrl: "https://www.google.com/maps/d/edit?mid=166sbz326pQNLhWrv0rSfG7E9Kcnz9Cc&usp=drive_link", history: [{publisher: "Alena Beruso", issuedAt: "2025-10-20", returnedAt: null}]},
+            {number: "14", mapUrl: "https://www.google.com/maps/d/edit?mid=13WqHsU6iD8fUdStnKu-o-Pl71RH6rdo&usp=drive_link", history: [{publisher: "Valentina Ermolayva", issuedAt: "2025-04-22", returnedAt: "2025-05-01"}]},
+            {number: "15", mapUrl: "https://www.google.com/maps/d/edit?mid=1vsXJk93AEzYPH2yKVefmSYZyrbNvpoA&usp=drive_link", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-10-19", returnedAt: "2025-10-24"}]},
+            {number: "16", mapUrl: "https://www.google.com/maps/d/edit?mid=1UyW4_Dvs7fvUZGmMmvUxFiYwl-BN0e4&usp=drive_link", history: [{publisher: "Valera", issuedAt: "2025-10-24", returnedAt: "2025-10-27"}]},
+            {number: "17", mapUrl: "https://www.google.com/maps/d/edit?mid=1l94546Sft_rD07ZcPEHY54Xix9n1P40&usp=drive_link", history: [{publisher: "Kravtsov O.", issuedAt: "2025-10-24", returnedAt: "2025-10-24"}]},
+            {number: "18", mapUrl: "https://www.google.com/maps/d/edit?mid=1MpqF20Wya6cb9t_9_JnZLWJe8D94Fwg&usp=drive_link", history: [{publisher: "Kravtsov O.", issuedAt: "2025-10-24", returnedAt: "2025-10-24"}]},
+            {number: "19", mapUrl: "https://www.google.com/maps/d/edit?mid=1SykMKd7GWUE3VXnkrwzoR9G2GyMPtHY&usp=drive_link", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-10-24", returnedAt: "2025-11-06"}]},
+            {number: "20", mapUrl: "https://www.google.com/maps/d/edit?mid=1ncYLf7Dhd73o4mjFseze-Dh75JoETkE&usp=drive_link", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-10-24", returnedAt: "2025-11-06"}]}
+        ];
+
+        const saintMarcelTerritories = [
+            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]},
+            {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]},
+            {number: "3", mapUrl: "", history: [{publisher: "Larisa Velcheva", issuedAt: "2026-01-24", returnedAt: "2026-02-21"}]},
+            {number: "4", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2026-01-25", returnedAt: "2026-01-25"}]},
+            {number: "5", mapUrl: "", history: [{publisher: "Ambatsymov Tigran", issuedAt: "2026-01-25", returnedAt: "2026-03-01"}]},
+            {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-31", returnedAt: "2026-02-10"}]},
+            {number: "7", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2026-01-25", returnedAt: "2026-01-25"}]},
+            {number: "8", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-02-19", returnedAt: "2026-03-13"}]},
+            {number: "9", mapUrl: "", history: [{publisher: "Ambatsymov", issuedAt: "2026-03-01", returnedAt: "2026-03-03"}]},
+            {number: "10", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-03-13", returnedAt: "2026-05-24"}]},
+            {number: "11", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-02-19", returnedAt: "2026-03-13"}]},
+            {number: "12", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-02-19", returnedAt: "2026-03-13"}]},
+            {number: "13", mapUrl: "", history: [{publisher: "Tatiana Loktionova", issuedAt: "2026-02-28", returnedAt: "2026-03-08"}]},
+            {number: "14", mapUrl: "", history: [{publisher: "Loktionova", issuedAt: "2026-03-08", returnedAt: "2026-03-22"}]},
+            {number: "15", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-03-13", returnedAt: "2026-06-06"}]}
+        ];
+
+        function initApp() {
+            onSnapshot(collection(db, "cities"), async (snapshot) => {
+                citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                document.getElementById('db-status').innerText = '● Firebase подключен';
+
+                let valenceCity = citiesData.find(c => c.name === "Valence");
+                if (!valenceCity) {
+                    const valenceRef = await addDoc(collection(db, "cities"), { 
+                        name: "Valence",
+                        mapUrl: "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13"
+                    });
+                    for (const item of valenceTerritories) {
+                        await addDoc(collection(db, "territories"), {
+                            cityId: valenceRef.id,
+                            number: item.number,
+                            mapUrl: item.mapUrl || "",
+                            isArchived: false,
+                            history: item.history
+                        });
+                    }
+                    return; 
+                }
+
+                let guilherandCity = citiesData.find(c => c.name === "Guilherand-Granges");
+                if (!guilherandCity) {
+                    const guilherandRef = await addDoc(collection(db, "cities"), { 
+                        name: "Guilherand-Granges",
+                        mapUrl: "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low"
+                    });
+                    for (const item of guilherandTerritories) {
+                        await addDoc(collection(db, "territories"), {
+                            cityId: guilherandRef.id,
+                            number: item.number,
+                            mapUrl: item.mapUrl || "",
+                            isArchived: false,
+                            history: item.history
+                        });
+                    }
+                    return; 
+                }
+
+                let saintMarcelCity = citiesData.find(c => c.name === "Saint-Marcel-lès-Valence");
+                if (!saintMarcelCity) {
+                    const saintMarcelRef = await addDoc(collection(db, "cities"), { 
+                        name: "Saint-Marcel-lès-Valence",
+                        mapUrl: ""
+                    });
+                    for (const item of saintMarcelTerritories) {
+                        await addDoc(collection(db, "territories"), {
+                            cityId: saintMarcelRef.id,
+                            number: item.number,
+                            mapUrl: item.mapUrl || "",
+                            isArchived: false,
+                            history: item.history
+                        });
+                    }
+                    return; 
+                }
+
+                if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
                     activeCityId = citiesData[0].id;
                 }
 
@@ -140,14 +319,13 @@
             });
         }
 
-        // Подписка на участки конкретного города в реальном времени (подколлекция)
         let unsubscribeTerritories = null;
         function subscribeToTerritories() {
             if (unsubscribeTerritories) unsubscribeTerritories();
-            if (!activeCityId) return;
 
             const q = query(
-                collection(db, "cities", activeCityId, "territories"), 
+                collection(db, "territories"), 
+                where("cityId", "==", activeCityId),
                 where("isArchived", "==", false)
             );
 
@@ -162,26 +340,30 @@
             });
         }
 
-        // Управление меню города
+        // --- УПРАВЛЕНИЕ МЕНЮ ГОРОДА ---
         window.toggleCityMenu = (event) => {
             event.stopPropagation();
-            document.getElementById('city-dropdown-menu').classList.toggle('hidden');
+            const menu = document.getElementById('city-dropdown-menu');
+            menu.classList.toggle('hidden');
         };
+
         window.closeCityMenu = () => {
             const menu = document.getElementById('city-dropdown-menu');
             if (menu) menu.classList.add('hidden');
         };
-        document.addEventListener('click', () => closeCityMenu());
 
-        // Добавление нового города (папки)
+        document.addEventListener('click', () => {
+            closeCityMenu();
+        });
+
+        // --- УПРАВЛЕНИЕ ГОРОДАМИ ---
         window.addCity = async () => {
             const name = prompt('Название нового города:');
             if (!name || !name.trim()) return;
-            const mapUrl = prompt('Ссылка на общую карту города (необязательно):', '');
-            
+            const mapLink = prompt('Ссылка на общую карту Google My Maps для этого города:', 'https://www.google.com/maps/d/');
             await addDoc(collection(db, "cities"), { 
                 name: name.trim(),
-                mapUrl: mapUrl ? mapUrl.trim() : ''
+                mapUrl: mapLink ? mapLink.trim() : '#'
             });
         };
 
@@ -189,27 +371,34 @@
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
             const newName = prompt('Новое название города:', city.name);
-            if (!newName || !newName.trim()) return;
-            await updateDoc(doc(db, "cities", activeCityId), { name: newName.trim() });
+            if (!newName || newName.trim() === '') return;
+
+            await updateDoc(doc(db, "cities", activeCityId), { 
+                name: newName.trim()
+            });
         };
 
         window.editCityMap = async () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
-            const newUrl = prompt('Ссылка на карту города:', city.mapUrl || '');
-            if (newUrl === null) return;
-            await updateDoc(doc(db, "cities", activeCityId), { mapUrl: newUrl.trim() });
+            const newMapUrl = prompt('Введите новую ссылку на общую карту Google My Maps для этого города:', city.mapUrl || '');
+            if (newMapUrl === null) return;
+
+            await updateDoc(doc(db, "cities", activeCityId), { 
+                mapUrl: newMapUrl.trim()
+            });
         };
 
-        // Добавление участка в папку активного города
+        // --- УПРАВЛЕНИЕ УЧАСТКАМИ ---
         window.addTerritory = async () => {
-            const num = prompt('Номер участка (например: 1, 15-А):');
-            if (!num || !num.trim()) return;
-            const mapUrl = prompt('Ссылка на онлайн-карту участка (необязательно):', '');
+            const num = prompt('Номер участка (например: 78 или 12-А):');
+            if (!num) return;
+            const mapLink = prompt('Ссылка на карту этого участка (необязательно):', '');
 
-            await addDoc(collection(db, "cities", activeCityId, "territories"), {
+            await addDoc(collection(db, "territories"), {
+                cityId: activeCityId,
                 number: num.trim(),
-                mapUrl: mapUrl ? mapUrl.trim() : '',
+                mapUrl: mapLink ? mapLink.trim() : '',
                 isArchived: false,
                 history: []
             });
@@ -219,50 +408,48 @@
             const t = territoriesData.find(item => item.id === id);
             const newNum = prompt('Новый номер участка:', t.number);
             if (newNum !== null && newNum.trim() !== '') {
-                await updateDoc(doc(db, "cities", activeCityId, "territories", id), { number: newNum.trim() });
+                await updateDoc(doc(db, "territories", id), {
+                    number: newNum.trim()
+                });
             }
         };
 
         window.archiveTerritory = async (id) => {
             const t = territoriesData.find(item => item.id === id);
-            if (confirm(`Удалить/архивировать участок №${t.number}?`)) {
-                await updateDoc(doc(db, "cities", activeCityId, "territories", id), { isArchived: true });
+            if (confirm(`Архивировать участок №${t.number}?`)) {
+                await updateDoc(doc(db, "territories", id), { isArchived: true });
             }
         };
 
-        // Выдача участка (автоматическая дата)
         window.issueTerritory = async (id) => {
-            const name = prompt('ФИО возвещателя:');
-            if (!name || !name.trim()) return;
+            const name = prompt('ФИО возвещателя, которому выдаётся участок:');
+            if (!name) return;
             const t = territoriesData.find(item => item.id === id);
             const history = t.history || [];
-            
             history.push({
                 publisher: name.trim(),
                 issuedAt: new Date().toISOString().split('T')[0],
                 returnedAt: null
             });
-            
-            await updateDoc(doc(db, "cities", activeCityId, "territories", id), { history });
+            await updateDoc(doc(db, "territories", id), { history });
         };
 
-        // Сдача участка (автоматическая дата возврата)
         window.returnTerritory = async (id) => {
             const t = territoriesData.find(item => item.id === id);
             const history = t.history || [];
             if (history.length > 0) {
                 history[history.length - 1].returnedAt = new Date().toISOString().split('T')[0];
-                await updateDoc(doc(db, "cities", activeCityId, "territories", id), { history });
+                await updateDoc(doc(db, "territories", id), { history });
             }
         };
 
-        // Модальное окно истории
+        // --- УПРАВЛЕНИЕ ИСТОРИЕЙ И ССЫЛКОЙ УЧАСТКА (МОДАЛЬНОЕ ОКНО) ---
         window.showHistory = (id) => {
             currentEditingTerritoryId = id;
             const t = territoriesData.find(item => item.id === id);
             if (!t) return;
 
-            document.getElementById('modal-title').innerText = `Участок №${t.number} — История`;
+            document.getElementById('modal-title').innerText = `Управление участком №${t.number}`;
             document.getElementById('modal-territory-map-url').value = t.mapUrl || '';
 
             const listContainer = document.getElementById('modal-history-list');
@@ -277,18 +464,23 @@
                     itemDiv.innerHTML = `
                         <div class="space-y-1">
                             <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
-                            <p class="text-slate-400">Выдан: <span class="text-slate-200">${h.issuedAt}</span> | Сдан: <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || 'У возвещателя'}</span></p>
+                            <p class="text-slate-400">Выдан: <span class="text-slate-200">${h.issuedAt}</span> | Сдан: <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || 'В ОБРАБОТКЕ'}</span></p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                     `;
                     listContainer.appendChild(itemDiv);
                 });
             }
 
-            document.getElementById('history-modal').classList.add('flex');
             document.getElementById('history-modal').classList.remove('hidden');
+            document.getElementById('history-modal').classList.add('flex');
         };
 
         window.closeHistoryModal = () => {
@@ -300,57 +492,79 @@
         window.saveTerritoryMapUrl = async () => {
             if (!currentEditingTerritoryId) return;
             const newUrl = document.getElementById('modal-territory-map-url').value;
-            await updateDoc(doc(db, "cities", activeCityId, "territories", currentEditingTerritoryId), {
+            await updateDoc(doc(db, "territories", currentEditingTerritoryId), {
                 mapUrl: newUrl.trim()
             });
+        };
+
+        window.editHistoryItem = async (index) => {
+            const t = territoriesData.find(item => item.id === currentEditingTerritoryId);
+            if (!t || !t.history[index]) return;
+            const h = t.history[index];
+
+            const newPub = prompt('ФИО возвещателя:', h.publisher);
+            if (newPub === null) return;
+
+            const newIssued = prompt('Дата выдачи (ГГГГ-ММ-ДД):', h.issuedAt);
+            if (newIssued === null) return;
+
+            const newReturned = prompt('Дата возврата (ГГГГ-ММ-ДД или оставьте пустым, если в обработке):', h.returnedAt || '');
+            if (newReturned === null) return;
+
+            t.history[index] = {
+                publisher: newPub.trim(),
+                issuedAt: newIssued.trim(),
+                returnedAt: newReturned.trim() !== '' ? newReturned.trim() : null
+            };
+
+            await updateDoc(doc(db, "territories", t.id), { history: t.history });
         };
 
         window.deleteHistoryItem = async (index) => {
             const t = territoriesData.find(item => item.id === currentEditingTerritoryId);
             if (!t || !t.history[index]) return;
-            if (confirm('Удалить эту запись из истории?')) {
+
+            if (confirm(`Удалить запись #${index + 1} (${t.history[index].publisher})?`)) {
                 t.history.splice(index, 1);
-                await updateDoc(doc(db, "cities", activeCityId, "territories", t.id), { history: t.history });
+                await updateDoc(doc(db, "territories", t.id), { history: t.history });
             }
         };
 
-        window.copyLink = (url) => {
-            if (url) navigator.clipboard.writeText(url);
+        // --- КОПИРОВАНИЕ ССЫЛКИ (БЕЗ УВЕДОМЛЕНИЙ) ---
+        window.copyTerritoryLink = (url, num) => {
+            if (!url) return;
+            navigator.clipboard.writeText(url).catch(err => {
+                console.error('Ошибка копирования: ', err);
+            });
         };
 
-        // Рендер интерфейса городов
+        // --- ОТРИСОВКА ---
         function renderCities() {
             const container = document.getElementById('cities-container');
             container.innerHTML = '';
-            
             citiesData.forEach(c => {
                 const btn = document.createElement('button');
-                btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition ${c.id === activeCityId ? 'bg-indigo-600 text-white font-semibold shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`;
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition ${c.id === activeCityId ? 'bg-indigo-600 text-white font-semibold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`;
                 btn.innerText = c.name;
                 btn.onclick = () => { activeCityId = c.id; renderCities(); subscribeToTerritories(); };
                 container.appendChild(btn);
 
                 if (c.id === activeCityId) {
-                    const mapBtn = document.getElementById('map-link');
+                    const mapLinkBtn = document.getElementById('map-link');
                     if (c.mapUrl) {
-                        mapBtn.href = c.mapUrl;
-                        mapBtn.style.display = 'flex';
+                        mapLinkBtn.href = c.mapUrl;
+                        mapLinkBtn.style.display = 'flex';
                     } else {
-                        mapBtn.style.display = 'none';
+                        mapLinkBtn.style.display = 'none';
                     }
                 }
             });
         }
 
-        // Рендер участков
         function renderTerritories() {
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
             let free = 0, busy = 0, overdue = 0;
-
-            if (territoriesData.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-slate-500 italic col-span-full py-6 text-center">В этом городе пока нет участков. Нажмите «Добавить участок».</p>';
-            }
 
             territoriesData.forEach(t => {
                 const lastRec = t.history && t.history.length > 0 ? t.history[t.history.length - 1] : null;
@@ -365,7 +579,7 @@
                 if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
 
                 let badge = '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Свободен</span>';
-                if (isBusy && !isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">У возвещателя (${days} дн.)</span>`;
+                if (isBusy && !isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">В обработке (${days} дн.)</span>`;
                 if (isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20">Просрочен (${days} дн.)</span>`;
 
                 const card = document.createElement('div');
@@ -382,19 +596,32 @@
                     <div class="space-y-1.5 text-xs text-slate-400">
                         ${isBusy ? `<p><i class="fa-solid fa-user text-slate-500 mr-1"></i> <strong>${lastRec.publisher}</strong></p>` : '<p class="text-slate-600 italic">Никому не выдан</p>'}
                         
+                        <!-- Блок кнопок карты для участка -->
                         <div class="flex items-center gap-1.5 pt-1">
                             ${t.mapUrl ? `
-                                <a href="${t.mapUrl}" target="_blank" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-400 rounded font-medium flex items-center gap-1 transition"><i class="fa-solid fa-map-location-dot"></i> Карта</a>
-                                <button onclick="copyLink('${t.mapUrl}')" title="Копировать ссылку" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded transition"><i class="fa-solid fa-copy"></i></button>
-                            ` : `<span class="text-[10px] text-slate-600 italic">Карта не привязана</span>`}
+                                <a href="${t.mapUrl}" target="_blank" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 rounded font-medium flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-map"></i> Карта
+                                </a>
+                                <button onclick="copyTerritoryLink('${t.mapUrl}', '${t.number}')" title="Скопировать ссылку для возвещателя" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded transition">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            ` : `
+                                <span class="text-[10px] text-slate-600 italic">Ссылка на карту не добавлена</span>
+                            `}
                         </div>
                     </div>
 
                     <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1">
                         <div class="flex space-x-1">
-                            <button onclick="editTerritory('${t.id}')" title="Изменить номер" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="showHistory('${t.id}')" title="История" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                            <button onclick="archiveTerritory('${t.id}')" title="Удалить" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded text-xs"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editTerritory('${t.id}')" title="Редактировать номер" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="showHistory('${t.id}')" title="История и ссылка" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </button>
+                            <button onclick="archiveTerritory('${t.id}')" title="В архив" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded text-xs">
+                                <i class="fa-solid fa-box-archive"></i>
+                            </button>
                         </div>
                         ${!isBusy 
                             ? `<button onclick="issueTerritory('${t.id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold">Выдать</button>`
@@ -410,7 +637,6 @@
             document.getElementById('st-overdue').innerText = overdue;
         }
 
-        // Запуск при загрузке страницы
         initApp();
     </script>
 </body>
