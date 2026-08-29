@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Учёт территорий - Валанс и Гийеран-Гранж</title>
+    <title>Учёт территорий - Валанс, Гийеран-Гранж и Сент-Марсель</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -233,6 +233,24 @@
             {number: "20", mapUrl: "https://www.google.com/maps/d/edit?mid=1ncYLf7Dhd73o4mjFseze-Dh75JoETkE&usp=drive_link", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-10-24", returnedAt: "2025-11-06"}]}
         ];
 
+        const saintMarcelTerritories = [
+            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]},
+            {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]},
+            {number: "3", mapUrl: "", history: [{publisher: "Larisa Velcheva", issuedAt: "2026-01-24", returnedAt: "2026-02-21"}]},
+            {number: "4", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2026-01-25", returnedAt: "2026-01-25"}]},
+            {number: "5", mapUrl: "", history: [{publisher: "Ambatsymov Tigran", issuedAt: "2026-01-25", returnedAt: "2026-03-01"}]},
+            {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-31", returnedAt: "2026-02-10"}]},
+            {number: "7", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2026-01-25", returnedAt: "2026-01-25"}]},
+            {number: "8", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-02-19", returnedAt: "2026-03-13"}]},
+            {number: "9", mapUrl: "", history: [{publisher: "Ambatsymov", issuedAt: "2026-03-01", returnedAt: "2026-03-03"}]},
+            {number: "10", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-03-13", returnedAt: "2026-05-24"}]},
+            {number: "11", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-02-19", returnedAt: "2026-03-13"}]},
+            {number: "12", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-02-19", returnedAt: "2026-03-13"}]},
+            {number: "13", mapUrl: "", history: [{publisher: "Tatiana Loktionova", issuedAt: "2026-02-28", returnedAt: "2026-03-08"}]},
+            {number: "14", mapUrl: "", history: [{publisher: "Loktionova", issuedAt: "2026-03-08", returnedAt: "2026-03-22"}]},
+            {number: "15", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-03-13", returnedAt: "2026-06-06"}]}
+        ];
+
         function initApp() {
             onSnapshot(collection(db, "cities"), async (snapshot) => {
                 citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -265,6 +283,24 @@
                     for (const item of guilherandTerritories) {
                         await addDoc(collection(db, "territories"), {
                             cityId: guilherandRef.id,
+                            number: item.number,
+                            mapUrl: item.mapUrl || "",
+                            isArchived: false,
+                            history: item.history
+                        });
+                    }
+                    return; 
+                }
+
+                let saintMarcelCity = citiesData.find(c => c.name === "Saint-Marcel-lès-Valence");
+                if (!saintMarcelCity) {
+                    const saintMarcelRef = await addDoc(collection(db, "cities"), { 
+                        name: "Saint-Marcel-lès-Valence",
+                        mapUrl: ""
+                    });
+                    for (const item of saintMarcelTerritories) {
+                        await addDoc(collection(db, "territories"), {
+                            cityId: saintMarcelRef.id,
                             number: item.number,
                             mapUrl: item.mapUrl || "",
                             isArchived: false,
