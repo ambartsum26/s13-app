@@ -69,7 +69,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <!-- ЕДИНСТВЕННАЯ КНОПКА СКАЧИВАНИЯ (Генерирует официальный заполненный бланк S-13) -->
+                <!-- КНОПКА СКАЧИВАНИЯ БЛАНКА S-13 ДЛЯ MS WORD -->
                 <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition border border-slate-700 shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-download"></i>
                 </button>
@@ -243,50 +243,51 @@
             return translations[currentLang][key] || key;
         }
 
-        // --- ФУНКЦИЯ ГЕНЕРАЦИИ ОФИЦИАЛЬНОГО БЛАНКА (REGISTRE S-13) С ДВУХСТРОЧНОЙ СТРУКТУРОЙ ---
+        // --- ФУНКЦИЯ ГЕНЕРАЦИИ ОФИЦИАЛЬНОГО БЛАНКА S-13 ДЛЯ MS WORD (.doc) ---
         window.exportOfficialRegister = () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
 
             let htmlContent = `
-            <html lang="fr">
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
             <head>
                 <meta charset="UTF-8">
+                <title>S-13</title>
                 <style>
-                    body { font-family: Arial, sans-serif; font-size: 10px; margin: 10px; color: #000; }
-                    h2 { text-align: center; margin-bottom: 2px; font-size: 15px; }
-                    .subtitle { text-align: center; font-weight: bold; margin-bottom: 12px; font-size: 12px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                    th, td { border: 1px solid #000; padding: 3px; text-align: center; vertical-align: middle; }
-                    th { background-color: #f2f2f2; font-weight: bold; font-size: 9px; }
-                    .publisher-row { font-weight: bold; font-size: 9.5px; background-color: #fafafa; text-align: left; padding-left: 6px; }
-                    .note { font-size: 8px; margin-top: 10px; font-style: italic; }
-                    .footer-code { font-size: 8px; margin-top: 5px; }
+                    body { font-family: Arial, sans-serif; font-size: 9pt; margin: 20px; color: #000; }
+                    h2 { text-align: center; margin-bottom: 2px; font-size: 13pt; font-weight: bold; }
+                    .subtitle { font-weight: bold; margin-bottom: 15px; font-size: 10pt; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 5px; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+                    th, td { border: 0.5pt solid #000; padding: 3px; text-align: center; vertical-align: middle; font-size: 8pt; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    .publisher-row { font-weight: bold; font-size: 8.5pt; background-color: #fafafa; text-align: center; height: 18px; }
+                    .note { font-size: 7.5pt; margin-top: 15px; font-style: italic; }
+                    .footer-code { font-size: 7.5pt; margin-top: 5px; }
                 </style>
             </head>
             <body>
                 <h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2>
-                <div class="subtitle">Année de service : ${new Date().getFullYear()} &nbsp;&nbsp;|&nbsp;&nbsp; Ville : ${city.name}</div>
+                <div class="subtitle">Année de service : ${new Date().getFullYear()} &nbsp;&nbsp;&nbsp;&nbsp; Ville : ${city.name}</div>
                 
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width: 45px;">Terr. n°</th>
-                            <th rowspan="2" style="width: 95px;">Parcouru pour la dernière fois le*</th>
+                            <th rowspan="2" style="width: 35px;">Terr. n°</th>
+                            <th rowspan="2" style="width: 80px;">Parcouru pour la dernière fois le*</th>
                             <th colspan="2">Attribué à</th>
                             <th colspan="2">Attribué à</th>
                             <th colspan="2">Attribué à</th>
                             <th colspan="2">Attribué à</th>
                         </tr>
                         <tr>
-                            <th>Attribué le</th>
-                            <th>Entièrement parcouru le</th>
-                            <th>Attribué le</th>
-                            <th>Entièrement parcouru le</th>
-                            <th>Attribué le</th>
-                            <th>Entièrement parcouru le</th>
-                            <th>Attribué le</th>
-                            <th>Entièrement parcouru le</th>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -297,28 +298,25 @@
                 let publisherRowHtml = "";
                 let datesRowHtml = "";
                 
-                // Формируем до 4 блоков выдачи
                 for (let i = 0; i < 4; i++) {
                     const h = history[i];
                     if (h) {
                         publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
                         const issuedDate = h.issuedAt || "";
-                        const returnedDate = h.returnedAt ? h.returnedAt : '<span style="color:#0066cc;">En cours</span>';
+                        const returnedDate = h.returnedAt ? h.returnedAt : 'En cours';
                         datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
                     } else {
-                        publisherRowHtml += `<td colspan="2"></td>`;
+                        publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
                         datesRowHtml += `<td></td><td></td>`;
                     }
                 }
 
-                // Вычисляем дату последнего прохождения
                 let lastWalkedDate = "";
                 const completedItems = history.filter(h => h.returnedAt);
                 if (completedItems.length > 0) {
                     lastWalkedDate = completedItems[completedItems.length - 1].returnedAt;
                 }
 
-                // Строка участка занимает 2 рядовые строки таблицы (верхняя — ФИО, нижняя — даты)
                 htmlContent += `
                     <tr>
                         <td rowspan="2"><b>${tObj.number}</b></td>
@@ -331,14 +329,16 @@
                 `;
             });
 
-            // Добавляем пустые стандартные строки до 15 штук для заполнения бланка
             const totalRows = Math.max(territoriesData.length, 15);
             for (let i = territoriesData.length; i < totalRows; i++) {
                 htmlContent += `
                     <tr>
                         <td rowspan="2">&nbsp;</td>
                         <td rowspan="2"></td>
-                        <td colspan="2"></td><td colspan="2"></td><td colspan="2"></td><td colspan="2"></td>
+                        <td colspan="2" class="publisher-row"></td>
+                        <td colspan="2" class="publisher-row"></td>
+                        <td colspan="2" class="publisher-row"></td>
+                        <td colspan="2" class="publisher-row"></td>
                     </tr>
                     <tr>
                         <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
@@ -357,11 +357,11 @@
             </html>
             `;
 
-            const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `S-13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.xls`;
+            link.download = `S-13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.doc`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
