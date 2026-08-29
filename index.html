@@ -3,672 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Учёт участков</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Учёт территорий (Firebase)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Mammoth.js для импорта Word -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-
-    <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
-    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased flex flex-col">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-6">
 
-    <!-- Header / Navbar -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-600/30">
-                    <i class="fa-solid fa-map-location-dot"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg text-white leading-none">Территории</h1>
-                    <span class="text-xs text-slate-400">Система учёта и карт</span>
-                </div>
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+    <header class="max-w-6xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-600/30">
+                <i class="fa-solid fa-cloud"></i>
             </div>
-
-            <!-- Переключатель городов -->
-            <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar py-1" id="cities-tab-container">
-                <!-- Динамические вкладки городов -->
+            <div>
+                <h1 class="font-bold text-lg leading-tight">Помощник по участкам</h1>
+                <p class="text-xs text-emerald-400 font-medium" id="db-status">● Подключение к Firebase...</p>
             </div>
+        </div>
 
-            <!-- Управление городами и экспортом/импортом -->
-            <div class="flex items-center space-x-2">
-                <!-- Кнопка Импорта Word -->
-                <label class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm" title="Импортировать из файла Word (.docx)">
-                    <i class="fa-solid fa-file-word"></i>
-                    <span>Импорт Word</span>
-                    <input type="file" id="word-import-file" accept=".docx" class="hidden" onchange="importWordFile(event)">
-                </label>
+        <!-- Переключатель городов -->
+        <div class="flex items-center gap-2 overflow-x-auto py-1" id="cities-container"></div>
 
-                <button onclick="openAddCityModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1">
-                    <i class="fa-solid fa-plus text-indigo-400"></i> Город
-                </button>
-            </div>
+        <!-- Кнопки управления городами -->
+        <div class="flex items-center gap-2">
+            <button onclick="addCity()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                <i class="fa-solid fa-plus text-indigo-400 mr-1"></i> Город
+            </button>
+            <button onclick="editCity()" title="Переименовать город" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700">
+                <i class="fa-solid fa-pen"></i>
+            </button>
         </div>
     </header>
 
-    <!-- Главный контейнер -->
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="max-w-6xl mx-auto space-y-6">
 
-        <!-- Общая карта города -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-            <div class="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-900/50">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-earth-americas text-indigo-400"></i>
-                    <h2 class="font-bold text-slate-200 text-sm" id="current-city-title">Карта города</h2>
-                    
-                    <!-- Кнопки управления текущим городом -->
-                    <div class="flex items-center space-x-1 border-l border-slate-700 pl-3">
-                        <button onclick="editCurrentCity()" title="Переименовать город" class="p-1 text-slate-400 hover:text-indigo-400 text-xs transition">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button onclick="deleteCurrentCity()" title="Удалить город со всеми участками" class="p-1 text-slate-400 hover:text-rose-400 text-xs transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <a id="edit-city-map-btn" href="#" target="_blank" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-pen-to-square text-indigo-400"></i> Редактировать карту
-                    </a>
-                </div>
+        <!-- Карта города -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="font-bold text-sm text-slate-300" id="city-title">Карта</h2>
+                <a id="city-map-link" href="#" target="_blank" class="text-xs text-indigo-400 hover:underline">Открыть в Google Maps <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
             </div>
-            <div class="relative w-full h-[320px] bg-slate-950">
-                <iframe id="google-map-frame" class="w-full h-full border-0" loading="lazy" allowfullscreen src=""></iframe>
+            <div class="w-full h-48 bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
+                <iframe id="city-iframe" class="w-full h-full border-0" src=""></iframe>
             </div>
         </section>
 
-        <!-- Статистика и панель добавления участков -->
-        <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl">
-            <div class="flex items-center space-x-4 text-xs font-medium">
-                <span class="flex items-center gap-1.5 text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Свободно: <strong id="stat-free" class="text-white">0</strong>
-                </span>
-                <span class="flex items-center gap-1.5 text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> На руках: <strong id="stat-busy" class="text-white">0</strong>
-                </span>
-                <span class="flex items-center gap-1.5 text-slate-300">
-                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Просрочено (>120 дн): <strong id="stat-overdue" class="text-white">0</strong>
-                </span>
+        <!-- Статистика и Действия -->
+        <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+            <div class="flex items-center space-x-4 text-xs">
+                <span>🟢 Свободно: <strong id="st-free" class="text-white">0</strong></span>
+                <span>🔵 На руках: <strong id="st-busy" class="text-white">0</strong></span>
+                <span>🔴 Просрочено: <strong id="st-overdue" class="text-white">0</strong></span>
             </div>
 
-            <button onclick="openAddTerritoryModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-md transition flex items-center gap-2">
-                <i class="fa-solid fa-plus"></i> Добавить участок
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="quickImport()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                    <i class="fa-solid fa-file-import mr-1"></i> Быстрый импорт
+                </button>
+                <button onclick="addTerritory()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-xs font-semibold rounded-lg transition shadow-md">
+                    <i class="fa-solid fa-plus mr-1"></i> Участок
+                </button>
+            </div>
         </section>
 
-        <!-- Сетка карточек участков -->
-        <section id="territories-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <!-- Динамические карточки участков -->
-        </section>
-
+        <!-- Сетка карточек -->
+        <section id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></section>
     </main>
 
-    <!-- Уведомление Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-indigo-600 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center space-x-2 text-xs font-medium pointer-events-none">
-        <i class="fa-solid fa-circle-check"></i>
-        <span id="toast-message">Действие выполнено</span>
-    </div>
+    <!-- FIREBASE SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <!-- МОДАЛЬНЫЕ ОКНА -->
-
-    <!-- Модалка: Выдать участок -->
-    <div id="modal-issue" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-lg text-white">Выдать участок <span id="issue-territory-num" class="text-indigo-400"></span></h3>
-            <div>
-                <label class="block text-xs text-slate-400 mb-1">ФИО Возвещателя</label>
-                <input type="text" id="issue-publisher-input" placeholder="Введите имя..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-            </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeModal('modal-issue')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium">Отмена</button>
-                <button onclick="confirmIssueTerritory()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Выдать</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка: История участка -->
-    <div id="modal-history" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="font-bold text-lg text-white">История участка №<span id="history-territory-num" class="text-indigo-400"></span></h3>
-                <button onclick="closeModal('modal-history')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="history-list-container" class="max-h-60 overflow-y-auto custom-scrollbar space-y-2 pr-1">
-                <!-- Записи истории -->
-            </div>
-            <div class="flex justify-end pt-2">
-                <button onclick="closeModal('modal-history')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium">Закрыть</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка: Редактирование истории -->
-    <div id="modal-edit-history" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-white">Редактировать запись истории</h3>
-            <input type="hidden" id="edit-history-index">
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Возвещатель</label>
-                    <input type="text" id="edit-history-publisher" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Дата выдачи</label>
-                    <input type="date" id="edit-history-issued" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Дата сдачи</label>
-                    <input type="date" id="edit-history-returned" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                </div>
-            </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeModal('modal-edit-history')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium">Отмена</button>
-                <button onclick="saveHistoryRecordEdit()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Сохранить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка: Добавление города -->
-    <div id="modal-add-city" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-lg text-white">Добавить город</h3>
-            <div>
-                <label class="block text-xs text-slate-400 mb-1">Название города</label>
-                <input type="text" id="add-city-name" placeholder="Например: Valence" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-            </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeModal('modal-add-city')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium">Отмена</button>
-                <button onclick="confirmAddCity()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Добавить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка: Добавление участка -->
-    <div id="modal-add-territory" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-lg text-white">Новый участок</h3>
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Номер участка</label>
-                    <input type="text" id="add-territory-num" placeholder="Например: 01" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-400 mb-1">Ссылка на Google Maps (опционально)</label>
-                    <input type="url" id="add-territory-map" placeholder="https://maps.google.com/..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                </div>
-            </div>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeModal('modal-add-territory')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium">Отмена</button>
-                <button onclick="confirmAddTerritory()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">Создать</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT ЛОГИКА -->
-    <script>
-        const STORAGE_KEY = 'territories_s13_db';
-        const DEFAULT_MAP_LINK = 'https://www.google.com/maps';
-        const VALENCE_EMBED_MAP = 'https://www.google.com/maps/d/embed?mid=1vX69FpD5PexnshT_KILuT-z5u3xQf4g&ehbc=2E312F';
-        const VALENCE_EDIT_MAP = 'https://www.google.com/maps/d/edit?mid=1vX69FpD5PexnshT_KILuT-z5u3xQf4g&usp=sharing';
-
-        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-            cities: [{ id: 1, name: 'Valence' }],
-            territories: []
+        // ⚠️ ВСТАВЬ СВОИ ДАННЫЕ ИЗ КОНСОЛИ FIREBASE ⚠️
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        let activeCityId = appData.cities.length > 0 ? appData.cities[0].id : null;
-        let selectedTerritoryId = null;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-            renderUI();
-        }
+        let activeCityId = null;
+        let citiesData = [];
+        let territoriesData = [];
 
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-message').innerText = message;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
+        function initApp() {
+            onSnapshot(collection(db, "cities"), (snapshot) => {
+                citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                document.getElementById('db-status').innerText = '● Firebase подключен';
 
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+                if (citiesData.length === 0) {
+                    addDoc(collection(db, "cities"), { name: "Valence", mapUrl: "" });
+                    return;
+                }
 
-        function getTerritoryStatus(territory) {
-            if (!territory.history || territory.history.length === 0) return { status: 'free', text: 'Свободен' };
-            const lastRecord = territory.history[territory.history.length - 1];
-            if (lastRecord.returnedAt) return { status: 'free', text: 'Свободен' };
-            
-            const issuedDate = new Date(lastRecord.issuedAt);
-            const diffDays = Math.floor((new Date() - issuedDate) / (1000 * 60 * 60 * 24));
-            
-            if (diffDays > 120) {
-                return { status: 'overdue', text: `Просрочен (${diffDays} дн.)`, days: diffDays, publisher: lastRecord.publisher };
-            }
-            return { status: 'busy', text: `На руках (${diffDays} дн.)`, days: diffDays, publisher: lastRecord.publisher };
-        }
+                if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
+                    activeCityId = citiesData[0].id;
+                }
 
-        function renderUI() {
-            renderCitiesTabs();
-            updateGoogleMap();
-            renderTerritories();
-        }
-
-        function renderCitiesTabs() {
-            const container = document.getElementById('cities-tab-container');
-            container.innerHTML = '';
-
-            appData.cities.forEach(city => {
-                const isActive = city.id === activeCityId;
-                const btn = document.createElement('button');
-                btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap flex items-center gap-2 ${
-                    isActive ? 'bg-indigo-600 text-white font-semibold shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`;
-                btn.innerHTML = `<i class="fa-solid fa-city"></i> ${city.name}`;
-                btn.onclick = () => {
-                    activeCityId = city.id;
-                    renderUI();
-                };
-                container.appendChild(btn);
+                renderCities();
+                subscribeToTerritories();
             });
         }
 
-        function updateGoogleMap() {
-            const currentCity = appData.cities.find(c => c.id === activeCityId);
-            const mapFrame = document.getElementById('google-map-frame');
-            const editBtn = document.getElementById('edit-city-map-btn');
-            const title = document.getElementById('current-city-title');
+        let unsubscribeTerritories = null;
+        function subscribeToTerritories() {
+            if (unsubscribeTerritories) unsubscribeTerritories();
 
-            if (!currentCity) {
-                mapFrame.src = 'about:blank';
-                title.innerText = 'Город не выбран';
-                return;
+            const q = query(
+                collection(db, "territories"), 
+                where("cityId", "==", activeCityId),
+                where("isArchived", "==", false)
+            );
+
+            unsubscribeTerritories = onSnapshot(q, (snapshot) => {
+                territoriesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderTerritories();
+            });
+        }
+
+        // --- УПРАВЛЕНИЕ ГОРОДАМИ ---
+        window.addCity = async () => {
+            const name = prompt('Название нового города:');
+            if (!name) return;
+            const docRef = await addDoc(collection(db, "cities"), { name: name.trim(), mapUrl: "" });
+            activeCityId = docRef.id;
+        };
+
+        window.editCity = async () => {
+            const city = citiesData.find(c => c.id === activeCityId);
+            if (!city) return;
+            const newName = prompt('Новое название города:', city.name);
+            if (newName) {
+                await updateDoc(doc(db, "cities", activeCityId), { name: newName.trim() });
             }
+        };
 
-            title.innerText = `Карта города: ${currentCity.name}`;
+        // --- УПРАВЛЕНИЕ УЧАСТКАМИ ---
+        window.addTerritory = async () => {
+            const num = prompt('Номер участка (например: 01 или 12-А):');
+            if (!num) return;
+            const map = prompt('Ссылка на карту участка (необязательно):', '');
 
-            if (currentCity.name.toLowerCase() === 'valence') {
-                mapFrame.src = VALENCE_EMBED_MAP;
-                editBtn.href = VALENCE_EDIT_MAP;
-            } else {
-                mapFrame.src = `https://maps.google.com/maps?q=${encodeURIComponent(currentCity.name)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
-                editBtn.href = `https://www.google.com/maps/search/${encodeURIComponent(currentCity.name)}`;
+            await addDoc(collection(db, "territories"), {
+                cityId: activeCityId,
+                number: num.trim(),
+                mapUrl: map ? map.trim() : "",
+                isArchived: false,
+                history: []
+            });
+        };
+
+        window.editTerritory = async (id) => {
+            const t = territoriesData.find(item => item.id === id);
+            const newNum = prompt('Новый номер участка:', t.number);
+            if (newNum !== null && newNum.trim() !== '') {
+                const newMap = prompt('Ссылка на карту:', t.mapUrl || '');
+                await updateDoc(doc(db, "territories", id), {
+                    number: newNum.trim(),
+                    mapUrl: newMap !== null ? newMap.trim() : (t.mapUrl || "")
+                });
+            }
+        };
+
+        window.archiveTerritory = async (id) => {
+            const t = territoriesData.find(item => item.id === id);
+            if (confirm(`Архивировать участок №${t.number}?`)) {
+                await updateDoc(doc(db, "territories", id), { isArchived: true });
+            }
+        };
+
+        window.issueTerritory = async (id) => {
+            const name = prompt('ФИО возвещателя, которому выдаётся участок:');
+            if (!name) return;
+            const t = territoriesData.find(item => item.id === id);
+            const history = t.history || [];
+            history.push({
+                publisher: name.trim(),
+                issuedAt: new Date().toISOString().split('T')[0],
+                returnedAt: null
+            });
+            await updateDoc(doc(db, "territories", id), { history });
+        };
+
+        window.returnTerritory = async (id) => {
+            const t = territoriesData.find(item => item.id === id);
+            const history = t.history || [];
+            if (history.length > 0) {
+                history[history.length - 1].returnedAt = new Date().toISOString().split('T')[0];
+                await updateDoc(doc(db, "territories", id), { history });
+            }
+        };
+
+        window.showHistory = (id) => {
+            const t = territoriesData.find(item => item.id === id);
+            if (!t.history || t.history.length === 0) return alert(`История участка №${t.number} пуста.`);
+
+            let text = `История участка №${t.number}:\n\n`;
+            t.history.forEach((h, i) => {
+                text += `${i + 1}. ${h.publisher} | Выдан: ${h.issuedAt} | Сдан: ${h.returnedAt || 'НА РУКАХ'}\n`;
+            });
+            alert(text);
+        };
+
+        window.quickImport = async () => {
+            const input = prompt('Вставьте список номеров участков через запятую или с новой строки:');
+            if (!input) return;
+            const numbers = input.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+            
+            let added = 0;
+            for (const num of numbers) {
+                const exists = territoriesData.some(t => t.number === num);
+                if (!exists) {
+                    await addDoc(collection(db, "territories"), {
+                        cityId: activeCityId,
+                        number: num,
+                        mapUrl: "",
+                        isArchived: false,
+                        history: []
+                    });
+                    added++;
+                }
+            }
+            alert(`Успешно добавлено участков в базу: ${added}`);
+        };
+
+        // --- ОТРИСОВКА ---
+        function renderCities() {
+            const container = document.getElementById('cities-container');
+            container.innerHTML = '';
+            citiesData.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition ${c.id === activeCityId ? 'bg-indigo-600 text-white font-semibold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`;
+                btn.innerText = c.name;
+                btn.onclick = () => { activeCityId = c.id; renderCities(); subscribeToTerritories(); };
+                container.appendChild(btn);
+            });
+
+            const current = citiesData.find(c => c.id === activeCityId);
+            if (current) {
+                document.getElementById('city-title').innerText = `Карта города: ${current.name}`;
+                document.getElementById('city-iframe').src = current.mapUrl || `https://maps.google.com/maps?q=${encodeURIComponent(current.name)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
             }
         }
 
         function renderTerritories() {
-            const grid = document.getElementById('territories-grid');
+            const grid = document.getElementById('grid');
             grid.innerHTML = '';
+            let free = 0, busy = 0, overdue = 0;
 
-            const territories = appData.territories.filter(t => t.cityId === activeCityId);
+            territoriesData.forEach(t => {
+                const lastRec = t.history && t.history.length > 0 ? t.history[t.history.length - 1] : null;
+                const isBusy = lastRec && !lastRec.returnedAt;
+                
+                let days = 0, isOverdue = false;
+                if (isBusy) {
+                    days = Math.floor((new Date() - new Date(lastRec.issuedAt)) / (1000 * 60 * 60 * 24));
+                    if (days > 120) isOverdue = true;
+                }
 
-            let freeCount = 0, busyCount = 0, overdueCount = 0;
+                if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
 
-            territories.forEach(t => {
-                const info = getTerritoryStatus(t);
-                if (info.status === 'free') freeCount++;
-                if (info.status === 'busy') busyCount++;
-                if (info.status === 'overdue') overdueCount++;
-
-                let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Свободен</span>';
-                if (info.status === 'busy') statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">${info.text}</span>`;
-                if (info.status === 'overdue') statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">${info.text}</span>`;
+                let badge = '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Свободен</span>';
+                if (isBusy && !isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">На руках (${days} дн.)</span>`;
+                if (isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20">Просрочен (${days} дн.)</span>`;
 
                 const card = document.createElement('div');
-                card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-slate-700 transition relative group';
+                card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3';
                 card.innerHTML = `
                     <div class="flex items-start justify-between">
                         <div>
-                            <span class="text-xs font-semibold text-indigo-400">Участок</span>
-                            <h3 class="text-xl font-bold text-white leading-tight">№ ${t.number}</h3>
+                            <span class="text-[10px] text-indigo-400 font-bold uppercase">Участок</span>
+                            <h3 class="text-lg font-bold text-white">№ ${t.number}</h3>
                         </div>
-                        ${statusBadge}
+                        ${badge}
                     </div>
-
-                    <div class="text-xs text-slate-400 space-y-1">
-                        ${info.publisher ? `<p><i class="fa-solid fa-user text-slate-500 mr-1"></i> <strong>${info.publisher}</strong></p>` : '<p class="text-slate-500 italic">Никому не выдан</p>'}
+                    <div class="text-xs text-slate-400 min-h-[32px]">
+                        ${isBusy ? `<p><i class="fa-solid fa-user text-slate-500 mr-1"></i> <strong>${lastRec.publisher}</strong></p>` : '<p class="text-slate-600 italic">Никому не выдан</p>'}
                     </div>
-
                     <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1">
                         <div class="flex space-x-1">
-                            <button onclick="shareMapLink('${t.mapUrl || DEFAULT_MAP_LINK}')" title="Поделиться картой" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition">
-                                <i class="fa-solid fa-share-nodes"></i>
-                            </button>
-                            <button onclick="editMapLink(${t.id})" title="Изменить ссылку на карту" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition">
-                                <i class="fa-solid fa-link"></i>
-                            </button>
-                            <button onclick="editTerritoryNumber(${t.id})" title="Редактировать номер" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition">
+                            <button onclick="editTerritory('${t.id}')" title="Редактировать" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button onclick="deleteTerritory(${t.id})" title="Удалить участок" class="p-2 bg-slate-800 hover:bg-rose-900/50 text-slate-300 hover:text-rose-400 rounded-lg text-xs transition">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                            <button onclick="openHistory(${t.id})" title="История" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition">
+                            <button onclick="showHistory('${t.id}')" title="История" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs">
                                 <i class="fa-solid fa-clock-rotate-left"></i>
                             </button>
+                            <button onclick="archiveTerritory('${t.id}')" title="В архив" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded text-xs">
+                                <i class="fa-solid fa-box-archive"></i>
+                            </button>
                         </div>
-
-                        ${info.status === 'free' 
-                            ? `<button onclick="openIssueModal(${t.id})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition">Выдать</button>`
-                            : `<button onclick="returnTerritory(${t.id})" class="px-3 py-1.5 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white rounded-lg text-xs font-semibold transition">Сдать</button>`
+                        ${!isBusy 
+                            ? `<button onclick="issueTerritory('${t.id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold">Выдать</button>`
+                            : `<button onclick="returnTerritory('${t.id}')" class="px-3 py-1 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white rounded text-xs font-semibold">Сдать</button>`
                         }
                     </div>
                 `;
                 grid.appendChild(card);
             });
 
-            document.getElementById('stat-free').innerText = freeCount;
-            document.getElementById('stat-busy').innerText = busyCount;
-            document.getElementById('stat-overdue').innerText = overdueCount;
+            document.getElementById('st-free').innerText = free;
+            document.getElementById('st-busy').innerText = busy;
+            document.getElementById('st-overdue').innerText = overdue;
         }
 
-        // --- РЕДАКТИРОВАНИЕ И УДАЛЕНИЕ УЧАСТКОВ И ГОРОДОВ ---
-
-        function editTerritoryNumber(id) {
-            const t = appData.territories.find(item => item.id === id);
-            const newNum = prompt('Введите новый номер участка:', t.number);
-            if (newNum !== null && newNum.trim() !== '') {
-                t.number = newNum.trim();
-                saveData();
-                showToast('Номер участка изменен');
-            }
-        }
-
-        function deleteTerritory(id) {
-            const t = appData.territories.find(item => item.id === id);
-            if (confirm(`Вы уверены, что хотите удалить участок №${t.number}?`)) {
-                appData.territories = appData.territories.filter(item => item.id !== id);
-                saveData();
-                showToast('Участок удален');
-            }
-        }
-
-        function editCurrentCity() {
-            const currentCity = appData.cities.find(c => c.id === activeCityId);
-            if (!currentCity) return;
-            const newName = prompt('Новое название города:', currentCity.name);
-            if (newName !== null && newName.trim() !== '') {
-                currentCity.name = newName.trim();
-                saveData();
-                showToast('Город переименован');
-            }
-        }
-
-        function deleteCurrentCity() {
-            const currentCity = appData.cities.find(c => c.id === activeCityId);
-            if (!currentCity) return;
-            if (confirm(`Удалить город "${currentCity.name}" и ВСЕ привязанные к нему участки?`)) {
-                appData.cities = appData.cities.filter(c => c.id !== activeCityId);
-                appData.territories = appData.territories.filter(t => t.cityId !== activeCityId);
-                activeCityId = appData.cities.length > 0 ? appData.cities[0].id : null;
-                saveData();
-                showToast('Город удален');
-            }
-        }
-
-        // --- ИМПОРТ ИЗ WORD С ПОМОЩЬЮ MAMMOTH.JS ---
-        function importWordFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(loadEvent) {
-                const arrayBuffer = loadEvent.target.result;
-
-                mammoth.convertToHtml({ arrayBuffer: arrayBuffer })
-                    .then(function(result) {
-                        parseWordHtml(result.value);
-                    })
-                    .catch(function(err) {
-                        alert("Ошибка при чтении файла Word: " + err.message);
-                    });
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function parseWordHtml(html) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-
-            if (!activeCityId) {
-                alert("Сначала создайте город!");
-                return;
-            }
-
-            let addedCount = 0;
-            const rows = tempDiv.querySelectorAll('tr');
-
-            if (rows.length > 0) {
-                rows.forEach((row, index) => {
-                    const cells = Array.from(row.querySelectorAll('td, th')).map(td => td.textContent.trim());
-                    if (cells.length === 0 || !cells[0]) return;
-                    if (index === 0 && (cells[0].toLowerCase().includes('номер') || cells[0].toLowerCase().includes('№'))) return;
-
-                    const linkElement = row.querySelector('a');
-                    const mapUrl = linkElement ? linkElement.href : DEFAULT_MAP_LINK;
-                    const territoryNum = cells[0].replace(/[^0-9a-zA-ZА-Яа-я-]/g, '');
-
-                    if (territoryNum) {
-                        const exists = appData.territories.some(t => t.cityId === activeCityId && t.number === territoryNum);
-                        if (!exists) {
-                            appData.territories.push({
-                                id: Date.now() + index,
-                                cityId: activeCityId,
-                                number: territoryNum,
-                                mapUrl: mapUrl,
-                                history: []
-                            });
-                            addedCount++;
-                        }
-                    }
-                });
-            } else {
-                const paragraphs = tempDiv.querySelectorAll('p');
-                paragraphs.forEach((p, index) => {
-                    const text = p.textContent.trim();
-                    if (!text) return;
-
-                    const linkElement = p.querySelector('a');
-                    const mapUrl = linkElement ? linkElement.href : DEFAULT_MAP_LINK;
-                    const match = text.match(/^(\d+)/);
-                    const territoryNum = match ? match[1] : `${index + 1}`;
-
-                    const exists = appData.territories.some(t => t.cityId === activeCityId && t.number === territoryNum);
-                    if (!exists) {
-                        appData.territories.push({
-                            id: Date.now() + index,
-                            cityId: activeCityId,
-                            number: territoryNum,
-                            mapUrl: mapUrl,
-                            history: []
-                        });
-                        addedCount++;
-                    }
-                });
-            }
-
-            saveData();
-            showToast(`Добавлено участков из Word: ${addedCount}`);
-        }
-
-        // Действия с участками
-        function openIssueModal(id) {
-            selectedTerritoryId = id;
-            const t = appData.territories.find(item => item.id === id);
-            document.getElementById('issue-territory-num').innerText = `№ ${t.number}`;
-            document.getElementById('issue-publisher-input').value = '';
-            openModal('modal-issue');
-        }
-
-        function confirmIssueTerritory() {
-            const name = document.getElementById('issue-publisher-input').value.trim();
-            if (!name) return alert('Введите имя возвещателя');
-
-            const t = appData.territories.find(item => item.id === selectedTerritoryId);
-            if (!t.history) t.history = [];
-
-            t.history.push({
-                publisher: name,
-                issuedAt: new Date().toISOString().split('T')[0],
-                returnedAt: null
-            });
-
-            closeModal('modal-issue');
-            saveData();
-            showToast(`Участок №${t.number} выдан: ${name}`);
-        }
-
-        function returnTerritory(id) {
-            const t = appData.territories.find(item => item.id === id);
-            if (t && t.history && t.history.length > 0) {
-                const lastRecord = t.history[t.history.length - 1];
-                if (!lastRecord.returnedAt) {
-                    lastRecord.returnedAt = new Date().toISOString().split('T')[0];
-                    saveData();
-                    showToast(`Участок №${t.number} сдан`);
-                }
-            }
-        }
-
-        function shareMapLink(url) {
-            navigator.clipboard.writeText(url).then(() => {
-                showToast('Ссылка на карту скопирована!');
-            });
-        }
-
-        function editMapLink(id) {
-            const t = appData.territories.find(item => item.id === id);
-            const newUrl = prompt('Введите новую ссылку на Google Maps для участка №' + t.number, t.mapUrl || '');
-            if (newUrl !== null) {
-                t.mapUrl = newUrl.trim();
-                saveData();
-                showToast('Ссылка обновлена');
-            }
-        }
-
-        // История участка
-        function openHistory(id) {
-            selectedTerritoryId = id;
-            const t = appData.territories.find(item => item.id === id);
-            document.getElementById('history-territory-num').innerText = t.number;
-            const container = document.getElementById('history-list-container');
-            container.innerHTML = '';
-
-            if (!t.history || t.history.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-500 italic">История пуста</p>';
-            } else {
-                t.history.forEach((rec, idx) => {
-                    const item = document.createElement('div');
-                    item.className = 'bg-slate-950 border border-slate-800 p-3 rounded-lg flex items-center justify-between text-xs';
-                    item.innerHTML = `
-                        <div>
-                            <div class="font-semibold text-white">${rec.publisher}</div>
-                            <div class="text-[10px] text-slate-400">Выдан: ${rec.issuedAt} | Сдан: ${rec.returnedAt || 'На руках'}</div>
-                        </div>
-                        <div class="flex space-x-1">
-                            <button onclick="openEditHistoryRecord(${idx})" class="p-1.5 text-slate-400 hover:text-indigo-400"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteHistoryRecord(${idx})" class="p-1.5 text-slate-400 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    `;
-                    container.appendChild(item);
-                });
-            }
-            openModal('modal-history');
-        }
-
-        function openEditHistoryRecord(idx) {
-            const t = appData.territories.find(item => item.id === selectedTerritoryId);
-            const rec = t.history[idx];
-            document.getElementById('edit-history-index').value = idx;
-            document.getElementById('edit-history-publisher').value = rec.publisher;
-            document.getElementById('edit-history-issued').value = rec.issuedAt;
-            document.getElementById('edit-history-returned').value = rec.returnedAt || '';
-            openModal('modal-edit-history');
-        }
-
-        function saveHistoryRecordEdit() {
-            const idx = parseInt(document.getElementById('edit-history-index').value);
-            const t = appData.territories.find(item => item.id === selectedTerritoryId);
-
-            t.history[idx] = {
-                publisher: document.getElementById('edit-history-publisher').value.trim(),
-                issuedAt: document.getElementById('edit-history-issued').value,
-                returnedAt: document.getElementById('edit-history-returned').value || null
-            };
-
-            closeModal('modal-edit-history');
-            openHistory(selectedTerritoryId);
-            saveData();
-        }
-
-        function deleteHistoryRecord(idx) {
-            if (confirm('Удалить эту запись из истории?')) {
-                const t = appData.territories.find(item => item.id === selectedTerritoryId);
-                t.history.splice(idx, 1);
-                openHistory(selectedTerritoryId);
-                saveData();
-            }
-        }
-
-        // Создание городов и участков
-        function openAddCityModal() { openModal('modal-add-city'); }
-        function confirmAddCity() {
-            const name = document.getElementById('add-city-name').value.trim();
-            if (!name) return;
-            const newCity = { id: Date.now(), name: name };
-            appData.cities.push(newCity);
-            activeCityId = newCity.id;
-            document.getElementById('add-city-name').value = '';
-            closeModal('modal-add-city');
-            saveData();
-        }
-
-        function openAddTerritoryModal() { openModal('modal-add-territory'); }
-        function confirmAddTerritory() {
-            const num = document.getElementById('add-territory-num').value.trim();
-            const map = document.getElementById('add-territory-map').value.trim();
-            if (!num) return alert('Введите номер участка');
-
-            appData.territories.push({
-                id: Date.now(),
-                cityId: activeCityId,
-                number: num,
-                mapUrl: map || DEFAULT_MAP_LINK,
-                history: []
-            });
-
-            document.getElementById('add-territory-num').value = '';
-            document.getElementById('add-territory-map').value = '';
-            closeModal('modal-add-territory');
-            saveData();
-        }
-
-        // Первоначальный запуск
-        document.addEventListener('DOMContentLoaded', () => {
-            renderUI();
-        });
+        initApp();
     </script>
 </body>
 </html>
