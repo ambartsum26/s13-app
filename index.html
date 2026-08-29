@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистр Учета Участков (S-13)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <style>
+        @keyframes highlight {
+            0% { transform: scale(1); ring: 0px; }
+            50% { transform: scale(1.02); box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
+            100% { transform: scale(1); }
+        }
+        .highlight-card {
+            animation: highlight 1.5s ease-in-out infinite alternate;
+            border-color: #6366f1 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col md:flex-row">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-2 translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i class="fa-solid fa-check"></i>
+        <span id="toast-message">Ссылка скопирована!</span>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 justify-between shrink-0">
+        <div class="space-y-6">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+                <span class="font-bold text-sm text-white tracking-tight">Регистр S-13</span>
+            </div>
+            <nav class="space-y-1">
+                <a href="#" onclick="switchTab('dashboard')" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold bg-indigo-600 text-white">
+                    <i class="fa-solid fa-house w-5"></i> Главная
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0">
+        <header class="h-16 bg-slate-900 border-b border-slate-800 px-4 md:px-6 flex items-center justify-between">
+            <span class="font-bold text-sm text-white md:hidden">Регистр S-13</span>
+            <button onclick="openModal('city-modal')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 ml-auto">
+                <i class="fa-solid fa-plus"></i> Добавить город
+            </button>
+        </header>
+
+        <main class="p-4 md:p-6 space-y-6 flex-1 overflow-y-auto">
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="space-y-6">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+                        <span class="text-xs text-slate-400 font-medium">Всего участков</span>
+                        <div id="stat-total" class="text-2xl font-bold text-white">0</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+                        <span class="text-xs text-emerald-400 font-medium">🟢 Свободно</span>
+                        <div id="stat-free" class="text-2xl font-bold text-emerald-400">0</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+                        <span class="text-xs text-blue-400 font-medium">🔵 На руках</span>
+                        <div id="stat-issued" class="text-2xl font-bold text-blue-400">0</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+                        <span class="text-xs text-rose-400 font-medium">🔴 Просрочено</span>
+                        <div id="stat-overdue" class="text-2xl font-bold text-rose-400">0</div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Ваши города</h2>
+                    <div id="cities-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </div>
+
+            <!-- CITY DETAIL VIEW -->
+            <div id="view-city-detail" class="space-y-6 hidden">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <button onclick="switchTab('dashboard')" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-left"></i> Назад к списку городов
+                    </button>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="deleteCurrentCity()" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-trash"></i> Удалить город
+                        </button>
+                        <button onclick="openModal('territory-modal')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Участок вручную
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <h3 id="detail-city-title" class="font-bold text-white text-base">Город</h3>
+                        <a id="google-maps-link" href="#" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                            <i class="fa-solid fa-pen-to-square"></i> Редактировать карту
+                        </a>
+                    </div>
+                    <div style="height: 420px; width: 100%; border-radius: 0.5rem; overflow: hidden;" class="border border-slate-800 bg-slate-950">
+                        <iframe id="google-map-frame" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="font-bold text-white text-base">Список участков</h3>
+                    <div id="detail-territory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="city-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <h3 class="font-bold text-white border-b border-slate-800 pb-2 text-base">Новый город</h3>
+            <div>
+                <label class="text-xs font-semibold text-slate-400">Название города</label>
+                <input type="text" id="city-name-input" placeholder="Например: Valence" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeModal('city-modal')" class="flex-1 py-2 border border-slate-800 rounded-lg text-xs font-semibold text-slate-400">Отмена</button>
+                <button onclick="saveCity()" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="territory-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <h3 class="font-bold text-white border-b border-slate-800 pb-2 text-base">Добавить участок</h3>
+            <div>
+                <label class="text-xs font-semibold text-slate-400">Номер участка</label>
+                <input type="text" id="t-num-input" placeholder="78" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-slate-400">Ссылка на Google Карту (для возвещателя)</label>
+                <input type="text" id="t-map-input" placeholder="https://www.google.com/maps/d/edit?mid=..." class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeModal('territory-modal')" class="flex-1 py-2 border border-slate-800 rounded-lg text-xs font-semibold text-slate-400">Отмена</button>
+                <button onclick="saveTerritory()" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: История участка -->
+    <div id="history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 id="history-modal-title" class="font-bold text-white text-base">История</h3>
+                <button onclick="closeModal('history-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="history-content" class="space-y-2 max-h-80 overflow-y-auto text-xs"></div>
+            <div class="pt-2 border-t border-slate-800 flex justify-end">
+                <button onclick="closeModal('history-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Редактирование записи истории -->
+    <div id="edit-history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+            <h3 class="font-bold text-white border-b border-slate-800 pb-2 text-base">Редактировать запись</h3>
+            <input type="hidden" id="edit-h-tid">
+            <input type="hidden" id="edit-h-idx">
+            <div>
+                <label class="text-xs font-semibold text-slate-400">Возвещатель</label>
+                <input type="text" id="edit-h-publisher" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-slate-400">Дата выдачи (ГГГГ-ММ-ДД)</label>
+                <input type="date" id="edit-h-issued" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-slate-400">Дата сдачи (оставьте пустым, если на руках)</label>
+                <input type="date" id="edit-h-returned" class="w-full mt-1 p-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeModal('edit-history-modal')" class="flex-1 py-2 border border-slate-800 rounded-lg text-xs font-semibold text-slate-400">Отмена</button>
+                <button onclick="saveHistoryRecordEdit()" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Ваши ключи проекта fir-13-app
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
+            authDomain: "fir-13-app.firebaseapp.com",
+            projectId: "fir-13-app",
+            storageBucket: "fir-13-app.firebasestorage.app",
+            messagingSenderId: "1080215970738",
+            appId: "1:1080215970738:web:2d66b3b8a9ea26f1e6baab",
+            measurementId: "G-70HBSY6MC6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const docRef = doc(db, "app_data", "s13_registry");
+
+        const DEFAULT_MAP_LINK = 'https://www.google.com/maps/d/edit?mid=1Z8LxzoUjVqJx-8QikyySVlmPmNd4x6c&usp=drive_link';
+
+        const defaultValenceData = {
+            cities: [{ id: 101, name: 'Valence' }],
+            territories: [
+                { id: 1001, cityId: 101, number: '1', mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: 'Kravtsov Oleksandr', issuedAt: '2024-01-28', returnedAt: '2025-08-23' }] },
+                { id: 1002, cityId: 101, number: '2', mapUrl: DEFAULT_MAP_LINK, history: [{ publisher: 'Edmond Maduncev', issuedAt: '2024-02-02', returnedAt: '2024-04-10' }, { publisher: 'Brozik Zinaida', issuedAt: '2025-03-30', returnedAt: '2025-08-28' }] }
+            ]
+        };
+
+        window.appData = { cities: [], territories: [] };
+        window.currentTab = 'dashboard';
+        window.activeCityId = null;
+
+        // Синхронизация данных из Firestore в реальном времени
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                window.appData = docSnap.data();
+            } else {
+                window.appData = defaultValenceData;
+                setDoc(docRef, defaultValenceData);
+            }
+            renderUI();
+        });
+
+        window.saveData = async function() {
+            try {
+                await setDoc(docRef, window.appData);
+                renderUI();
+            } catch (e) {
+                console.error("Ошибка сохранения в Firebase:", e);
+                alert("Ошибка сохранения. Убедитесь, что правила Firestore разрешают запись (Rules -> allow read, write: if true;).");
+            }
+        };
+
+        window.checkUrlParams = function() {
+            const params = new URLSearchParams(window.location.search);
+            const cityId = parseInt(params.get('city'));
+            const territoryId = parseInt(params.get('territory'));
+
+            if (cityId) {
+                switchTab('city-detail', cityId);
+                if (territoryId) {
+                    setTimeout(() => {
+                        const targetCard = document.getElementById(`territory-card-${territoryId}`);
+                        if (targetCard) {
+                            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            targetCard.classList.add('highlight-card');
+                            setTimeout(() => {
+                                targetCard.classList.remove('highlight-card');
+                            }, 4000);
+                        }
+                    }, 200);
+                }
+            }
+        };
+
+        window.shareMapLink = function(territoryNum, mapUrl) {
+            const linkToCopy = mapUrl || DEFAULT_MAP_LINK;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(linkToCopy).then(() => {
+                    showToast(`Ссылка на карту участка №${territoryNum} скопирована!`);
+                }).catch(() => {
+                    prompt(`Скопируйте ссылку на карту участка №${territoryNum}:`, linkToCopy);
+                });
+            } else {
+                prompt(`Скопируйте ссылку на карту участка №${territoryNum}:`, linkToCopy);
+            }
+        };
+
+        window.editMapLink = function(territoryId) {
+            const t = window.appData.territories.find(x => x.id === territoryId);
+            if (!t) return;
+            const currentUrl = t.mapUrl || DEFAULT_MAP_LINK;
+            const newUrl = prompt(`Вставьте прямую ссылку Google Maps для участка №${t.number}:`, currentUrl);
+            if (newUrl !== null) {
+                t.mapUrl = newUrl.trim();
+                saveData();
+                showToast("Ссылка на карту обновлена!");
+            }
+        };
+
+        window.showToast = function(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        };
+
+        window.switchTab = function(tab, cityId = null) {
+            window.currentTab = tab;
+            if (cityId) window.activeCityId = cityId;
+
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-city-detail').classList.add('hidden');
+
+            if (tab === 'dashboard') {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+            } else if (tab === 'city-detail') {
+                document.getElementById('view-city-detail').classList.remove('hidden');
+                updateGoogleMap();
+            }
+            renderUI();
+        };
+
+        window.getTerritoryStatus = function(t) {
+            if (!t.history || t.history.length === 0) {
+                return { badge: '🟢 Свободен', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', isIssued: false };
+            }
+            const last = t.history[t.history.length - 1];
+            if (last.returnedAt) {
+                return { badge: '🟢 Свободен', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', isIssued: false };
+            }
+
+            const issuedDate = new Date(last.issuedAt);
+            const diffDays = Math.floor((new Date() - issuedDate) / (1000 * 60 * 60 * 24));
+            const isOverdue = diffDays > 120;
+
+            return {
+                badge: isOverdue ? `🔴 Просрочен (${last.publisher})` : `🔵 На руках (${last.publisher})`,
+                color: isOverdue ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                isIssued: true,
+                overdue: isOverdue
+            };
+        };
+
+        window.renderUI = function() {
+            if (!window.appData.territories) return;
+            let total = window.appData.territories.length;
+            let free = 0, issued = 0, overdue = 0;
+
+            window.appData.territories.forEach(t => {
+                const s = getTerritoryStatus(t);
+                if (!s.isIssued) free++;
+                if (s.isIssued) {
+                    issued++;
+                    if (s.overdue) overdue++;
+                }
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-free').innerText = free;
+            document.getElementById('stat-issued').innerText = issued;
+            document.getElementById('stat-overdue').innerText = overdue;
+
+            const grid = document.getElementById('cities-grid');
+            grid.innerHTML = '';
+
+            window.appData.cities.forEach(city => {
+                const cTerritories = window.appData.territories.filter(t => t.cityId === city.id);
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-4 hover:border-slate-700 transition-all flex flex-col justify-between";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <div onclick="switchTab('city-detail', ${city.id})" class="cursor-pointer flex-1">
+                            <h3 class="font-bold text-white text-base">${city.name}</h3>
+                            <p class="text-xs text-slate-400">${cTerritories.length} участков в регистре</p>
+                        </div>
+                        <button onclick="deleteCity(${city.id})" class="text-slate-500 hover:text-rose-400 p-1.5 transition-colors" title="Удалить город">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div onclick="switchTab('city-detail', ${city.id})" class="cursor-pointer flex justify-end text-xs text-indigo-400 font-semibold items-center gap-1">
+                        Открыть регистр <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            if (window.currentTab === 'city-detail' && window.activeCityId) {
+                const city = window.appData.cities.find(c => c.id === window.activeCityId);
+                if (city) {
+                    document.getElementById('detail-city-title').innerText = `Город: ${city.name}`;
+                    renderDetailTerritories(city.id);
+                }
+            }
+        };
+
+        window.updateGoogleMap = function() {
+            const city = window.appData.cities.find(c => c.id === window.activeCityId);
+            if (!city) return;
+
+            const mapFrame = document.getElementById('google-map-frame');
+            const mapLink = document.getElementById('google-maps-link');
+
+            if (city.name.toLowerCase() === 'valence') {
+                mapFrame.src = "https://www.google.com/maps/d/embed?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw";
+                mapLink.href = "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13";
+                mapLink.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Редактировать карту Валанса`;
+            } else {
+                const encodedCity = encodeURIComponent(city.name);
+                mapFrame.src = `https://maps.google.com/maps?q=${encodedCity}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+                mapLink.href = `https://www.google.com/maps/search/?api=1&query=${encodedCity}`;
+                mapLink.innerHTML = `<i class="fa-solid fa-map-location-dot"></i> Открыть карту на Google Maps`;
+            }
+        };
+
+        window.renderDetailTerritories = function(cityId) {
+            const list = document.getElementById('detail-territory-list');
+            list.innerHTML = '';
+            const territories = window.appData.territories.filter(t => t.cityId === cityId);
+
+            territories.forEach(t => {
+                const status = getTerritoryStatus(t);
+                const mapUrl = t.mapUrl || DEFAULT_MAP_LINK;
+                const card = document.createElement('div');
+                card.id = `territory-card-${t.id}`;
+                card.className = "bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3 flex flex-col justify-between transition-all duration-300";
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-white text-base">Участок №${t.number}</span>
+                                <button onclick="editTerritoryNumber(${t.id})" class="text-slate-500 hover:text-indigo-400 text-xs p-1" title="Изменить номер участка">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </div>
+                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border ${status.color}">${status.badge}</span>
+                        </div>
+
+                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center justify-between text-xs gap-2">
+                            <div class="flex items-center gap-1.5 text-slate-300 font-medium truncate">
+                                <i class="fa-solid fa-map-location-dot text-indigo-400"></i>
+                                <span class="truncate">Карта участка</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="shareMapLink('${t.number}', '${mapUrl}')" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold text-[11px] flex items-center gap-1 transition-colors" title="Отправить ссылку на карту возвещателю">
+                                    <i class="fa-solid fa-share-nodes"></i> Отправить карту
+                                </button>
+                                <a href="${mapUrl}" target="_blank" class="p-1 text-slate-400 hover:text-white" title="Открыть карту на Google">
+                                    <i class="fa-solid fa-up-right-from-square"></i>
+                                </a>
+                                <button onclick="editMapLink(${t.id})" class="p-1 text-slate-500 hover:text-indigo-400" title="Изменить ссылку участка на карту">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+                        <button onclick="openHistory(${t.id})" class="text-indigo-400 hover:underline font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-clock-rotate-left"></i> История (${t.history.length})
+                        </button>
+                        <div class="flex gap-1.5">
+                            ${!status.isIssued ? `<button onclick="issueTerritory(${t.id})" class="px-2.5 py-1 bg-indigo-500/10 text-indigo-400 rounded font-bold hover:bg-indigo-500/20">Выдать</button>` : ''}
+                            ${status.isIssued ? `<button onclick="returnTerritory(${t.id})" class="px-2.5 py-1 bg-emerald-500/10 text-emerald-400 rounded font-bold hover:bg-emerald-500/20">Сдать</button>` : ''}
+                            <button onclick="deleteTerritory(${t.id})" class="px-2 py-1 text-slate-500 hover:text-rose-400 rounded"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        };
+
+        window.openModal = function(id) { document.getElementById(id).classList.remove('hidden'); };
+        window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); };
+
+        window.saveCity = function() {
+            const name = document.getElementById('city-name-input').value.trim();
+            if (!name) return alert("Введите название города!");
+            window.appData.cities.push({ id: Date.now(), name });
+            saveData();
+            closeModal('city-modal');
+            document.getElementById('city-name-input').value = '';
+        };
+
+        window.deleteCity = function(cityId) {
+            const city = window.appData.cities.find(c => c.id === cityId);
+            if (!confirm(`Удалить город "${city ? city.name : ''}" и все его участки с историей?`)) return;
+            window.appData.cities = window.appData.cities.filter(c => c.id !== cityId);
+            window.appData.territories = window.appData.territories.filter(t => t.cityId !== cityId);
+            if (window.activeCityId === cityId) switchTab('dashboard');
+            else saveData();
+        };
+
+        window.deleteCurrentCity = function() { if (window.activeCityId) deleteCity(window.activeCityId); };
+
+        window.saveTerritory = function() {
+            const number = document.getElementById('t-num-input').value.trim();
+            const mapUrl = document.getElementById('t-map-input').value.trim() || DEFAULT_MAP_LINK;
+            if (!number) return alert("Введите номер участка!");
+            window.appData.territories.push({ id: Date.now(), cityId: window.activeCityId, number: number, mapUrl: mapUrl, history: [] });
+            saveData();
+            closeModal('territory-modal');
+            document.getElementById('t-num-input').value = '';
+            document.getElementById('t-map-input').value = '';
+        };
+
+        window.editTerritoryNumber = function(id) {
+            const t = window.appData.territories.find(x => x.id === id);
+            if (!t) return;
+            const newNum = prompt("Введите новый номер участка:", t.number);
+            if (newNum !== null && newNum.trim() !== "") {
+                t.number = newNum.trim();
+                saveData();
+            }
+        };
+
+        window.issueTerritory = function(id) {
+            const publisher = prompt("Введите ФИО возвещателя:");
+            if (!publisher) return;
+            const t = window.appData.territories.find(x => x.id === id);
+            const today = new Date().toISOString().slice(0, 10);
+            t.history = t.history || [];
+            t.history.push({ publisher: publisher, issuedAt: today, returnedAt: null });
+            saveData();
+        };
+
+        window.returnTerritory = function(id) {
+            if (!confirm("Подтвердить сдачу участка?")) return;
+            const t = window.appData.territories.find(x => x.id === id);
+            const last = t.history[t.history.length - 1];
+            if (last && !last.returnedAt) {
+                last.returnedAt = new Date().toISOString().slice(0, 10);
+            }
+            saveData();
+        };
+
+        window.openHistory = function(id) {
+            const t = window.appData.territories.find(x => x.id === id);
+            document.getElementById('history-modal-title').innerText = `История участка №${t.number}`;
+            const container = document.getElementById('history-content');
+            container.innerHTML = '';
+
+            if (!t.history || t.history.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 italic">История выдач пуста.</p>';
+            } else {
+                t.history.forEach((h, index) => {
+                    const row = document.createElement('div');
+                    row.className = "p-2.5 bg-slate-950 border border-slate-800 rounded-lg flex justify-between items-center gap-2";
+                    row.innerHTML = `
+                        <div class="flex-1 min-w-0">
+                            <span class="text-indigo-400 font-bold truncate block">#${index + 1} ${h.publisher}</span>
+                            <div class="text-slate-400 text-[11px]">Выдан: ${h.issuedAt}</div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            ${h.returnedAt ? `<span class="text-emerald-400 font-semibold">Сдан: ${h.returnedAt}</span>` : '<span class="text-blue-400 font-bold">На руках</span>'}
+                        </div>
+                        <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+                            <button onclick="openEditHistoryModal(${t.id}, ${index})" class="p-1.5 text-slate-500 hover:text-indigo-400 transition-colors" title="Редактировать запись">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteHistoryRecord(${t.id}, ${index})" class="p-1.5 text-slate-500 hover:text-rose-400 transition-colors" title="Удалить запись">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+            openModal('history-modal');
+        };
+
+        window.openEditHistoryModal = function(territoryId, historyIndex) {
+            const t = window.appData.territories.find(x => x.id === territoryId);
+            if (!t || !t.history[historyIndex]) return;
+            const rec = t.history[historyIndex];
+
+            document.getElementById('edit-h-tid').value = territoryId;
+            document.getElementById('edit-h-idx').value = historyIndex;
+            document.getElementById('edit-h-publisher').value = rec.publisher || '';
+            document.getElementById('edit-h-issued').value = rec.issuedAt || '';
+            document.getElementById('edit-h-returned').value = rec.returnedAt || '';
+
+            openModal('edit-history-modal');
+        };
+
+        window.saveHistoryRecordEdit = function() {
+            const territoryId = parseInt(document.getElementById('edit-h-tid').value);
+            const historyIndex = parseInt(document.getElementById('edit-h-idx').value);
+            const publisher = document.getElementById('edit-h-publisher').value.trim();
+            const issuedAt = document.getElementById('edit-h-issued').value;
+            const returnedAt = document.getElementById('edit-h-returned').value || null;
+
+            if (!publisher || !issuedAt) {
+                return alert("Укажите имя возвещателя и дату выдачи!");
+            }
+
+            const t = window.appData.territories.find(x => x.id === territoryId);
+            if (t && t.history[historyIndex]) {
+                t.history[historyIndex] = { publisher, issuedAt, returnedAt };
+                saveData();
+                closeModal('edit-history-modal');
+                openHistory(territoryId);
+            }
+        };
+
+        window.deleteHistoryRecord = function(territoryId, historyIndex) {
+            if (!confirm("Вы действительно хотите удалить эту запись из истории?")) return;
+            const t = window.appData.territories.find(x => x.id === territoryId);
+            if (t && t.history) {
+                t.history.splice(historyIndex, 1);
+                saveData();
+                openHistory(territoryId);
+            }
+        };
+
+        window.deleteTerritory = function(id) {
+            if (!confirm("Удалить участок?")) return;
+            window.appData.territories = window.appData.territories.filter(x => x.id !== id);
+            saveData();
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            checkUrlParams();
+        });
+    </script>
+</body>
+</html>
