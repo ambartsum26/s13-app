@@ -36,8 +36,8 @@
             </div>
         </div>
 
-        <!-- Переключатель городов (с фиксированным поведением против глича) -->
-        <div class="flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none max-w-[50vw]" id="cities-container"></div>
+        <!-- Переключатель городов (со стабильными классами против глича смещения) -->
+        <div class="flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none" id="cities-container"></div>
 
         <!-- Кнопки управления и Язык -->
         <div class="flex items-center gap-2">
@@ -684,39 +684,28 @@
 
         function renderCities() {
             const container = document.getElementById('cities-container');
-            const currentCityIds = Array.from(container.children).map(btn => btn.dataset.cityId);
-            const newCityIds = citiesData.map(c => c.id);
             
-            const isSameStructure = currentCityIds.length === newCityIds.length && 
-                                    currentCityIds.every((id, index) => id === newCityIds[index]);
-
-            if (isSameStructure) {
-                Array.from(container.children).forEach(btn => {
-                    const cId = btn.dataset.cityId;
-                    if (cId === activeCityId) {
-                        btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block bg-indigo-600 text-white font-semibold shadow-md";
-                    } else {
-                        btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium";
-                    }
-                });
-            } else {
+            // Создаем кнопки только при самом первом запуске или изменении состава городов
+            if (container.children.length === 0 || container.children.length !== citiesData.length) {
                 container.innerHTML = '';
                 citiesData.forEach(c => {
                     const btn = document.createElement('button');
                     btn.dataset.cityId = c.id;
-                    btn.className = `px-3 py-1.5 rounded-lg text-xs transition inline-block ${c.id === activeCityId ? 'bg-indigo-600 text-white font-semibold shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium'}`;
                     btn.innerText = c.name;
                     btn.onclick = () => { 
                         if (activeCityId !== c.id) {
                             activeCityId = c.id; 
-                            renderCities(); 
+                            updateActiveCityStyles(); 
                             subscribeToTerritories(); 
                         }
                     };
                     container.appendChild(btn);
                 });
             }
+            
+            updateActiveCityStyles();
 
+            // Управление ссылкой на карту активного города
             const activeCity = citiesData.find(c => c.id === activeCityId);
             const mapLinkBtn = document.getElementById('map-link');
             if (activeCity && activeCity.mapUrl) {
@@ -725,6 +714,19 @@
             } else {
                 mapLinkBtn.style.display = 'none';
             }
+        }
+
+        // Точечное обновление стилей активной кнопки без пересоздания элементов (устраняет любые рывки)
+        function updateActiveCityStyles() {
+            const container = document.getElementById('cities-container');
+            Array.from(container.children).forEach(btn => {
+                const cId = btn.dataset.cityId;
+                if (cId === activeCityId) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block text-center bg-indigo-600 text-white font-semibold shadow-md";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block text-center bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium";
+                }
+            });
         }
 
         function renderTerritories() {
