@@ -420,80 +420,52 @@
 
         async function initApp() {
             try {
-                // 1. Однократный запрос для проверки и инициализации городов (сберегает чтения)
                 const citiesSnapshot = await getDocs(collection(db, "cities"));
                 citiesData = citiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
                 const findCity = (searchName) => citiesData.find(c => c.name && c.name.normalize("NFC") === searchName.normalize("NFC"));
 
-                let valenceCity = findCity("Valence");
-                if (!valenceCity) {
-                    const valenceRef = await addDoc(collection(db, "cities"), { 
-                        name: "Valence",
-                        mapUrl: "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13"
-                    });
-                    for (const item of valenceTerritories) {
-                        await addDoc(collection(db, "territories"), { cityId: valenceRef.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                const cityMaps = {
+                    "Valence": "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13",
+                    "Guilherand-Granges": "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low",
+                    "Saint-Marcel-lès-Valence": "",
+                    "Saint-Péray": ""
+                };
+
+                for (const [cityName, mapUrl] of Object.entries(cityMaps)) {
+                    let existingCity = findCity(cityName);
+                    if (!existingCity) {
+                        let territoriesList = [];
+                        if (cityName === "Valence") territoriesList = valenceTerritories;
+                        if (cityName === "Guilherand-Granges") territoriesList = guilherandTerritories;
+                        if (cityName === "Saint-Marcel-lès-Valence") territoriesList = saintMarcelTerritories;
+                        if (cityName === "Saint-Péray") territoriesList = saintPerayTerritories;
+
+                        const ref = await addDoc(collection(db, "cities"), { name: cityName, mapUrl: mapUrl });
+                        for (const item of territoriesList) {
+                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                        }
+                    } else {
+                        if (mapUrl && existingCity.mapUrl !== mapUrl) {
+                            await updateDoc(doc(db, "cities", existingCity.id), { mapUrl: mapUrl });
+                        }
                     }
-                    window.location.reload();
-                    return; 
                 }
 
-                let guilherandCity = findCity("Guilherand-Granges");
-                if (!guilherandCity) {
-                    const guilherandRef = await addDoc(collection(db, "cities"), { 
-                        name: "Guilherand-Granges",
-                        mapUrl: "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low"
-                    });
-                    for (const item of guilherandTerritories) {
-                        await addDoc(collection(db, "territories"), { cityId: guilherandRef.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
-                    }
-                    window.location.reload();
-                    return; 
-                }
-
-                let saintMarcelCity = findCity("Saint-Marcel-lès-Valence");
-                if (!saintMarcelCity) {
-                    const saintMarcelRef = await addDoc(collection(db, "cities"), { 
-                        name: "Saint-Marcel-lès-Valence",
-                        mapUrl: ""
-                    });
-                    for (const item of saintMarcelTerritories) {
-                        await addDoc(collection(db, "territories"), { cityId: saintMarcelRef.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
-                    }
-                    window.location.reload();
-                    return; 
-                }
-
-                let saintPerayCity = findCity("Saint-Péray");
-                if (!saintPerayCity) {
-                    const saintPerayRef = await addDoc(collection(db, "cities"), { 
-                        name: "Saint-Péray",
-                        mapUrl: ""
-                    });
-                    for (const item of saintPerayTerritories) {
-                        await addDoc(collection(db, "territories"), { 
-                            cityId: saintPerayRef.id, 
-                            number: item.number, 
-                            mapUrl: item.mapUrl || "", 
-                            isArchived: false, 
-                            history: item.history 
-                        });
-                    }
-                    window.location.reload();
-                    return; 
-                }
+                const updatedCitiesSnapshot = await getDocs(collection(db, "cities"));
+                citiesData = updatedCitiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
                 document.getElementById('db-status').innerText = t('db_connected');
 
                 if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
-                    activeCityId = citiesData[0].id;
+                    activeCityId = citiesData[0]?.id || null;
                 }
 
-                renderCities();
-                subscribeToTerritories();
+                if (activeCityId) {
+                    renderCities();
+                    subscribeToTerritories();
+                }
 
-                // 2. Включаем легкий слушатель только для обновления списка городов в реальном времени
                 onSnapshot(collection(db, "cities"), (snapshot) => {
                     citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCities();
@@ -507,7 +479,12 @@
 
         let unsubscribeTerritories = null;
         function subscribeToTerritories() {
-            if (unsubscribeTerritories) unsubscribeTerritories();
+            if (typeof unsubscribeTerritories === 'function') {
+                unsubscribeTerritories();
+                unsubscribeTerritories = null;
+            }
+
+            if (!activeCityId) return;
 
             const q = query(
                 collection(db, "territories"), 
@@ -576,6 +553,7 @@
 
         window.editTerritory = async (id) => {
             const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
             const newNum = prompt(t('prompt_edit_territory_num'), tObj.number);
             if (newNum !== null && newNum.trim() !== '') {
                 await updateDoc(doc(db, "territories", id), { number: newNum.trim() });
@@ -584,6 +562,7 @@
 
         window.archiveTerritory = async (id) => {
             const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
             if (confirm(`${t('prompt_archive_confirm')}№${tObj.number}?`)) {
                 await updateDoc(doc(db, "territories", id), { isArchived: true });
             }
@@ -593,6 +572,7 @@
             const name = prompt(t('prompt_publisher_name'));
             if (!name) return;
             const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
             const history = tObj.history || [];
             history.push({ publisher: name.trim(), issuedAt: new Date().toISOString().split('T')[0], returnedAt: null });
             await updateDoc(doc(db, "territories", id), { history });
@@ -600,6 +580,7 @@
 
         window.returnTerritory = async (id) => {
             const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
             const history = tObj.history || [];
             if (history.length > 0) {
                 history[history.length - 1].returnedAt = new Date().toISOString().split('T')[0];
@@ -652,6 +633,7 @@
             if (!currentEditingTerritoryId) return;
             const newUrl = document.getElementById('modal-territory-map-url').value;
             await updateDoc(doc(db, "territories", currentEditingTerritoryId), { mapUrl: newUrl.trim() });
+            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
         };
 
         window.editHistoryItem = async (index) => {
@@ -673,6 +655,7 @@
             };
 
             await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
+            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
         };
 
         window.deleteHistoryItem = async (index) => {
@@ -682,6 +665,7 @@
             if (confirm(`${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`)) {
                 tObj.history.splice(index, 1);
                 await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
+                if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
             }
         };
 
@@ -693,28 +677,30 @@
         function renderCities() {
             const container = document.getElementById('cities-container');
             
-            if (container.children.length === 0 || container.children.length !== citiesData.length) {
-                container.innerHTML = '';
-                citiesData.forEach(c => {
-                    const btn = document.createElement('button');
-                    btn.dataset.cityId = c.id;
-                    btn.innerText = c.name;
-                    btn.onclick = () => { 
-                        if (activeCityId !== c.id) {
-                            activeCityId = c.id; 
-                            updateActiveCityStyles(); 
-                            subscribeToTerritories(); 
-                        }
-                    };
-                    container.appendChild(btn);
-                });
-            }
+            container.innerHTML = '';
+            citiesData.forEach(c => {
+                const btn = document.createElement('button');
+                btn.dataset.cityId = c.id;
+                btn.innerText = c.name;
+                btn.onclick = () => { 
+                    if (activeCityId !== c.id) {
+                        activeCityId = c.id; 
+                        updateActiveCityStyles(); 
+                        subscribeToTerritories(); 
+                        updateActiveCityMapLink();
+                    }
+                };
+                container.appendChild(btn);
+            });
             
             updateActiveCityStyles();
+            updateActiveCityMapLink();
+        }
 
+        function updateActiveCityMapLink() {
             const activeCity = citiesData.find(c => c.id === activeCityId);
             const mapLinkBtn = document.getElementById('map-link');
-            if (activeCity && activeCity.mapUrl) {
+            if (activeCity && activeCity.mapUrl && activeCity.mapUrl.trim() !== '' && activeCity.mapUrl !== '#') {
                 mapLinkBtn.href = activeCity.mapUrl;
                 mapLinkBtn.style.display = 'flex';
             } else {
@@ -744,9 +730,12 @@
                 const isBusy = lastRec && !lastRec.returnedAt;
                 
                 let days = 0, isOverdue = false;
-                if (isBusy) {
-                    days = Math.floor((new Date() - new Date(lastRec.issuedAt)) / (1000 * 60 * 60 * 24));
-                    if (days > 120) isOverdue = true;
+                if (isBusy && lastRec.issuedAt) {
+                    const parsedDate = new Date(lastRec.issuedAt);
+                    if (!isNaN(parsedDate.getTime())) {
+                        days = Math.floor((new Date() - parsedDate) / (1000 * 60 * 60 * 24));
+                        if (days > 120) isOverdue = true;
+                    }
                 }
 
                 if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
