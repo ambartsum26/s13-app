@@ -1067,9 +1067,9 @@
                     <div class="space-y-2 text-xs text-slate-200">
                         ${isBusy ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>` : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`}
                         
-                        <p class="flex items-center gap-1.5 font-medium text-slate-300">
+                        <!-- Отображение только иконки и числа -->
+                        <p class="flex items-center gap-1.5 font-medium text-slate-300" title="${t('label_russian_speakers')} ${ruCount}">
                             <i class="fa-solid fa-user-group text-sky-400"></i> 
-                            <span>${t('label_russian_speakers')}</span> 
                             <strong class="text-white font-bold">${ruCount}</strong>
                         </p>
 
