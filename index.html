@@ -210,17 +210,17 @@
                 </button>
             </div>
             <div class="space-y-2">
-                <!-- Изменить номер (иконка человечка) -->
+                <!-- Изменить номер -->
                 <button onclick="menuOptionEditNumber()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-user text-indigo-400 w-4"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
+                    <i class="fa-solid fa-hashtag text-indigo-400 w-4"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
                 </button>
                 <!-- Изменить ссылку на карту -->
                 <button onclick="menuOptionEditMap()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-map text-emerald-400 w-4"></i> <span data-i18n="menu_edit_territory_map">Изменить ссылку на карту</span>
                 </button>
-                <!-- Количество русскоязычных -->
+                <!-- Количество русскоговорящих (с иконкой человечка fa-user) -->
                 <button onclick="menuOptionEditRussianCount()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-language text-sky-400 w-4"></i> <span data-i18n="menu_edit_russian_count">Количество русскоязычных</span>
+                    <i class="fa-solid fa-user text-sky-400 w-4"></i> <span data-i18n="menu_edit_russian_count">Количество русскоговорящих</span>
                 </button>
             </div>
         </div>
@@ -307,14 +307,14 @@
                 prompt_edit_issued_date: "Дата выдачи (ДД.ММ.ГГГГ):",
                 prompt_edit_returned_date: "Дата возврата (ДД.ММ.ГГГГ или оставьте пустым, если в обработке):",
                 prompt_delete_history: "Удалить запись #",
-                prompt_russian_count: "Введите количество найденных русскоязычных:",
+                prompt_russian_count: "Введите количество найденных русскоговорящих:",
                 btn_cancel: "Отмена",
                 btn_ok: "ОК",
                 btn_confirm: "Подтвердить",
                 confirm_title: "Подтверждение",
                 menu_edit_number: "Изменить номер",
                 menu_edit_territory_map: "Изменить ссылку на карту",
-                menu_edit_russian_count: "Количество русскоязычных"
+                menu_edit_russian_count: "Количество русскоговорящих"
             },
             fr: {
                 app_title: "ASSISTANT DE TERRITOIRES",
@@ -1079,15 +1079,16 @@
                                     <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
                                 `}
                             </div>
-                            <span class="text-[11px] text-sky-400 font-semibold bg-sky-950/40 px-2 py-1 rounded-lg border border-sky-500/20" title="Количество русскоязычных">
-                                <i class="fa-solid fa-language mr-1"></i>${tObj.russianCount || 0}
+                            <span class="text-[11px] text-sky-400 font-semibold bg-sky-950/40 px-2 py-1 rounded-lg border border-sky-500/20" title="Количество русскоговорящих">
+                                <i class="fa-solid fa-user mr-1 text-[10px]"></i>${tObj.russianCount || 0}
                             </span>
                         </div>
                     </div>
 
                     <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-user"></i></button>
+                            <!-- Вернули иконку карандаша fa-pen -->
+                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         </div>
                         ${!isBusy 
