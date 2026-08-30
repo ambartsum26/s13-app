@@ -24,9 +24,9 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white p-4 sm:p-6 md:p-8">
 
     <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
-    <header class="max-w-6xl mx-auto bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+    <header class="max-w-6xl mx-auto bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
         <!-- Блок названия и статуса -->
-        <div class="flex items-center space-x-3.5 w-full md:w-auto justify-between md:justify-start">
+        <div class="flex items-center space-x-3.5 w-full lg:w-auto justify-between lg:justify-start">
             <div class="flex items-center space-x-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-600/30">
                     <i class="fa-solid fa-location-dot"></i>
@@ -40,11 +40,11 @@
             </div>
         </div>
 
-        <!-- Переключатель городов (Разбивка на 2 ряда / красивый флекс-контейнер) -->
-        <div class="w-full md:w-auto flex flex-wrap items-center gap-2 max-w-full justify-center bg-slate-950/40 p-1.5 rounded-2xl border border-slate-800/80" id="cities-container"></div>
+        <!-- Переключатель городов (Четкая сетка для отображения городов в 2 ряда / ровные колонки) -->
+        <div class="w-full lg:w-auto grid grid-cols-3 sm:grid-cols-6 lg:flex lg:flex-wrap items-center gap-1.5 bg-slate-950/40 p-1.5 rounded-2xl border border-slate-800/80" id="cities-container"></div>
 
         <!-- Кнопки управления и Язык (Правый блок) -->
-        <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+        <div class="flex items-center gap-2.5 w-full lg:w-auto justify-end">
             <button onclick="toggleLanguage()" title="Сменить язык / Changer de langue" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700/60 text-indigo-400 transition shadow-sm flex items-center gap-1.5">
                 <i class="fa-solid fa-globe"></i> <span id="lang-btn">FR</span>
             </button>
@@ -107,7 +107,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5">
-                <!-- КНОПКА СКАЧИВАНИЯ ОТЧЁТА (С иконкой скачивания) -->
+                <!-- КНОПКА СКАЧИВАНИЯ ОТЧЁТА (Иконка fa-download) -->
                 <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="p-2.5 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 rounded-2xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-download text-base"></i>
                 </button>
@@ -761,9 +761,9 @@
             Array.from(container.children).forEach(btn => {
                 const cId = btn.dataset.cityId;
                 if (cId === activeCityId) {
-                    btn.className = "px-3.5 py-2 rounded-xl text-xs transition inline-block text-center bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/30";
+                    btn.className = "px-2.5 py-1.5 rounded-xl text-xs transition text-center bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/30 truncate";
                 } else {
-                    btn.className = "px-3.5 py-2 rounded-xl text-xs transition inline-block text-center bg-transparent text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium";
+                    btn.className = "px-2.5 py-1.5 rounded-xl text-xs transition text-center bg-transparent text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium truncate";
                 }
             });
         }
