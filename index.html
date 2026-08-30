@@ -12,78 +12,62 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .scrollbar-none::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-none {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-            animation: fadeInUp 0.4s ease forwards;
-            opacity: 0;
-        }
+        .animate-fade-in { animation: fadeInUp 0.4s ease forwards; opacity: 0; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white p-4 sm:p-6 md:p-8">
 
-    <!-- ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ (TOASTS) -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
     <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
     <header class="max-w-6xl mx-auto bg-slate-900/85 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
-        <!-- Блок названия и статуса -->
         <div class="flex items-center space-x-3.5 w-full lg:w-auto justify-between lg:justify-start">
             <div class="flex items-center space-x-3.5">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-lg shadow-lg shadow-indigo-600/30">
                     <i class="fa-solid fa-location-dot"></i>
                 </div>
                 <div>
-                    <!-- ЗАГОЛОВОК КАПСЛОКОМ -->
                     <h1 class="font-extrabold text-base tracking-tight text-white leading-tight uppercase" data-i18n="app_title">АССИСТЕНТ ПО УЧАСТКАМ</h1>
                     <p class="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5 mt-0.5" id="db-status">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Подключение к Firebase...
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Подключение к Firebase...
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- Переключатель городов -->
-        <div class="grid grid-cols-2 gap-2 bg-slate-950/40 p-2 rounded-2xl border border-slate-800/80 w-full lg:w-auto" id="cities-container"></div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-950/40 p-2 rounded-2xl border border-slate-800/80 w-full lg:w-auto" id="cities-container"></div>
 
-        <!-- Кнопки управления и Язык -->
-        <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
-            
-            <!-- ТОГГЛ-КНОПКА ПЕРЕКЛЮЧЕНИЯ ЯЗЫКА -->
-            <button id="btn-toggle-lang" title="Сменить язык / Changer de langue" class="relative w-24 h-10 bg-slate-950 rounded-xl border border-slate-800 p-1 flex items-center justify-between select-none cursor-pointer overflow-hidden shadow-inner">
+        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end">
+            <button id="login-btn" onclick="handleLogin()" class="h-10 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl text-white transition shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login">Войти (Админ)</span>
+            </button>
+            <button id="logout-btn" onclick="handleLogout()" class="h-10 px-3.5 bg-rose-600/80 hover:bg-rose-500 text-xs font-semibold rounded-xl text-white transition shadow-sm hidden flex items-center gap-1.5">
+                <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="btn_logout">Выйти</span>
+            </button>
+
+            <button onclick="toggleLanguage()" title="Сменить язык" class="relative w-24 h-10 bg-slate-950 rounded-xl border border-slate-800 p-1 flex items-center justify-between select-none cursor-pointer overflow-hidden shadow-inner">
                 <div id="lang-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-emerald-500 rounded-lg transition-all duration-300 transform translate-x-0 shadow-md"></div>
                 <span id="lang-label-ru" class="relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300">RU</span>
                 <span id="lang-label-fr" class="relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300">FR</span>
             </button>
 
-            <button id="btn-add-city" class="h-10 px-3.5 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
+            <button onclick="addCity()" class="admin-only hidden h-10 px-3.5 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
                 <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_city">Город</span>
             </button>
             
-            <div class="relative">
-                <button id="btn-city-menu-toggle" title="Управление городом" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-xs rounded-xl border border-slate-700/60 text-slate-300 hover:text-white transition shadow-sm flex items-center justify-center">
+            <div class="relative admin-only hidden">
+                <button onclick="toggleCityMenu(event)" title="Управление городом" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-xs rounded-xl border border-slate-700/60 text-slate-300 hover:text-white transition shadow-sm flex items-center justify-center">
                     <i class="fa-solid fa-pen"></i>
                 </button>
                 <div id="city-dropdown-menu" class="hidden absolute right-0 mt-2.5 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 text-xs backdrop-blur-xl">
-                    <button id="btn-edit-city-name" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
+                    <button onclick="editCityName(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
                         <i class="fa-solid fa-signature text-indigo-400 w-4"></i> <span data-i18n="menu_edit_city">Изменить название</span>
                     </button>
-                    <button id="btn-edit-city-map" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
+                    <button onclick="editCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
                         <i class="fa-solid fa-earth-americas text-emerald-400 w-4"></i> <span data-i18n="menu_edit_map">Изменить ссылку на карту</span>
                     </button>
                 </div>
@@ -93,8 +77,6 @@
 
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-6xl mx-auto space-y-6">
-
-        <!-- ПАНЕЛЬ СТАТИСТИКИ И ДЕЙСТВИЙ -->
         <section class="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/90 backdrop-blur-xl border border-slate-800/90 p-4 md:p-5 rounded-3xl shadow-2xl">
             <div class="flex flex-wrap items-center gap-3 md:gap-4 text-xs font-medium">
                 <div class="flex items-center gap-2.5 bg-emerald-950/30 px-3.5 py-2 rounded-2xl border border-emerald-500/20 shadow-inner h-10">
@@ -128,9 +110,8 @@
                 </div>
             </div>
 
-            <!-- Действия -->
             <div class="flex flex-wrap items-center gap-2">
-                <button id="btn-export-register" title="Télécharger le registre officiel (S-13)" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 rounded-xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center">
+                <button onclick="exportOfficialRegister()" title="Скачать документ S-13" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 rounded-xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-download text-sm"></i>
                 </button>
 
@@ -138,550 +119,97 @@
                     <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="btn_general_map">Карта</span>
                 </a>
                 
-                <button id="btn-add-territory" class="h-10 px-4 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-xl transition shadow-md flex items-center gap-1.5 text-slate-200">
+                <button onclick="addTerritory()" class="admin-only hidden h-10 px-4 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-xl transition shadow-md flex items-center gap-1.5 text-slate-200">
                     <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_territory">Участок</span>
                 </button>
             </div>
         </section>
 
-        <!-- СЕТКА УЧАСТКОВ -->
         <section id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5"></section>
     </main>
 
-    <!-- МОДАЛЬНОЕ ОКНО ИСТОРИИ -->
+    <!-- МОДАЛЬНЫЕ ОКНА -->
     <div id="history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
-        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-4">
-                <h3 id="modal-title" class="font-bold text-base text-white" data-i18n="history_modal_title">История выдач участка</h3>
-                <button id="btn-close-history-x" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                <h3 id="modal-title" class="font-bold text-base text-white" data-i18n="history_modal_title">История участка</h3>
+                <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
-
             <div class="space-y-2">
                 <h4 class="text-xs font-bold text-slate-300" data-i18n="history_title">История выдач:</h4>
                 <div id="modal-history-list" class="space-y-2 max-h-[45vh] overflow-y-auto pr-1"></div>
             </div>
-
             <div class="flex justify-end pt-3 border-t border-slate-800/80">
-                <button id="btn-close-history" class="h-10 px-5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
+                <button onclick="closeHistoryModal()" class="h-10 px-5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
             </div>
         </div>
     </div>
 
-    <!-- УНИВЕРСАЛЬНОЕ КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ФОРМЫ / ПОДТВЕРЖДЕНИЯ -->
     <div id="custom-dialog-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
-        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-3">
-                <h3 id="custom-dialog-title" class="font-bold text-sm text-white">Заголовок</h3>
-                <button id="btn-close-dialog-x" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                <h3 id="custom-dialog-title" class="font-bold text-sm text-white">Ввод данных</h3>
+                <button onclick="closeCustomDialog(false)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
-            
-            <p id="custom-dialog-message" class="text-xs text-slate-300 leading-relaxed hidden"></p>
             <div id="custom-dialog-fields" class="space-y-3"></div>
-
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-800/80">
-                <button id="btn-dialog-cancel" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
-                <button id="btn-dialog-confirm" class="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-indigo-600/30" data-i18n="btn_ok">ОК</button>
+                <button onclick="closeCustomDialog(false)" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
+                <button onclick="closeCustomDialog(true)" class="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-indigo-600/30" data-i18n="btn_ok">ОК</button>
             </div>
         </div>
     </div>
 
-    <!-- КАСТОМНОЕ МЕНЮ РЕДАКТИРОВАНИЯ УЧАСТКА -->
+    <div id="custom-confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
+        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-lg flex-shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="font-bold text-sm text-white" data-i18n="confirm_title">Подтверждение</h3>
+            </div>
+            <p id="custom-confirm-message" class="text-xs text-slate-300 leading-relaxed"></p>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeCustomConfirm(false)" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
+                <button onclick="closeCustomConfirm(true)" class="h-10 px-5 bg-rose-600 hover:bg-rose-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-rose-600/30" data-i18n="btn_confirm">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
     <div id="territory-menu-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
-        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-3">
                 <h3 id="territory-menu-title" class="font-bold text-sm text-white">Участок</h3>
-                <button id="btn-close-territory-menu" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                <button onclick="closeTerritoryMenuModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
             <div class="space-y-2">
-                <!-- Изменить номер -->
-                <button id="btn-menu-edit-number" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                <button onclick="menuOptionEditNumber()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-hashtag text-indigo-400 w-4"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
                 </button>
-                <!-- Изменить ссылку на карту -->
-                <button id="btn-menu-edit-map" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                <button onclick="menuOptionEditMap()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-map text-emerald-400 w-4"></i> <span data-i18n="menu_edit_territory_map">Изменить ссылку на карту</span>
                 </button>
-                <!-- Количество русскоговорящих -->
-                <button id="btn-menu-edit-russian" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                <button onclick="menuOptionEditRussianCount()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-user text-sky-400 w-4"></i> <span data-i18n="menu_edit_russian_count">Количество русскоговорящих</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- FIREBASE SDK И СКРИПТ -->
+    <!-- FIREBASE SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { 
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // Всплывающие уведомления (Toast)
-        function showToast(message, type = 'error') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const bgColor = type === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' : 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200';
-            toast.className = `px-4 py-3 rounded-2xl border text-xs font-medium shadow-2xl backdrop-blur-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bgColor}`;
-            toast.innerText = message;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            const parts = dateStr.split('-');
-            if (parts.length === 3) {
-                return `${parts[2]}.${parts[1]}.${parts[0]}`;
-            }
-            return dateStr;
-        }
-
-        function parseInputDate(inputStr) {
-            if (!inputStr) return null;
-            const cleanStr = inputStr.trim();
-            if (cleanStr.includes('.')) {
-                const parts = cleanStr.split('.');
-                if (parts.length === 3) {
-                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                }
-            }
-            return cleanStr;
-        }
-
-        function getCurrentDateFormatted() {
-            const today = new Date();
-            const day = String(today.getDate()).padStart(2, '0');
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const year = today.getFullYear();
-            return `${year}-${month}-${day}`;
-        }
-
-        const translations = {
-            ru: {
-                app_title: "АССИСТЕНТ ПО УЧАСТКАМ",
-                db_connected: "● Firebase подключен",
-                db_connecting: "● Подключение к Firebase...",
-                btn_city: "Город",
-                menu_edit_city: "Изменить название",
-                menu_edit_map: "Изменить ссылку на карту",
-                st_free_label: "Свободно",
-                st_busy_label: "В обработке",
-                st_overdue_label: "Просрочено",
-                btn_general_map: "Карта",
-                btn_territory: "Участок",
-                history_modal_title: "История выдач участка",
-                modal_map_label: "Ссылка на карту участка",
-                btn_save: "Сохранить",
-                history_title: "История выдач:",
-                btn_close: "Закрыть",
-                card_territory: "Участок",
-                status_free: "Свободен",
-                status_busy: "В обработке",
-                status_overdue: "Просрочен",
-                days_text: "дн.",
-                card_map: "Карта",
-                no_map_link: "Ссылка не добавлена",
-                not_issued: "Никому не выдан",
-                btn_issue: "Выдать",
-                btn_return: "Сдать",
-                history_empty: "История пуста.",
-                issued_by: "Выдан:",
-                returned_by: "Сдан:",
-                in_progress: "В ОБРАБОТКЕ",
-                prompt_new_city: "Название нового города:",
-                prompt_new_city_map: "Ссылка на общую карту Google My Maps для этого города:",
-                prompt_edit_city_name: "Новое название города:",
-                prompt_edit_city_map: "Введите новую ссылку на общую карту Google My Maps для этого города:",
-                prompt_new_territory_num: "Номер участка (например: 78 или 12-А):",
-                prompt_new_territory_map: "Ссылка на карту этого участка (необязательно):",
-                prompt_edit_territory_num: "Новый номер участка:",
-                prompt_edit_territory_map: "Введите новую ссылку на карту участка:",
-                prompt_publisher_name: "ФИО возвещателя, которому выдаётся участок:",
-                prompt_edit_publisher: "ФИО возвещателя:",
-                prompt_edit_issued_date: "Дата выдачи (ДД.ММ.ГГГГ):",
-                prompt_edit_returned_date: "Дата возврата (ДД.ММ.ГГГГ или оставьте пустым, если в обработке):",
-                prompt_delete_history: "Удалить запись #",
-                prompt_russian_count: "Введите количество найденных русскоговорящих:",
-                btn_cancel: "Отмена",
-                btn_ok: "ОК",
-                btn_confirm: "Подтвердить",
-                confirm_title: "Подтверждение",
-                menu_edit_number: "Изменить номер",
-                menu_edit_territory_map: "Изменить ссылку на карту",
-                menu_edit_russian_count: "Количество русскоговорящих",
-                err_save: "Ошибка при сохранении данных.",
-                err_number_invalid: "Пожалуйста, введите корректное число."
-            },
-            fr: {
-                app_title: "ASSISTANT DE TERRITOIRES",
-                db_connected: "● Firebase connecté",
-                db_connecting: "● Connexion à Firebase...",
-                btn_city: "Ville",
-                menu_edit_city: "Modifier le nom",
-                menu_edit_map: "Modifier le lien de la carte",
-                st_free_label: "Libres",
-                st_busy_label: "Attribués",
-                st_overdue_label: "En retard",
-                btn_general_map: "Carte",
-                btn_territory: "Territoire",
-                history_modal_title: "Historique du territoire",
-                modal_map_label: "Lien de la carte du territoire",
-                btn_save: "Enregistrer",
-                history_title: "Historique des attributions :",
-                btn_close: "Fermer",
-                card_territory: "Territoire",
-                status_free: "Libre",
-                status_busy: "Attribué",
-                status_overdue: "En retard",
-                days_text: "j.",
-                card_map: "Carte",
-                no_map_link: "Aucun lien",
-                not_issued: "Non attribué",
-                btn_issue: "Attribuer",
-                btn_return: "Rendre",
-                history_empty: "L'historique est vide.",
-                issued_by: "Attribué :",
-                returned_by: "Rendu :",
-                in_progress: "EN COURS",
-                prompt_new_city: "Nom de la nouvelle ville :",
-                prompt_new_city_map: "Lien de la carte Google My Maps pour cette ville :",
-                prompt_edit_city_name: "Nouveau nom de la ville :",
-                prompt_edit_city_map: "Entrez le nouveau lien de la carte générale Google My Maps :",
-                prompt_new_territory_num: "Numéro du territoire (ex: 78 ou 12-A) :",
-                prompt_new_territory_map: "Lien vers la carte de ce territoire (facultatif) :",
-                prompt_edit_territory_num: "Nouveau numéro du territoire :",
-                prompt_edit_territory_map: "Entrez le nouveau lien de la carte du territoire :",
-                prompt_publisher_name: "Nom du proclamateur :",
-                prompt_edit_publisher: "Nom du proclamateur :",
-                prompt_edit_issued_date: "Date d'attribution (JJ.MM.AAAA) :",
-                prompt_edit_returned_date: "Date de retour (JJ.MM.AAAA ou laisser vide si en cours) :",
-                prompt_delete_history: "Supprimer l'entrée n°",
-                prompt_russian_count: "Entrez le nombre de russophones trouvés :",
-                btn_cancel: "Annuler",
-                btn_ok: "OK",
-                btn_confirm: "Confirmer",
-                confirm_title: "Confirmation",
-                menu_edit_number: "Modifier le numéro",
-                menu_edit_territory_map: "Modifier le lien de la carte",
-                menu_edit_russian_count: "Nombre de russophones",
-                err_save: "Erreur lors de l'enregistrement des données.",
-                err_number_invalid: "Veuillez entrer un nombre valide."
-            }
-        };
-
-        let currentLang = 'ru';
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'ru' ? 'fr' : 'ru';
-            document.getElementById('html-root').lang = currentLang;
-            
-            const slider = document.getElementById('lang-slider');
-            const labelRu = document.getElementById('lang-label-ru');
-            const labelFr = document.getElementById('lang-label-fr');
-
-            if (currentLang === 'fr') {
-                slider.classList.remove('translate-x-0', 'bg-emerald-500');
-                slider.classList.add('translate-x-[calc(100%+4px)]', 'bg-rose-500');
-                
-                labelRu.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300';
-                labelFr.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300';
-            } else {
-                slider.classList.remove('translate-x-[calc(100%+4px)]', 'bg-rose-500');
-                slider.classList.add('translate-x-0', 'bg-emerald-500');
-                
-                labelRu.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300';
-                labelFr.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300';
-            }
-            
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (translations[currentLang][key]) {
-                    el.innerText = translations[currentLang][key];
-                }
-            });
-
-            if (citiesData.length > 0) renderCities();
-            if (territoriesData.length > 0) renderTerritories();
-            if (currentEditingTerritoryId) showHistory(currentEditingTerritoryId);
-        }
-
-        function t(key) {
-            return translations[currentLang][key] || key;
-        }
-
-        // УНИВЕРСАЛЬНЫЙ ДИАЛОГ (Для ввода данных и подтверждения)
-        let customDialogResolver = null;
-        function showCustomDialog(title, fields = [], isConfirm = false, message = '') {
-            return new Promise((resolve) => {
-                customDialogResolver = resolve;
-                document.getElementById('custom-dialog-title').innerText = title;
-                
-                const messageEl = document.getElementById('custom-dialog-message');
-                if (isConfirm && message) {
-                    messageEl.innerText = message;
-                    messageEl.classList.remove('hidden');
-                } else {
-                    messageEl.classList.add('hidden');
-                }
-
-                const fieldsContainer = document.getElementById('custom-dialog-fields');
-                fieldsContainer.innerHTML = '';
-
-                fields.forEach((f, idx) => {
-                    const fieldWrapper = document.createElement('div');
-                    fieldWrapper.className = 'space-y-1';
-                    
-                    const label = document.createElement('label');
-                    label.className = 'text-[10px] text-slate-400 font-bold uppercase tracking-wider block';
-                    label.innerText = f.label;
-
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.id = `custom-field-${idx}`;
-                    input.value = f.defaultValue || '';
-                    input.placeholder = f.placeholder || '';
-                    input.className = 'w-full h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition shadow-inner';
-
-                    fieldWrapper.appendChild(label);
-                    fieldWrapper.appendChild(input);
-                    fieldsContainer.appendChild(fieldWrapper);
-                });
-
-                const confirmBtn = document.getElementById('btn-dialog-confirm');
-                confirmBtn.innerText = isConfirm ? t('btn_confirm') : t('btn_ok');
-                confirmBtn.className = isConfirm 
-                    ? 'h-10 px-5 bg-rose-600 hover:bg-rose-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-rose-600/30'
-                    : 'h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-indigo-600/30';
-
-                document.getElementById('custom-dialog-modal').classList.remove('hidden');
-                document.getElementById('custom-dialog-modal').classList.add('flex');
-                
-                const firstInput = document.getElementById('custom-field-0');
-                if (firstInput) firstInput.focus();
-            });
-        }
-
-        function closeCustomDialog(isSuccess) {
-            document.getElementById('custom-dialog-modal').classList.add('hidden');
-            document.getElementById('custom-dialog-modal').classList.remove('flex');
-            
-            if (!customDialogResolver) return;
-
-            if (!isSuccess) {
-                customDialogResolver(null);
-            } else {
-                const inputs = document.querySelectorAll('#custom-dialog-fields input');
-                if (inputs.length === 0) {
-                    customDialogResolver(true);
-                } else {
-                    const values = Array.from(inputs).map(inp => inp.value);
-                    customDialogResolver(values);
-                }
-            }
-            customDialogResolver = null;
-        }
-
-        let activeTerritoryForMenu = null;
-        function openTerritoryMenu(id) {
-            activeTerritoryForMenu = territoriesData.find(item => item.id === id);
-            if (!activeTerritoryForMenu) return;
-            document.getElementById('territory-menu-title').innerText = `${t('card_territory')} №${activeTerritoryForMenu.number}`;
-            document.getElementById('territory-menu-modal').classList.remove('hidden');
-            document.getElementById('territory-menu-modal').classList.add('flex');
-        }
-
-        function closeTerritoryMenuModal() {
-            document.getElementById('territory-menu-modal').classList.add('hidden');
-            document.getElementById('territory-menu-modal').classList.remove('flex');
-        }
-
-        async function menuOptionEditNumber() {
-            closeTerritoryMenuModal();
-            if (!activeTerritoryForMenu) return;
-            const res = await showCustomDialog(t('menu_edit_number'), [
-                { label: t('prompt_edit_territory_num'), defaultValue: activeTerritoryForMenu.number }
-            ]);
-            if (res && res[0] && res[0].trim() !== '') {
-                try {
-                    await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { number: res[0].trim() });
-                } catch (e) {
-                    showToast(t('err_save'));
-                }
-            }
-        }
-
-        async function menuOptionEditMap() {
-            closeTerritoryMenuModal();
-            if (!activeTerritoryForMenu) return;
-            const res = await showCustomDialog(t('menu_edit_territory_map'), [
-                { label: t('modal_map_label'), defaultValue: activeTerritoryForMenu.mapUrl || '', placeholder: 'https://www.google.com/maps/d/...' }
-            ]);
-            if (res) {
-                try {
-                    await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { mapUrl: res[0].trim() });
-                } catch (e) {
-                    showToast(t('err_save'));
-                }
-            }
-        }
-
-        async function menuOptionEditRussianCount() {
-            closeTerritoryMenuModal();
-            if (!activeTerritoryForMenu) return;
-            const currentCount = activeTerritoryForMenu.russianCount || 0;
-            const res = await showCustomDialog(t('menu_edit_russian_count'), [
-                { label: t('prompt_russian_count'), defaultValue: String(currentCount) }
-            ]);
-            if (res !== null && res[0] !== undefined) {
-                const newCount = parseInt(res[0], 10);
-                if (!isNaN(newCount) && newCount >= 0) {
-                    try {
-                        await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { russianCount: newCount });
-                    } catch (e) {
-                        showToast(t('err_save'));
-                    }
-                } else {
-                    showToast(t('err_number_invalid'));
-                }
-            }
-        }
-
-        function exportOfficialRegister() {
-            const city = citiesData.find(c => c.id === activeCityId);
-            if (!city) return;
-
-            let htmlContent = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-            <head>
-                <meta charset="UTF-8">
-                <title>S-13</title>
-                <style>
-                    body { font-family: Arial, sans-serif; font-size: 9pt; margin: 20px; color: #000; }
-                    h2 { text-align: center; margin-bottom: 2px; font-size: 13pt; font-weight: bold; }
-                    .subtitle { font-weight: bold; margin-bottom: 15px; font-size: 10pt; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 5px; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                    th, td { border: 0.5pt solid #000; padding: 3px; text-align: center; vertical-align: middle; font-size: 8pt; }
-                    th { background-color: #f2f2f2; font-weight: bold; }
-                    .publisher-row { font-weight: bold; font-size: 8.5pt; background-color: #fafafa; text-align: center; height: 18px; }
-                    .note { font-size: 7.5pt; margin-top: 15px; font-style: italic; }
-                    .footer-code { font-size: 7.5pt; margin-top: 5px; }
-                </style>
-            </head>
-            <body>
-                <h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2>
-                <div class="subtitle">Année de service : ${new Date().getFullYear()} &nbsp;&nbsp;&nbsp;&nbsp; Ville : ${city.name}</div>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th rowspan="2" style="width: 35px;">Terr. n°</th>
-                            <th rowspan="2" style="width: 80px;">Parcourus pour la dernière fois le*</th>
-                            <th colspan="2">Attribué à</th>
-                            <th colspan="2">Attribué à</th>
-                            <th colspan="2">Attribué à</th>
-                            <th colspan="2">Attribué à</th>
-                        </tr>
-                        <tr>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            territoriesData.forEach(tObj => {
-                const history = tObj.history || [];
-                let publisherRowHtml = "";
-                let datesRowHtml = "";
-                
-                for (let i = 0; i < 4; i++) {
-                    const h = history[i];
-                    if (h) {
-                        publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
-                        const issuedDate = formatDate(h.issuedAt) || "";
-                        const returnedDate = h.returnedAt ? formatDate(h.returnedAt) : 'En cours';
-                        datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
-                    } else {
-                        publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
-                        datesRowHtml += `<td></td><td></td>`;
-                    }
-                }
-
-                let lastWalkedDate = "";
-                const completedItems = history.filter(h => h.returnedAt);
-                if (completedItems.length > 0) {
-                    lastWalkedDate = formatDate(completedItems[completedItems.length - 1].returnedAt);
-                }
-
-                htmlContent += `
-                    <tr>
-                        <td rowspan="2"><b>${tObj.number}</b></td>
-                        <td rowspan="2">${lastWalkedDate}</td>
-                        ${publisherRowHtml}
-                    </tr>
-                    <tr>
-                        ${datesRowHtml}
-                    </tr>
-                `;
-            });
-
-            const totalRows = Math.max(territoriesData.length, 15);
-            for (let i = territoriesData.length; i < totalRows; i++) {
-                htmlContent += `
-                    <tr>
-                        <td rowspan="2">&nbsp;</td>
-                        <td rowspan="2"></td>
-                        <td colspan="2" class="publisher-row"></td>
-                        <td colspan="2" class="publisher-row"></td>
-                        <td colspan="2" class="publisher-row"></td>
-                        <td colspan="2" class="publisher-row"></td>
-                    </tr>
-                    <tr>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                    </tr>
-                `;
-            }
-
-            htmlContent += `
-                    </tbody>
-                </table>
-                <div class="note">
-                    * Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.
-                </div>
-                <div class="footer-code">S-13-F 1/22</div>
-            </body>
-            </html>
-            `;
-
-            const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `S-13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.doc`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        import { 
+            getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
@@ -689,109 +217,130 @@
             projectId: "fir-13-app",
             storageBucket: "fir-13-app.firebasestorage.app",
             messagingSenderId: "1080215970738",
-            appId: "1:1080215970738:web:2d66b3b8a9ea26f1e6baab",
-            measurementId: "G-70HBSY6MC6"
+            appId: "1:1080215970738:web:2d66b3b8a9ea26f1e6baab"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
+        let isAdmin = false;
         let activeCityId = null;
         let citiesData = [];
         let territoriesData = [];
         let currentEditingTerritoryId = null;
+        let currentLang = 'ru';
 
-        const valenceTerritories = [
-            {number: "1", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
-            {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]}
-        ];
-        const guilherandTerritories = [
-            {number: "1", mapUrl: "https://www.google.com/maps/d/edit?mid=1lZ2YTYdPAsSnnuqRZm4GojR7UCsr95c&usp=drive_link", history: [{publisher: "Stella", issuedAt: "2025-04-27", returnedAt: null}]}
-        ];
-        const saintMarcelTerritories = [
-            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]}
-        ];
-        const saintPerayTerritories = [
-            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
-            {number: "2", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
-            {number: "3", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
-            {number: "4", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
-            {number: "5", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-10-31", returnedAt: "2025-11-23"}]},
-            {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-            {number: "7", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-11", returnedAt: "2025-12-14"}]},
-            {number: "8", mapUrl: "", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-11-07", returnedAt: "2026-01-10"}]},
-            {number: "9", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-06", returnedAt: "2025-11-08"}]},
-            {number: "10", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-05", returnedAt: "2025-12-14"}]},
-            {number: "11", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-            {number: "12", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-            {number: "13", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
-            {number: "14", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
-            {number: "15", mapUrl: "", history: [{publisher: "Valera (+участок 21)", issuedAt: "2026-01-16", returnedAt: "2026-05-24"}]},
-            {number: "16", mapUrl: "", history: [{publisher: "Brozik Zinaida", issuedAt: "2025-11-24", returnedAt: "2025-12-21"}]},
-            {number: "17", mapUrl: "", history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-11-24", returnedAt: "2026-01-03"}]},
-            {number: "18", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
-            {number: "19", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
-            {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
-        ];
-        const tournonTerritories = Array.from({ length: 22 }, (_, index) => ({
-            number: String(index + 1),
-            mapUrl: "",
-            history: []
-        }));
-        const romansTerritories = Array.from({ length: 40 }, (_, index) => ({
-            number: String(index + 1),
-            mapUrl: "",
-            history: []
-        }));
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            return parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
+        }
+
+        function parseInputDate(inputStr) {
+            if (!inputStr) return null;
+            const cleanStr = inputStr.trim();
+            if (cleanStr.includes('.')) {
+                const parts = cleanStr.split('.');
+                if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+            return cleanStr;
+        }
+
+        function getCurrentDateFormatted() {
+            const today = new Date();
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        }
+
+        const translations = {
+            ru: {
+                app_title: "АССИСТЕНТ ПО УЧАСТКАМ", db_connected: "● Firebase подключен", db_connecting: "● Подключение...",
+                btn_login: "Войти (Админ)", btn_logout: "Выйти", btn_city: "Город", menu_edit_city: "Изменить название",
+                menu_edit_map: "Изменить карту", st_free_label: "Свободно", st_busy_label: "В обработке",
+                st_overdue_label: "Просрочено", btn_general_map: "Карта", btn_territory: "Участок",
+                history_modal_title: "История участка", modal_map_label: "Ссылка на карту", btn_save: "Сохранить",
+                history_title: "История выдач:", btn_close: "Закрыть", card_territory: "Участок", status_free: "Свободен",
+                status_busy: "В обработке", status_overdue: "Просрочен", days_text: "дн.", card_map: "Карта",
+                no_map_link: "Ссылка отсутствует", not_issued: "Никому не выдан", btn_issue: "Выдать", btn_return: "Сдать",
+                history_empty: "История пуста.", issued_by: "Выдан:", returned_by: "Сдан:", in_progress: "В ОБРАБОТКЕ",
+                prompt_login_email: "Email:", prompt_login_password: "Пароль:", prompt_new_city: "Название города:",
+                prompt_new_city_map: "Ссылка на карту города:", prompt_edit_city_name: "Новое название:",
+                prompt_edit_city_map: "Новая ссылка на карту:", prompt_new_territory_num: "Номер участка:",
+                prompt_new_territory_map: "Ссылка на карту участка:", prompt_edit_territory_num: "Новый номер:",
+                prompt_edit_territory_map: "Новая ссылка:", prompt_publisher_name: "ФИО возвещателя:",
+                prompt_edit_publisher: "ФИО возвещателя:", prompt_edit_issued_date: "Дата выдачи (ДД.ММ.ГГГГ):",
+                prompt_edit_returned_date: "Дата возврата (ДД.ММ.ГГГГ):", prompt_delete_history: "Удалить запись #",
+                prompt_russian_count: "Количество русскоговорящих:", btn_cancel: "Отмена", btn_ok: "ОК",
+                btn_confirm: "Подтвердить", confirm_title: "Подтверждение", menu_edit_number: "Изменить номер",
+                menu_edit_territory_map: "Изменить ссылку на карту", menu_edit_russian_count: "Количество русскоговорящих"
+            },
+            fr: {
+                app_title: "ASSISTANT DE TERRITOIRES", db_connected: "● Firebase connecté", db_connecting: "● Connexion...",
+                btn_login: "Connexion (Admin)", btn_logout: "Déconnexion", btn_city: "Ville", menu_edit_city: "Modifier le nom",
+                menu_edit_map: "Modifier le lien", st_free_label: "Libres", st_busy_label: "Attribués",
+                st_overdue_label: "En retard", btn_general_map: "Carte", btn_territory: "Territoire",
+                history_modal_title: "Historique", modal_map_label: "Lien de la carte", btn_save: "Enregistrer",
+                history_title: "Historique des attributions :", btn_close: "Fermer", card_territory: "Territoire", status_free: "Libre",
+                status_busy: "Attribué", status_overdue: "En retard", days_text: "j.", card_map: "Carte",
+                no_map_link: "Aucun lien", not_issued: "Non attribué", btn_issue: "Attribuer", btn_return: "Rendre",
+                history_empty: "L'historique est vide.", issued_by: "Attribué :", returned_by: "Rendu :", in_progress: "EN COURS",
+                prompt_login_email: "E-mail :", prompt_login_password: "Mot de passe :", prompt_new_city: "Nom de la ville :",
+                prompt_new_city_map: "Lien de la carte :", prompt_edit_city_name: "Nouveau nom :",
+                prompt_edit_city_map: "Nouveau lien :", prompt_new_territory_num: "Numéro du territoire :",
+                prompt_new_territory_map: "Lien vers la carte :", prompt_edit_territory_num: "Nouveau numéro :",
+                prompt_edit_territory_map: "Nouveau lien :", prompt_publisher_name: "Nom du proclamateur :",
+                prompt_edit_publisher: "Nom du proclamateur :", prompt_edit_issued_date: "Date d'attribution (JJ.MM.AAAA) :",
+                prompt_edit_returned_date: "Date de retour (JJ.MM.AAAA) :", prompt_delete_history: "Supprimer l'entrée n°",
+                prompt_russian_count: "Nombre de russophones :", btn_cancel: "Annuler", btn_ok: "OK",
+                btn_confirm: "Confirmer", confirm_title: "Confirmation", menu_edit_number: "Modifier le numéro",
+                menu_edit_territory_map: "Modifier le lien", menu_edit_russian_count: "Nombre de russophones"
+            }
+        };
+
+        function t(key) { return translations[currentLang][key] || key; }
+
+        window.toggleLanguage = () => {
+            currentLang = currentLang === 'ru' ? 'fr' : 'ru';
+            document.getElementById('html-root').lang = currentLang;
+            const slider = document.getElementById('lang-slider');
+            if (currentLang === 'fr') {
+                slider.classList.remove('translate-x-0', 'bg-emerald-500');
+                slider.classList.add('translate-x-[calc(100%+4px)]', 'bg-rose-500');
+            } else {
+                slider.classList.remove('translate-x-[calc(100%+4px)]', 'bg-rose-500');
+                slider.classList.add('translate-x-0', 'bg-emerald-500');
+            }
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) el.innerText = translations[currentLang][key];
+            });
+            if (citiesData.length > 0) renderCities();
+            if (territoriesData.length > 0) renderTerritories();
+        };
+
+        // Отслеживание аутентификации
+        onAuthStateChanged(auth, async (user) => {
+            isAdmin = !!user;
+            document.querySelectorAll(".admin-only").forEach(el => el.classList.toggle("hidden", !isAdmin));
+            document.getElementById("login-btn").classList.toggle("hidden", isAdmin);
+            document.getElementById("logout-btn").classList.toggle("hidden", !isAdmin);
+
+            if (citiesData.length === 0) {
+                initApp();
+            } else {
+                renderTerritories();
+            }
+        });
 
         async function initApp() {
             try {
                 const citiesSnapshot = await getDocs(collection(db, "cities"));
                 citiesData = citiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                const findCity = (searchName) => citiesData.find(c => c.name && c.name.normalize("NFC") === searchName.normalize("NFC"));
-
-                const cityMaps = {
-                    "Valence": "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13",
-                    "Guilherand-Granges": "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low",
-                    "Saint-Marcel-lès-Valence": "",
-                    "Saint-Péray": "",
-                    "Tournon-sur-Rhône": "",
-                    "Romans-sur-Isère": ""
-                };
-
-                for (const [cityName, mapUrl] of Object.entries(cityMaps)) {
-                    let existingCity = findCity(cityName);
-                    if (!existingCity) {
-                        let territoriesList = [];
-                        if (cityName === "Valence") territoriesList = valenceTerritories;
-                        if (cityName === "Guilherand-Granges") territoriesList = guilherandTerritories;
-                        if (cityName === "Saint-Marcel-lès-Valence") territoriesList = saintMarcelTerritories;
-                        if (cityName === "Saint-Péray") territoriesList = saintPerayTerritories;
-                        if (cityName === "Tournon-sur-Rhône") territoriesList = tournonTerritories;
-                        if (cityName === "Romans-sur-Isère") territoriesList = romansTerritories;
-
-                        const ref = await addDoc(collection(db, "cities"), { name: cityName, mapUrl: mapUrl });
-                        for (const item of territoriesList) {
-                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", russianCount: 0, history: item.history });
-                        }
-                    } else {
-                        if (mapUrl && existingCity.mapUrl !== mapUrl) {
-                            await updateDoc(doc(db, "cities", existingCity.id), { mapUrl: mapUrl });
-                        }
-                    }
-                }
-
-                const updatedCitiesSnapshot = await getDocs(collection(db, "cities"));
-                citiesData = updatedCitiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
                 document.getElementById('db-status').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${t('db_connected').replace('● ', '')}`;
 
-                if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
-                    activeCityId = citiesData[0]?.id || null;
-                }
-
-                if (activeCityId) {
+                if (citiesData.length > 0) {
+                    activeCityId = citiesData[0].id;
                     renderCities();
                     subscribeToTerritories();
                 }
@@ -799,284 +348,178 @@
                 onSnapshot(collection(db, "cities"), (snapshot) => {
                     citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCities();
-                }, (error) => {
-                    showToast(t('err_save'));
                 });
-
             } catch (error) {
-                console.error("Firebase connection error:", error);
-                document.getElementById('db-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> ● Ошибка подключения';
-                showToast("Ошибка подключения к базе данных");
+                console.error("Firebase Auth/DB Error:", error);
+                document.getElementById('db-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> Ошибка подключения';
             }
         }
 
         let unsubscribeTerritories = null;
         function subscribeToTerritories() {
-            if (typeof unsubscribeTerritories === 'function') {
-                unsubscribeTerritories();
-                unsubscribeTerritories = null;
-            }
-
+            if (unsubscribeTerritories) unsubscribeTerritories();
             if (!activeCityId) return;
 
-            const q = query(
-                collection(db, "territories"), 
-                where("cityId", "==", activeCityId)
-            );
-
+            const q = query(collection(db, "territories"), where("cityId", "==", activeCityId));
             unsubscribeTerritories = onSnapshot(q, (snapshot) => {
                 territoriesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                // Сортировка на клиенте по числовому значению номера
                 territoriesData.sort((a, b) => parseInt(a.number) - parseInt(b.number) || a.number.localeCompare(b.number));
                 renderTerritories();
-                
-                if (currentEditingTerritoryId) {
-                    showHistory(currentEditingTerritoryId);
-                }
             }, (error) => {
-                showToast(t('err_save'));
+                console.error("Firestore Listen Error:", error);
             });
         }
 
-        function toggleCityMenu(event) {
-            if (event) event.stopPropagation();
-            document.getElementById('city-dropdown-menu').classList.toggle('hidden');
+        // Авторизация
+        window.handleLogin = async () => {
+            const res = await showCustomDialog(t('btn_login'), [
+                { label: t('prompt_login_email'), placeholder: 'admin@example.com' },
+                { label: t('prompt_login_password'), type: 'password' }
+            ]);
+            if (!res || !res[0] || !res[1]) return;
+            try {
+                await signInWithEmailAndPassword(auth, res[0].trim(), res[1].trim());
+            } catch (err) {
+                alert("Ошибка входа: " + err.message);
+            }
+        };
+
+        window.handleLogout = async () => {
+            try { await signOut(auth); } catch (err) { console.error(err); }
+        };
+
+        // UI Диалоги
+        let customDialogResolver = null;
+        function showCustomDialog(title, fields) {
+            return new Promise((resolve) => {
+                customDialogResolver = resolve;
+                document.getElementById('custom-dialog-title').innerText = title;
+                const fieldsContainer = document.getElementById('custom-dialog-fields');
+                fieldsContainer.innerHTML = '';
+
+                fields.forEach((f, idx) => {
+                    const fieldWrapper = document.createElement('div');
+                    fieldWrapper.className = 'space-y-1';
+                    fieldWrapper.innerHTML = `
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">${f.label}</label>
+                        <input type="${f.type || 'text'}" id="custom-field-${idx}" value="${f.defaultValue || ''}" placeholder="${f.placeholder || ''}" class="w-full h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                    `;
+                    fieldsContainer.appendChild(fieldWrapper);
+                });
+
+                document.getElementById('custom-dialog-modal').classList.remove('hidden');
+                document.getElementById('custom-dialog-modal').classList.add('flex');
+            });
         }
 
-        function closeCityMenu() {
-            const menu = document.getElementById('city-dropdown-menu');
-            if (menu) menu.classList.add('hidden');
+        window.closeCustomDialog = (isSuccess) => {
+            document.getElementById('custom-dialog-modal').classList.add('hidden');
+            document.getElementById('custom-dialog-modal').classList.remove('flex');
+            if (!customDialogResolver) return;
+            if (!isSuccess) {
+                customDialogResolver(null);
+            } else {
+                const inputs = document.querySelectorAll('#custom-dialog-fields input');
+                customDialogResolver(Array.from(inputs).map(inp => inp.value));
+            }
+            customDialogResolver = null;
+        };
+
+        let customConfirmResolver = null;
+        function showCustomConfirm(message) {
+            return new Promise((resolve) => {
+                customConfirmResolver = resolve;
+                document.getElementById('custom-confirm-message').innerText = message;
+                document.getElementById('custom-confirm-modal').classList.remove('hidden');
+                document.getElementById('custom-confirm-modal').classList.add('flex');
+            });
         }
 
-        async function addCity() {
+        window.closeCustomConfirm = (result) => {
+            document.getElementById('custom-confirm-modal').classList.add('hidden');
+            document.getElementById('custom-confirm-modal').classList.remove('flex');
+            if (customConfirmResolver) customConfirmResolver(result);
+            customConfirmResolver = null;
+        };
+
+        // Операции с базой данных (с защитой try...catch)
+        window.addCity = async () => {
+            if (!isAdmin) return;
             const res = await showCustomDialog(t('btn_city'), [
-                { label: t('prompt_new_city'), placeholder: 'Valence' },
-                { label: t('prompt_new_city_map'), defaultValue: 'https://www.google.com/maps/d/' }
+                { label: t('prompt_new_city') },
+                { label: t('prompt_new_city_map') }
             ]);
-            if (!res || !res[0] || !res[0].trim()) return;
+            if (!res || !res[0]?.trim()) return;
             try {
-                await addDoc(collection(db, "cities"), { name: res[0].trim(), mapUrl: res[1] ? res[1].trim() : '#' });
-            } catch (e) {
-                showToast(t('err_save'));
-            }
-        }
+                await addDoc(collection(db, "cities"), { name: res[0].trim(), mapUrl: res[1]?.trim() || '#' });
+            } catch (e) { alert("Ошибка при добавлении: " + e.message); }
+        };
 
-        async function editCityName() {
-            const city = citiesData.find(c => c.id === activeCityId);
-            if (!city) return;
-            const res = await showCustomDialog(t('menu_edit_city'), [
-                { label: t('prompt_edit_city_name'), defaultValue: city.name }
-            ]);
-            if (!res || !res[0] || !res[0].trim()) return;
-            try {
-                await updateDoc(doc(db, "cities", activeCityId), { name: res[0].trim() });
-            } catch (e) {
-                showToast(t('err_save'));
-            }
-        }
-
-        async function editCityMap() {
-            const city = citiesData.find(c => c.id === activeCityId);
-            if (!city) return;
-            const res = await showCustomDialog(t('menu_edit_map'), [
-                { label: t('prompt_edit_city_map'), defaultValue: city.mapUrl || '' }
-            ]);
-            if (!res) return;
-            try {
-                await updateDoc(doc(db, "cities", activeCityId), { mapUrl: res[0].trim() });
-            } catch (e) {
-                showToast(t('err_save'));
-            }
-        }
-
-        async function addTerritory() {
+        window.addTerritory = async () => {
+            if (!isAdmin || !activeCityId) return;
             const res = await showCustomDialog(t('btn_territory'), [
-                { label: t('prompt_new_territory_num'), placeholder: '78' },
-                { label: t('prompt_new_territory_map'), placeholder: 'https://www.google.com/maps/d/...' }
+                { label: t('prompt_new_territory_num') },
+                { label: t('prompt_new_territory_map') }
             ]);
-            if (!res || !res[0] || !res[0].trim()) return;
+            if (!res || !res[0]?.trim()) return;
             try {
                 await addDoc(collection(db, "territories"), {
                     cityId: activeCityId,
                     number: res[0].trim(),
-                    mapUrl: res[1] ? res[1].trim() : '',
+                    mapUrl: res[1]?.trim() || '',
                     russianCount: 0,
                     history: []
                 });
-            } catch (e) {
-                showToast(t('err_save'));
-            }
-        }
+            } catch (e) { alert("Ошибка сохранения: " + e.message); }
+        };
 
-        async function issueTerritory(id) {
+        window.issueTerritory = async (id) => {
+            if (!isAdmin) return;
             const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
-            const res = await showCustomDialog(`${t('btn_issue')} - ${t('card_territory')} №${tObj.number}`, [
-                { label: t('prompt_publisher_name'), placeholder: 'Иван Иванов' }
-            ]);
-            if (!res || !res[0] || !res[0].trim()) return;
-            const history = tObj.history || [];
-            history.push({ publisher: res[0].trim(), issuedAt: getCurrentDateFormatted(), returnedAt: null });
+            const res = await showCustomDialog(`${t('btn_issue')} №${tObj.number}`, [{ label: t('prompt_publisher_name') }]);
+            if (!res || !res[0]?.trim()) return;
+            
             try {
+                const history = [...(tObj.history || []), { publisher: res[0].trim(), issuedAt: getCurrentDateFormatted(), returnedAt: null }];
                 await updateDoc(doc(db, "territories", id), { history });
-            } catch (e) {
-                showToast(t('err_save'));
-            }
-        }
+            } catch (e) { alert("Недостаточно прав для операции."); }
+        };
 
-        async function returnTerritory(id) {
+        window.returnTerritory = async (id) => {
+            if (!isAdmin) return;
             const tObj = territoriesData.find(item => item.id === id);
-            if (!tObj) return;
-            const history = tObj.history || [];
-            if (history.length > 0) {
-                history[history.length - 1].returnedAt = getCurrentDateFormatted();
-                try {
-                    await updateDoc(doc(db, "territories", id), { history });
-                } catch (e) {
-                    showToast(t('err_save'));
-                }
-            }
-        }
-
-        function showHistory(id) {
-            currentEditingTerritoryId = id;
-            const tObj = territoriesData.find(item => item.id === id);
-            if (!tObj) return;
-
-            document.getElementById('modal-title').innerText = `${t('history_modal_title')} №${tObj.number}`;
-
-            const listContainer = document.getElementById('modal-history-list');
-            listContainer.innerHTML = '';
-
-            if (!tObj.history || tObj.history.length === 0) {
-                listContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-2">${t('history_empty')}</p>`;
-            } else {
-                tObj.history.forEach((h, index) => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'bg-slate-950/80 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 text-xs shadow-sm';
-                    
-                    itemDiv.innerHTML = `
-                        <div class="space-y-0.5">
-                            <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
-                            <p class="text-slate-400 text-[11px]">${t('issued_by')} <span class="text-slate-200">${formatDate(h.issuedAt)}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${formatDate(h.returnedAt) || t('in_progress')}</span></p>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button data-action="edit-history" data-index="${index}" title="Редактировать запись" class="w-8 h-8 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button data-action="delete-history" data-index="${index}" title="Удалить запись" class="w-8 h-8 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
-                        </div>
-                    `;
-                    listContainer.appendChild(itemDiv);
-                });
-            }
-
-            document.getElementById('history-modal').classList.remove('hidden');
-            document.getElementById('history-modal').classList.add('flex');
-        }
-
-        function closeHistoryModal() {
-            currentEditingTerritoryId = null;
-            document.getElementById('history-modal').classList.add('hidden');
-            document.getElementById('history-modal').classList.remove('flex');
-        }
-
-        async function editHistoryItem(index) {
-            const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
-            if (!tObj || !tObj.history[index]) return;
-            const h = tObj.history[index];
-
-            const res = await showCustomDialog(`${t('history_title')} #${index + 1}`, [
-                { label: t('prompt_edit_publisher'), defaultValue: h.publisher },
-                { label: t('prompt_edit_issued_date'), defaultValue: formatDate(h.issuedAt) },
-                { label: t('prompt_edit_returned_date'), defaultValue: formatDate(h.returnedAt) }
-            ]);
-
-            if (!res) return;
-
-            const newIssuedFormatted = parseInputDate(res[1]);
-            const newReturnedFormatted = parseInputDate(res[2]);
-
-            tObj.history[index] = {
-                publisher: res[0].trim(),
-                issuedAt: newIssuedFormatted || h.issuedAt,
-                returnedAt: newReturnedFormatted !== null && newReturnedFormatted !== '' ? newReturnedFormatted : null
-            };
-
+            if (!tObj || !tObj.history?.length) return;
             try {
-                await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
-                if (currentEditingTerritoryId) showHistory(currentEditingTerritoryId);
-            } catch (e) {
-                showToast(t('err_save'));
-            }
-        }
+                const history = [...tObj.history];
+                history[history.length - 1].returnedAt = getCurrentDateFormatted();
+                await updateDoc(doc(db, "territories", id), { history });
+            } catch (e) { alert("Ошибка обновления записи."); }
+        };
 
-        async function deleteHistoryItem(index) {
-            const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
-            if (!tObj || !tObj.history[index]) return;
-
-            const confirmed = await showCustomDialog(t('confirm_title'), [], true, `${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`);
-            if (confirmed) {
-                tObj.history.splice(index, 1);
-                try {
-                    await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
-                    if (currentEditingTerritoryId) showHistory(currentEditingTerritoryId);
-                } catch (e) {
-                    showToast(t('err_save'));
-                }
-            }
-        }
-
-        function copyTerritoryLink(url) {
-            if (!url) return;
-            navigator.clipboard.writeText(url).catch(err => console.error(err));
-        }
-
+        // Отрисовка
         function renderCities() {
             const container = document.getElementById('cities-container');
-            
             container.innerHTML = '';
             citiesData.forEach(c => {
                 const btn = document.createElement('button');
-                btn.dataset.cityId = c.id;
-                btn.title = c.name;
+                btn.className = `h-10 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center border truncate shadow-sm ${c.id === activeCityId ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-600/30' : 'bg-slate-900/90 text-slate-300 hover:text-white border-slate-800/80'}`;
                 btn.innerText = c.name;
-                btn.onclick = () => { 
-                    if (activeCityId !== c.id) {
-                        activeCityId = c.id; 
-                        updateActiveCityStyles(); 
-                        subscribeToTerritories(); 
-                        updateActiveCityMapLink();
-                    }
+                btn.onclick = () => {
+                    activeCityId = c.id;
+                    renderCities();
+                    subscribeToTerritories();
                 };
                 container.appendChild(btn);
             });
-            
-            updateActiveCityStyles();
-            updateActiveCityMapLink();
-        }
-
-        function updateActiveCityMapLink() {
             const activeCity = citiesData.find(c => c.id === activeCityId);
-            const mapLinkBtn = document.getElementById('map-link');
-            if (activeCity && activeCity.mapUrl && activeCity.mapUrl.trim() !== '' && activeCity.mapUrl !== '#') {
-                mapLinkBtn.href = activeCity.mapUrl;
-                mapLinkBtn.style.display = 'flex';
+            const mapBtn = document.getElementById('map-link');
+            if (activeCity?.mapUrl && activeCity.mapUrl !== '#') {
+                mapBtn.href = activeCity.mapUrl;
+                mapBtn.style.display = 'flex';
             } else {
-                mapLinkBtn.style.display = 'none';
+                mapBtn.style.display = 'none';
             }
-        }
-
-        function updateActiveCityStyles() {
-            const container = document.getElementById('cities-container');
-            Array.from(container.children).forEach(btn => {
-                const cId = btn.dataset.cityId;
-                const basePill = "h-10 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center border truncate shadow-sm";
-                
-                if (cId === activeCityId) {
-                    btn.className = `${basePill} bg-indigo-600 text-white border-indigo-500 shadow-indigo-600/30`;
-                } else {
-                    btn.className = `${basePill} bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-800/80`;
-                }
-            });
         }
 
         function renderTerritories() {
@@ -1084,7 +527,7 @@
             grid.innerHTML = '';
             let free = 0, busy = 0, overdue = 0;
 
-            territoriesData.forEach((tObj, index) => {
+            territoriesData.forEach((tObj) => {
                 const lastRec = tObj.history && tObj.history.length > 0 ? tObj.history[tObj.history.length - 1] : null;
                 const isBusy = lastRec && !lastRec.returnedAt;
                 
@@ -1100,22 +543,19 @@
                 if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
 
                 let badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-400/30">${t('status_free')}</span>`;
-                let cardStyle = "bg-emerald-900/40 border-emerald-500/60 hover:border-emerald-400 shadow-xl shadow-emerald-950/40";
+                let cardStyle = "bg-emerald-900/40 border-emerald-500/60 hover:border-emerald-400 shadow-xl";
                 
                 if (isBusy && !isOverdue) {
                     badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-950/60 text-blue-300 border border-blue-400/30">${t('status_busy')} (${days} ${t('days_text')})</span>`;
-                    cardStyle = "bg-blue-900/40 border-blue-500/60 hover:border-blue-400 shadow-xl shadow-blue-950/40";
+                    cardStyle = "bg-blue-900/40 border-blue-500/60 hover:border-blue-400 shadow-xl";
                 }
                 if (isOverdue) {
                     badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-rose-950/60 text-rose-300 border border-rose-400/30">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
-                    cardStyle = "bg-rose-900/40 border-rose-500/70 hover:border-rose-400 shadow-2xl shadow-rose-950/50";
+                    cardStyle = "bg-rose-900/40 border-rose-500/70 hover:border-rose-400 shadow-2xl";
                 }
 
                 const card = document.createElement('div');
-                const delay = Math.min(index * 0.04, 0.5);
                 card.className = `backdrop-blur-2xl border ${cardStyle} rounded-3xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-300 hover:-translate-y-0.5 animate-fade-in`;
-                card.style.animationDelay = `${delay}s`;
-
                 card.innerHTML = `
                     <div class="flex items-start justify-between gap-2">
                         <div>
@@ -1124,38 +564,16 @@
                         </div>
                         ${badge}
                     </div>
-                    
                     <div class="space-y-2 text-xs text-slate-200">
                         ${isBusy ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>` : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`}
-                        
                         <div class="flex items-center justify-between gap-1.5 pt-1">
-                            <div class="flex items-center gap-1.5">
-                                ${tObj.mapUrl ? `
-                                    <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
-                                        <i class="fa-solid fa-map"></i> ${t('card_map')}
-                                    </a>
-                                    <button data-action="copy-link" data-url="${tObj.mapUrl}" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
-                                        <i class="fa-solid fa-copy text-xs"></i>
-                                    </button>
-                                ` : `
-                                    <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
-                                `}
-                            </div>
-                            <span class="text-[11px] text-sky-400 font-semibold bg-sky-950/40 px-2 py-1 rounded-lg border border-sky-500/20" title="Количество русскоговорящих">
-                                <i class="fa-solid fa-user mr-1 text-[10px]"></i>${tObj.russianCount || 0}
-                            </span>
+                            ${tObj.mapUrl ? `<a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 text-xs"><i class="fa-solid fa-map"></i> ${t('card_map')}</a>` : `<span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>`}
+                            <span class="text-[11px] text-sky-400 font-semibold bg-sky-950/40 px-2 py-1 rounded-lg border border-sky-500/20"><i class="fa-solid fa-user mr-1 text-[10px]"></i>${tObj.russianCount || 0}</span>
                         </div>
                     </div>
-
                     <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
-                        <div class="flex space-x-1">
-                            <button data-action="open-menu" data-id="${tObj.id}" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-                            <button data-action="show-history" data-id="${tObj.id}" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                        </div>
-                        ${!isBusy 
-                            ? `<button data-action="issue" data-id="${tObj.id}" class="h-8 px-3.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center">${t('btn_issue')}</button>`
-                            : `<button data-action="return" data-id="${tObj.id}" class="h-8 px-3.5 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`
-                        }
+                        <button onclick="showHistory('${tObj.id}')" title="История" class="w-8 h-8 bg-black/30 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                        ${isAdmin ? (!isBusy ? `<button onclick="issueTerritory('${tObj.id}')" class="h-8 px-3.5 bg-white text-slate-950 rounded-xl text-xs font-bold shadow-lg flex items-center justify-center">${t('btn_issue')}</button>` : `<button onclick="returnTerritory('${tObj.id}')" class="h-8 px-3.5 bg-black/40 text-white rounded-xl text-xs font-semibold border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`) : ''}
                     </div>
                 `;
                 grid.appendChild(card);
@@ -1166,51 +584,35 @@
             document.getElementById('st-overdue').innerText = overdue;
         }
 
-        // НАЗНАЧЕНИЕ ОБРАБОТЧИКОВ СОБЫТИЙ (ОТВЯЗКА ОТ WINDOW)
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btn-toggle-lang').addEventListener('click', toggleLanguage);
-            document.getElementById('btn-add-city').addEventListener('click', addCity);
-            document.getElementById('btn-city-menu-toggle').addEventListener('click', (e) => toggleCityMenu(e));
-            document.getElementById('btn-edit-city-name').addEventListener('click', () => { editCityName(); closeCityMenu(); });
-            document.getElementById('btn-edit-city-map').addEventListener('click', () => { editCityMap(); closeCityMenu(); });
-            document.getElementById('btn-export-register').addEventListener('click', exportOfficialRegister);
-            document.getElementById('btn-add-territory').addEventListener('click', addTerritory);
+        window.showHistory = (id) => {
+            currentEditingTerritoryId = id;
+            const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
 
-            document.getElementById('btn-close-history').addEventListener('click', closeHistoryModal);
-            document.getElementById('btn-close-history-x').addEventListener('click', closeHistoryModal);
+            document.getElementById('modal-title').innerText = `${t('history_modal_title')} №${tObj.number}`;
+            const listContainer = document.getElementById('modal-history-list');
+            listContainer.innerHTML = tObj.history?.length ? '' : `<p class="text-xs text-slate-400 italic py-2">${t('history_empty')}</p>`;
 
-            document.getElementById('btn-dialog-cancel').addEventListener('click', () => closeCustomDialog(false));
-            document.getElementById('btn-dialog-confirm').addEventListener('click', () => closeCustomDialog(true));
-            document.getElementById('btn-close-dialog-x').addEventListener('click', () => closeCustomDialog(false));
-
-            document.getElementById('btn-close-territory-menu').addEventListener('click', closeTerritoryMenuModal);
-            document.getElementById('btn-menu-edit-number').addEventListener('click', menuOptionEditNumber);
-            document.getElementById('btn-menu-edit-map').addEventListener('click', menuOptionEditMap);
-            document.getElementById('btn-menu-edit-russian').addEventListener('click', menuOptionEditRussianCount);
-
-            document.addEventListener('click', (e) => {
-                closeCityMenu();
-                
-                // Делегирование событий карточек
-                const targetBtn = e.target.closest('button[data-action]');
-                if (!targetBtn) return;
-
-                const action = targetBtn.dataset.action;
-                const id = targetBtn.dataset.id;
-                const index = parseInt(targetBtn.dataset.index, 10);
-                const url = targetBtn.dataset.url;
-
-                if (action === 'open-menu') openTerritoryMenu(id);
-                if (action === 'show-history') showHistory(id);
-                if (action === 'issue') issueTerritory(id);
-                if (action === 'return') returnTerritory(id);
-                if (action === 'copy-link') copyTerritoryLink(url);
-                if (action === 'edit-history') editHistoryItem(index);
-                if (action === 'delete-history') deleteHistoryItem(index);
+            tObj.history?.forEach((h, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'bg-slate-950/80 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 text-xs';
+                itemDiv.innerHTML = `
+                    <div>
+                        <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
+                        <p class="text-slate-400 text-[11px]">${t('issued_by')} ${formatDate(h.issuedAt)} | ${t('returned_by')} ${formatDate(h.returnedAt) || t('in_progress')}</p>
+                    </div>
+                `;
+                listContainer.appendChild(itemDiv);
             });
 
-            initApp();
-        });
+            document.getElementById('history-modal').classList.remove('hidden');
+            document.getElementById('history-modal').classList.add('flex');
+        };
+
+        window.closeHistoryModal = () => {
+            document.getElementById('history-modal').classList.add('hidden');
+            document.getElementById('history-modal').classList.remove('flex');
+        };
     </script>
 </body>
 </html>
