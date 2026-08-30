@@ -227,7 +227,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { 
-            getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
+            getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs, runTransaction 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         function formatDate(dateStr) {
@@ -253,12 +253,75 @@
             return cleanStr;
         }
 
+        // Работаем с календарными датами как с YYYY-MM-DD, без UTC-сдвигов.
         function getCurrentDateFormatted() {
             const today = new Date();
-            const day = String(today.getDate()).padStart(2, '0');
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const year = today.getFullYear();
-            return `${year}-${month}-${day}`;
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        }
+
+        function parseDateOnly(value) {
+            if (!value || typeof value !== 'string') return null;
+            const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!m) return null;
+            const y = Number(m[1]), month = Number(m[2]), day = Number(m[3]);
+            const d = new Date(y, month - 1, day);
+            if (d.getFullYear() !== y || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+            return d;
+        }
+
+        function dateOnlyToString(d) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function addMonthsToDateOnly(dateStr, months) {
+            const source = parseDateOnly(dateStr);
+            if (!source) return null;
+            const day = source.getDate();
+            const result = new Date(source.getFullYear(), source.getMonth() + months, 1);
+            const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+            result.setDate(Math.min(day, lastDay));
+            return dateOnlyToString(result);
+        }
+
+        function daysSinceDateOnly(dateStr) {
+            const d = parseDateOnly(dateStr);
+            if (!d) return 0;
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return Math.max(0, Math.floor((today - d) / 86400000));
+        }
+
+        // Текущее состояние хранится отдельно от истории.
+        // Для старых документов без этих полей используем безопасный fallback.
+        function getCurrentAssignment(tObj) {
+            if (tObj.currentAssignment && tObj.currentAssignment.publisher && tObj.currentAssignment.issuedAt) {
+                return tObj.currentAssignment;
+            }
+            if (tObj.status === 'free') return null;
+
+            const history = Array.isArray(tObj.history) ? tObj.history : [];
+            const active = history
+                .map((h, index) => ({ ...h, _index: index }))
+                .filter(h => h.publisher && h.issuedAt && !h.returnedAt);
+            if (!active.length) return null;
+            active.sort((a, b) => String(a.issuedAt).localeCompare(String(b.issuedAt)) || a._index - b._index);
+            return active[active.length - 1];
+        }
+
+        function isValidHttpUrl(value) {
+            if (!value) return true;
+            try {
+                const url = new URL(value);
+                return url.protocol === 'https:' || url.protocol === 'http:';
+            } catch {
+                return false;
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+            }[ch]));
         }
 
         const translations = {
@@ -752,7 +815,7 @@
 
                         const ref = await addDoc(collection(db, "cities"), { name: cityName, mapUrl: mapUrl });
                         for (const item of territoriesList) {
-                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", russianSpeakers: item.russianSpeakers || 0, history: item.history });
+                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", russianSpeakers: item.russianSpeakers || 0, status: item.history?.some(h => h && !h.returnedAt) ? 'busy' : 'free', currentAssignment: (() => { const h = (item.history || []).filter(x => x && !x.returnedAt).at(-1); return h ? { publisher: h.publisher, issuedAt: h.issuedAt } : null; })(), history: item.history });
                         }
                     } else {
                         if (mapUrl && existingCity.mapUrl !== mapUrl) {
@@ -858,11 +921,18 @@
                 { label: t('prompt_new_territory_map'), placeholder: 'https://www.google.com/maps/d/...' }
             ]);
             if (!res || !res[0] || !res[0].trim()) return;
+            const mapUrl = res[1] ? res[1].trim() : '';
+            if (!isValidHttpUrl(mapUrl)) {
+                alert(currentLang === 'fr' ? 'Lien de carte invalide.' : 'Неверная ссылка на карту.');
+                return;
+            }
             await addDoc(collection(db, "territories"), {
                 cityId: activeCityId,
                 number: res[0].trim(),
-                mapUrl: res[1] ? res[1].trim() : '',
+                mapUrl,
                 russianSpeakers: 0,
+                status: 'free',
+                currentAssignment: null,
                 history: []
             });
         };
@@ -874,18 +944,70 @@
                 { label: t('prompt_publisher_name'), placeholder: 'Иван Иванов' }
             ]);
             if (!res || !res[0] || !res[0].trim()) return;
-            const history = Array.isArray(tObj.history) ? [...tObj.history] : [];
-            history.push({ publisher: res[0].trim(), issuedAt: getCurrentDateFormatted(), returnedAt: null });
-            await updateDoc(doc(db, "territories", id), { history });
+
+            const publisher = res[0].trim();
+            const issuedAt = getCurrentDateFormatted();
+            const ref = doc(db, 'territories', id);
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const snap = await transaction.get(ref);
+                    if (!snap.exists()) throw new Error('NOT_FOUND');
+                    const data = snap.data();
+                    if (getCurrentAssignment(data)) throw new Error('ALREADY_ISSUED');
+
+                    const history = Array.isArray(data.history) ? [...data.history] : [];
+                    history.push({ publisher, issuedAt, returnedAt: null });
+                    transaction.update(ref, {
+                        status: 'busy',
+                        currentAssignment: { publisher, issuedAt },
+                        history
+                    });
+                });
+            } catch (error) {
+                console.error('Issue territory error:', error);
+                if (error.message === 'ALREADY_ISSUED') {
+                    alert(currentLang === 'fr' ? 'Ce territoire vient déjà d'être attribué.' : 'Этот участок уже выдан.');
+                } else {
+                    alert(currentLang === 'fr' ? 'Erreur lors de l'attribution.' : 'Ошибка при выдаче участка.');
+                }
+            }
         };
 
         window.returnTerritory = async (id) => {
-            const tObj = territoriesData.find(item => item.id === id);
-            if (!tObj) return;
-            const history = Array.isArray(tObj.history) ? [...tObj.history] : [];
-            if (history.length > 0) {
-                history[history.length - 1] = { ...history[history.length - 1], returnedAt: getCurrentDateFormatted() };
-                await updateDoc(doc(db, "territories", id), { history });
+            const ref = doc(db, 'territories', id);
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const snap = await transaction.get(ref);
+                    if (!snap.exists()) throw new Error('NOT_FOUND');
+                    const data = snap.data();
+                    const assignment = getCurrentAssignment(data);
+                    if (!assignment) throw new Error('ALREADY_FREE');
+
+                    const history = Array.isArray(data.history) ? [...data.history] : [];
+                    let targetIndex = -1;
+                    if (data.currentAssignment) {
+                        targetIndex = history.findIndex(h => h.issuedAt === assignment.issuedAt && h.publisher === assignment.publisher && !h.returnedAt);
+                    }
+                    if (targetIndex < 0) {
+                        for (let i = history.length - 1; i >= 0; i--) {
+                            if (!history[i].returnedAt && history[i].issuedAt === assignment.issuedAt) { targetIndex = i; break; }
+                        }
+                    }
+                    if (targetIndex >= 0) {
+                        history[targetIndex] = { ...history[targetIndex], returnedAt: getCurrentDateFormatted() };
+                    }
+                    transaction.update(ref, {
+                        status: 'free',
+                        currentAssignment: null,
+                        history
+                    });
+                });
+            } catch (error) {
+                console.error('Return territory error:', error);
+                if (error.message !== 'ALREADY_FREE') {
+                    alert(currentLang === 'fr' ? 'Erreur lors du retour.' : 'Ошибка при сдаче участка.');
+                }
             }
         };
 
@@ -952,7 +1074,12 @@
                 returnedAt: newReturnedFormatted !== null && newReturnedFormatted !== '' ? newReturnedFormatted : null
             };
 
-            await updateDoc(doc(db, "territories", tObj.id), { history: updatedHistory });
+            const active = [...updatedHistory].reverse().find(h => h && h.publisher && h.issuedAt && !h.returnedAt) || null;
+            await updateDoc(doc(db, "territories", tObj.id), {
+                history: updatedHistory,
+                status: active ? 'busy' : 'free',
+                currentAssignment: active ? { publisher: active.publisher, issuedAt: active.issuedAt } : null
+            });
             if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
         };
 
@@ -964,7 +1091,12 @@
             if (confirmed) {
                 const updatedHistory = [...tObj.history];
                 updatedHistory.splice(index, 1);
-                await updateDoc(doc(db, "territories", tObj.id), { history: updatedHistory });
+                const active = [...updatedHistory].reverse().find(h => h && h.publisher && h.issuedAt && !h.returnedAt) || null;
+                await updateDoc(doc(db, "territories", tObj.id), {
+                    history: updatedHistory,
+                    status: active ? 'busy' : 'free',
+                    currentAssignment: active ? { publisher: active.publisher, issuedAt: active.issuedAt } : null
+                });
                 if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
             }
         };
@@ -1029,25 +1161,17 @@
             let free = 0, busy = 0, overdue = 0;
 
             territoriesData.forEach((tObj, index) => {
-                const lastRec = tObj.history && tObj.history.length > 0 ? tObj.history[tObj.history.length - 1] : null;
-                const isBusy = lastRec && !lastRec.returnedAt;
-                
+                const assignment = getCurrentAssignment(tObj);
+                const isBusy = !!assignment;
                 let days = 0, isOverdue = false, dueDateFormatted = '-';
-                if (isBusy && lastRec.issuedAt) {
-                    const parsedDate = new Date(lastRec.issuedAt);
-                    if (!isNaN(parsedDate.getTime())) {
-                        days = Math.floor((new Date() - parsedDate) / (1000 * 60 * 60 * 24));
-                        
-                        // Расчет даты окончания 4 месяцев
-                        const dueDate = new Date(parsedDate);
-                        dueDate.setMonth(dueDate.getMonth() + 4);
-                        const d = String(dueDate.getDate()).padStart(2, '0');
-                        const m = String(dueDate.getMonth() + 1).padStart(2, '0');
-                        const y = dueDate.getFullYear();
-                        const sep = currentLang === 'fr' ? '/' : '.';
-                        dueDateFormatted = `${d}${sep}${m}${sep}${y}`;
 
-                        if (new Date() > dueDate) isOverdue = true;
+                if (isBusy && assignment.issuedAt) {
+                    days = daysSinceDateOnly(assignment.issuedAt);
+                    const dueDate = addMonthsToDateOnly(assignment.issuedAt, 4);
+                    if (dueDate) {
+                        dueDateFormatted = formatDate(dueDate);
+                        const today = getCurrentDateFormatted();
+                        isOverdue = today > dueDate;
                     }
                 }
 
@@ -1055,7 +1179,7 @@
 
                 let badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-400/30">${t('status_free')}</span>`;
                 let cardStyle = "bg-emerald-900/40 border-emerald-500/60 hover:border-emerald-400 shadow-xl shadow-emerald-950/40";
-                
+
                 if (isBusy && !isOverdue) {
                     badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-950/60 text-blue-300 border border-blue-400/30">${t('status_busy')} (${days} ${t('days_text')})</span>`;
                     cardStyle = "bg-blue-900/40 border-blue-500/60 hover:border-blue-400 shadow-xl shadow-blue-950/40";
@@ -1065,7 +1189,10 @@
                     cardStyle = "bg-rose-900/40 border-rose-500/70 hover:border-rose-400 shadow-2xl shadow-rose-950/50";
                 }
 
-                const ruCount = tObj.russianSpeakers || 0;
+                const ruCount = Number.isFinite(Number(tObj.russianSpeakers)) ? Number(tObj.russianSpeakers) : 0;
+                const safeNumber = escapeHtml(tObj.number);
+                const safePublisher = assignment ? escapeHtml(assignment.publisher) : '';
+                const safeMapUrl = isValidHttpUrl(tObj.mapUrl) ? escapeHtml(tObj.mapUrl) : '';
                 const card = document.createElement('div');
                 const delay = Math.min(index * 0.04, 0.5);
                 card.className = `backdrop-blur-2xl border ${cardStyle} rounded-3xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-300 hover:-translate-y-0.5 animate-fade-in`;
@@ -1075,49 +1202,38 @@
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <span class="text-[10px] text-slate-300/80 font-bold uppercase tracking-wider">${t('card_territory')}</span>
-                            <h3 class="text-xl font-extrabold text-white tracking-tight">№ ${tObj.number}</h3>
+                            <h3 class="text-xl font-extrabold text-white tracking-tight">№ ${safeNumber}</h3>
                         </div>
                         ${badge}
                     </div>
-                    
                     <div class="space-y-2 text-xs text-slate-200">
-                        ${isBusy 
-                            ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>
-                               <p class="text-[11px] text-slate-300/80"><i class="fa-regular fa-calendar-check mr-1"></i> ${t('due_date_label')} <strong class="${isOverdue ? 'text-rose-400' : 'text-slate-200'}">${dueDateFormatted}</strong></p>` 
-                            : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`
-                        }
-                        
-                        <!-- Отображение количества русскоговорящих -->
+                        ${isBusy
+                            ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${safePublisher}</strong></p>
+                               <p class="text-[11px] text-slate-300/80"><i class="fa-regular fa-calendar-check mr-1"></i> ${t('due_date_label')} <strong class="${isOverdue ? 'text-rose-400' : 'text-slate-200'}">${dueDateFormatted}</strong></p>`
+                            : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`}
                         <p class="flex items-center gap-1.5 font-medium text-slate-300" title="${t('label_russian_speakers')} ${ruCount}">
-                            <i class="fa-solid fa-user-group text-sky-400"></i> 
-                            <strong class="text-white font-bold">${ruCount}</strong>
+                            <i class="fa-solid fa-user-group text-sky-400"></i><strong class="text-white font-bold">${ruCount}</strong>
                         </p>
-
                         <div class="flex items-center gap-1.5 pt-1">
-                            ${tObj.mapUrl ? `
-                                <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
+                            ${safeMapUrl ? `
+                                <a href="${safeMapUrl}" target="_blank" rel="noopener noreferrer" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
                                     <i class="fa-solid fa-map"></i> ${t('card_map')}
                                 </a>
-                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
+                                <button onclick="copyTerritoryLink(${JSON.stringify(tObj.mapUrl)})" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
                                     <i class="fa-solid fa-copy text-xs"></i>
-                                </button>
-                            ` : `
-                                <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
-                            `}
+                                </button>`
+                            : `<span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>`}
                         </div>
                     </div>
-
                     <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                            <button onclick="openTerritoryMenu(${JSON.stringify(tObj.id)})" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="showHistory(${JSON.stringify(tObj.id)})" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         </div>
-                        ${!isBusy 
-                            ? `<button onclick="issueTerritory('${tObj.id}')" class="h-8 px-3.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center">${t('btn_issue')}</button>`
-                            : `<button onclick="returnTerritory('${tObj.id}')" class="h-8 px-3.5 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`
-                        }
-                    </div>
-                `;
+                        ${!isBusy
+                            ? `<button onclick="issueTerritory(${JSON.stringify(tObj.id)})" class="h-8 px-3.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center">${t('btn_issue')}</button>`
+                            : `<button onclick="returnTerritory(${JSON.stringify(tObj.id)})" class="h-8 px-3.5 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`}
+                    </div>`;
                 grid.appendChild(card);
             });
 
