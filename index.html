@@ -37,6 +37,9 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white p-4 sm:p-6 md:p-8">
 
+    <!-- ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ (TOASTS) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
     <header class="max-w-6xl mx-auto bg-slate-900/85 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
         <!-- Блок названия и статуса -->
@@ -62,25 +65,25 @@
         <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
             
             <!-- ТОГГЛ-КНОПКА ПЕРЕКЛЮЧЕНИЯ ЯЗЫКА -->
-            <button onclick="toggleLanguage()" title="Сменить язык / Changer de langue" class="relative w-24 h-10 bg-slate-950 rounded-xl border border-slate-800 p-1 flex items-center justify-between select-none cursor-pointer overflow-hidden shadow-inner">
+            <button id="btn-toggle-lang" title="Сменить язык / Changer de langue" class="relative w-24 h-10 bg-slate-950 rounded-xl border border-slate-800 p-1 flex items-center justify-between select-none cursor-pointer overflow-hidden shadow-inner">
                 <div id="lang-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-emerald-500 rounded-lg transition-all duration-300 transform translate-x-0 shadow-md"></div>
                 <span id="lang-label-ru" class="relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300">RU</span>
                 <span id="lang-label-fr" class="relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300">FR</span>
             </button>
 
-            <button onclick="addCity()" class="h-10 px-3.5 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
+            <button id="btn-add-city" class="h-10 px-3.5 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
                 <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_city">Город</span>
             </button>
             
             <div class="relative">
-                <button onclick="toggleCityMenu(event)" title="Управление городом" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-xs rounded-xl border border-slate-700/60 text-slate-300 hover:text-white transition shadow-sm flex items-center justify-center">
+                <button id="btn-city-menu-toggle" title="Управление городом" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-xs rounded-xl border border-slate-700/60 text-slate-300 hover:text-white transition shadow-sm flex items-center justify-center">
                     <i class="fa-solid fa-pen"></i>
                 </button>
                 <div id="city-dropdown-menu" class="hidden absolute right-0 mt-2.5 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 text-xs backdrop-blur-xl">
-                    <button onclick="editCityName(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
+                    <button id="btn-edit-city-name" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
                         <i class="fa-solid fa-signature text-indigo-400 w-4"></i> <span data-i18n="menu_edit_city">Изменить название</span>
                     </button>
-                    <button onclick="editCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
+                    <button id="btn-edit-city-map" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
                         <i class="fa-solid fa-earth-americas text-emerald-400 w-4"></i> <span data-i18n="menu_edit_map">Изменить ссылку на карту</span>
                     </button>
                 </div>
@@ -127,7 +130,7 @@
 
             <!-- Действия -->
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 rounded-xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center">
+                <button id="btn-export-register" title="Télécharger le registre officiel (S-13)" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 rounded-xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center">
                     <i class="fa-solid fa-download text-sm"></i>
                 </button>
 
@@ -135,7 +138,7 @@
                     <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="btn_general_map">Карта</span>
                 </a>
                 
-                <button onclick="addTerritory()" class="h-10 px-4 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-xl transition shadow-md flex items-center gap-1.5 text-slate-200">
+                <button id="btn-add-territory" class="h-10 px-4 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-xl transition shadow-md flex items-center gap-1.5 text-slate-200">
                     <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_territory">Участок</span>
                 </button>
             </div>
@@ -150,7 +153,7 @@
         <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-4">
                 <h3 id="modal-title" class="font-bold text-base text-white" data-i18n="history_modal_title">История выдач участка</h3>
-                <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                <button id="btn-close-history-x" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
@@ -161,41 +164,27 @@
             </div>
 
             <div class="flex justify-end pt-3 border-t border-slate-800/80">
-                <button onclick="closeHistoryModal()" class="h-10 px-5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
+                <button id="btn-close-history" class="h-10 px-5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
             </div>
         </div>
     </div>
 
-    <!-- УНИВЕРСАЛЬНОЕ КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ФОРМЫ -->
+    <!-- УНИВЕРСАЛЬНОЕ КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ФОРМЫ / ПОДТВЕРЖДЕНИЯ -->
     <div id="custom-dialog-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
         <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-3">
                 <h3 id="custom-dialog-title" class="font-bold text-sm text-white">Заголовок</h3>
-                <button onclick="closeCustomDialog(false)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                <button id="btn-close-dialog-x" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
+            
+            <p id="custom-dialog-message" class="text-xs text-slate-300 leading-relaxed hidden"></p>
             <div id="custom-dialog-fields" class="space-y-3"></div>
-            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800/80">
-                <button onclick="closeCustomDialog(false)" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="closeCustomDialog(true)" class="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-indigo-600/30" data-i18n="btn_ok">ОК</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
-    <div id="custom-confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
-        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-lg flex-shrink-0">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
-                <h3 class="font-bold text-sm text-white" data-i18n="confirm_title">Подтверждение</h3>
-            </div>
-            <p id="custom-confirm-message" class="text-xs text-slate-300 leading-relaxed"></p>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeCustomConfirm(false)" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="closeCustomConfirm(true)" class="h-10 px-5 bg-rose-600 hover:bg-rose-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-rose-600/30" data-i18n="btn_confirm">Подтвердить</button>
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800/80">
+                <button id="btn-dialog-cancel" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
+                <button id="btn-dialog-confirm" class="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-indigo-600/30" data-i18n="btn_ok">ОК</button>
             </div>
         </div>
     </div>
@@ -205,21 +194,21 @@
         <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-3">
                 <h3 id="territory-menu-title" class="font-bold text-sm text-white">Участок</h3>
-                <button onclick="closeTerritoryMenuModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                <button id="btn-close-territory-menu" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
             <div class="space-y-2">
                 <!-- Изменить номер -->
-                <button onclick="menuOptionEditNumber()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                <button id="btn-menu-edit-number" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-hashtag text-indigo-400 w-4"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
                 </button>
                 <!-- Изменить ссылку на карту -->
-                <button onclick="menuOptionEditMap()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                <button id="btn-menu-edit-map" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-map text-emerald-400 w-4"></i> <span data-i18n="menu_edit_territory_map">Изменить ссылку на карту</span>
                 </button>
-                <!-- Количество русскоговорящих (с иконкой человечка fa-user) -->
-                <button onclick="menuOptionEditRussianCount()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                <!-- Количество русскоговорящих -->
+                <button id="btn-menu-edit-russian" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-user text-sky-400 w-4"></i> <span data-i18n="menu_edit_russian_count">Количество русскоговорящих</span>
                 </button>
             </div>
@@ -232,6 +221,25 @@
         import { 
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Всплывающие уведомления (Toast)
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-200' : 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200';
+            toast.className = `px-4 py-3 rounded-2xl border text-xs font-medium shadow-2xl backdrop-blur-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bgColor}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
@@ -314,7 +322,9 @@
                 confirm_title: "Подтверждение",
                 menu_edit_number: "Изменить номер",
                 menu_edit_territory_map: "Изменить ссылку на карту",
-                menu_edit_russian_count: "Количество русскоговорящих"
+                menu_edit_russian_count: "Количество русскоговорящих",
+                err_save: "Ошибка при сохранении данных.",
+                err_number_invalid: "Пожалуйста, введите корректное число."
             },
             fr: {
                 app_title: "ASSISTANT DE TERRITOIRES",
@@ -367,13 +377,15 @@
                 confirm_title: "Confirmation",
                 menu_edit_number: "Modifier le numéro",
                 menu_edit_territory_map: "Modifier le lien de la carte",
-                menu_edit_russian_count: "Nombre de russophones"
+                menu_edit_russian_count: "Nombre de russophones",
+                err_save: "Erreur lors de l'enregistrement des données.",
+                err_number_invalid: "Veuillez entrer un nombre valide."
             }
         };
 
         let currentLang = 'ru';
 
-        window.toggleLanguage = () => {
+        function toggleLanguage() {
             currentLang = currentLang === 'ru' ? 'fr' : 'ru';
             document.getElementById('html-root').lang = currentLang;
             
@@ -404,18 +416,28 @@
 
             if (citiesData.length > 0) renderCities();
             if (territoriesData.length > 0) renderTerritories();
-            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
-        };
+            if (currentEditingTerritoryId) showHistory(currentEditingTerritoryId);
+        }
 
         function t(key) {
             return translations[currentLang][key] || key;
         }
 
+        // УНИВЕРСАЛЬНЫЙ ДИАЛОГ (Для ввода данных и подтверждения)
         let customDialogResolver = null;
-        function showCustomDialog(title, fields) {
+        function showCustomDialog(title, fields = [], isConfirm = false, message = '') {
             return new Promise((resolve) => {
                 customDialogResolver = resolve;
                 document.getElementById('custom-dialog-title').innerText = title;
+                
+                const messageEl = document.getElementById('custom-dialog-message');
+                if (isConfirm && message) {
+                    messageEl.innerText = message;
+                    messageEl.classList.remove('hidden');
+                } else {
+                    messageEl.classList.add('hidden');
+                }
+
                 const fieldsContainer = document.getElementById('custom-dialog-fields');
                 fieldsContainer.innerHTML = '';
 
@@ -439,6 +461,12 @@
                     fieldsContainer.appendChild(fieldWrapper);
                 });
 
+                const confirmBtn = document.getElementById('btn-dialog-confirm');
+                confirmBtn.innerText = isConfirm ? t('btn_confirm') : t('btn_ok');
+                confirmBtn.className = isConfirm 
+                    ? 'h-10 px-5 bg-rose-600 hover:bg-rose-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-rose-600/30'
+                    : 'h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-indigo-600/30';
+
                 document.getElementById('custom-dialog-modal').classList.remove('hidden');
                 document.getElementById('custom-dialog-modal').classList.add('flex');
                 
@@ -447,7 +475,7 @@
             });
         }
 
-        window.closeCustomDialog = (isSuccess) => {
+        function closeCustomDialog(isSuccess) {
             document.getElementById('custom-dialog-modal').classList.add('hidden');
             document.getElementById('custom-dialog-modal').classList.remove('flex');
             
@@ -457,68 +485,61 @@
                 customDialogResolver(null);
             } else {
                 const inputs = document.querySelectorAll('#custom-dialog-fields input');
-                const values = Array.from(inputs).map(inp => inp.value);
-                customDialogResolver(values);
+                if (inputs.length === 0) {
+                    customDialogResolver(true);
+                } else {
+                    const values = Array.from(inputs).map(inp => inp.value);
+                    customDialogResolver(values);
+                }
             }
             customDialogResolver = null;
-        };
-
-        let customConfirmResolver = null;
-        function showCustomConfirm(message) {
-            return new Promise((resolve) => {
-                customConfirmResolver = resolve;
-                document.getElementById('custom-confirm-message').innerText = message;
-                document.getElementById('custom-confirm-modal').classList.remove('hidden');
-                document.getElementById('custom-confirm-modal').classList.add('flex');
-            });
         }
 
-        window.closeCustomConfirm = (result) => {
-            document.getElementById('custom-confirm-modal').classList.add('hidden');
-            document.getElementById('custom-confirm-modal').classList.remove('flex');
-            if (customConfirmResolver) {
-                customConfirmResolver(result);
-                customConfirmResolver = null;
-            }
-        };
-
         let activeTerritoryForMenu = null;
-        window.openTerritoryMenu = (id) => {
+        function openTerritoryMenu(id) {
             activeTerritoryForMenu = territoriesData.find(item => item.id === id);
             if (!activeTerritoryForMenu) return;
             document.getElementById('territory-menu-title').innerText = `${t('card_territory')} №${activeTerritoryForMenu.number}`;
             document.getElementById('territory-menu-modal').classList.remove('hidden');
             document.getElementById('territory-menu-modal').classList.add('flex');
-        };
+        }
 
-        window.closeTerritoryMenuModal = () => {
+        function closeTerritoryMenuModal() {
             document.getElementById('territory-menu-modal').classList.add('hidden');
             document.getElementById('territory-menu-modal').classList.remove('flex');
-        };
+        }
 
-        window.menuOptionEditNumber = async () => {
+        async function menuOptionEditNumber() {
             closeTerritoryMenuModal();
             if (!activeTerritoryForMenu) return;
             const res = await showCustomDialog(t('menu_edit_number'), [
                 { label: t('prompt_edit_territory_num'), defaultValue: activeTerritoryForMenu.number }
             ]);
             if (res && res[0] && res[0].trim() !== '') {
-                await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { number: res[0].trim() });
+                try {
+                    await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { number: res[0].trim() });
+                } catch (e) {
+                    showToast(t('err_save'));
+                }
             }
-        };
+        }
 
-        window.menuOptionEditMap = async () => {
+        async function menuOptionEditMap() {
             closeTerritoryMenuModal();
             if (!activeTerritoryForMenu) return;
             const res = await showCustomDialog(t('menu_edit_territory_map'), [
                 { label: t('modal_map_label'), defaultValue: activeTerritoryForMenu.mapUrl || '', placeholder: 'https://www.google.com/maps/d/...' }
             ]);
             if (res) {
-                await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { mapUrl: res[0].trim() });
+                try {
+                    await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { mapUrl: res[0].trim() });
+                } catch (e) {
+                    showToast(t('err_save'));
+                }
             }
-        };
+        }
 
-        window.menuOptionEditRussianCount = async () => {
+        async function menuOptionEditRussianCount() {
             closeTerritoryMenuModal();
             if (!activeTerritoryForMenu) return;
             const currentCount = activeTerritoryForMenu.russianCount || 0;
@@ -528,14 +549,18 @@
             if (res !== null && res[0] !== undefined) {
                 const newCount = parseInt(res[0], 10);
                 if (!isNaN(newCount) && newCount >= 0) {
-                    await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { russianCount: newCount });
+                    try {
+                        await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { russianCount: newCount });
+                    } catch (e) {
+                        showToast(t('err_save'));
+                    }
                 } else {
-                    alert("Пожалуйста, введите корректное число.");
+                    showToast(t('err_number_invalid'));
                 }
             }
-        };
+        }
 
-        window.exportOfficialRegister = () => {
+        function exportOfficialRegister() {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
 
@@ -564,7 +589,7 @@
                     <thead>
                         <tr>
                             <th rowspan="2" style="width: 35px;">Terr. n°</th>
-                            <th rowspan="2" style="width: 80px;">Parcouru pour la dernière fois le*</th>
+                            <th rowspan="2" style="width: 80px;">Parcourus pour la dernière fois le*</th>
                             <th colspan="2">Attribué à</th>
                             <th colspan="2">Attribué à</th>
                             <th colspan="2">Attribué à</th>
@@ -656,7 +681,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        };
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
@@ -774,11 +799,14 @@
                 onSnapshot(collection(db, "cities"), (snapshot) => {
                     citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCities();
+                }, (error) => {
+                    showToast(t('err_save'));
                 });
 
             } catch (error) {
                 console.error("Firebase connection error:", error);
                 document.getElementById('db-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> ● Ошибка подключения';
+                showToast("Ошибка подключения к базе данных");
             }
         }
 
@@ -798,72 +826,89 @@
 
             unsubscribeTerritories = onSnapshot(q, (snapshot) => {
                 territoriesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Сортировка на клиенте по числовому значению номера
                 territoriesData.sort((a, b) => parseInt(a.number) - parseInt(b.number) || a.number.localeCompare(b.number));
                 renderTerritories();
                 
                 if (currentEditingTerritoryId) {
-                    window.showHistory(currentEditingTerritoryId);
+                    showHistory(currentEditingTerritoryId);
                 }
+            }, (error) => {
+                showToast(t('err_save'));
             });
         }
 
-        window.toggleCityMenu = (event) => {
-            event.stopPropagation();
+        function toggleCityMenu(event) {
+            if (event) event.stopPropagation();
             document.getElementById('city-dropdown-menu').classList.toggle('hidden');
-        };
+        }
 
-        window.closeCityMenu = () => {
+        function closeCityMenu() {
             const menu = document.getElementById('city-dropdown-menu');
             if (menu) menu.classList.add('hidden');
-        };
+        }
 
-        document.addEventListener('click', () => closeCityMenu());
-
-        window.addCity = async () => {
+        async function addCity() {
             const res = await showCustomDialog(t('btn_city'), [
                 { label: t('prompt_new_city'), placeholder: 'Valence' },
                 { label: t('prompt_new_city_map'), defaultValue: 'https://www.google.com/maps/d/' }
             ]);
             if (!res || !res[0] || !res[0].trim()) return;
-            await addDoc(collection(db, "cities"), { name: res[0].trim(), mapUrl: res[1] ? res[1].trim() : '#' });
-        };
+            try {
+                await addDoc(collection(db, "cities"), { name: res[0].trim(), mapUrl: res[1] ? res[1].trim() : '#' });
+            } catch (e) {
+                showToast(t('err_save'));
+            }
+        }
 
-        window.editCityName = async () => {
+        async function editCityName() {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
             const res = await showCustomDialog(t('menu_edit_city'), [
                 { label: t('prompt_edit_city_name'), defaultValue: city.name }
             ]);
             if (!res || !res[0] || !res[0].trim()) return;
-            await updateDoc(doc(db, "cities", activeCityId), { name: res[0].trim() });
-        };
+            try {
+                await updateDoc(doc(db, "cities", activeCityId), { name: res[0].trim() });
+            } catch (e) {
+                showToast(t('err_save'));
+            }
+        }
 
-        window.editCityMap = async () => {
+        async function editCityMap() {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
             const res = await showCustomDialog(t('menu_edit_map'), [
                 { label: t('prompt_edit_city_map'), defaultValue: city.mapUrl || '' }
             ]);
             if (!res) return;
-            await updateDoc(doc(db, "cities", activeCityId), { mapUrl: res[0].trim() });
-        };
+            try {
+                await updateDoc(doc(db, "cities", activeCityId), { mapUrl: res[0].trim() });
+            } catch (e) {
+                showToast(t('err_save'));
+            }
+        }
 
-        window.addTerritory = async () => {
+        async function addTerritory() {
             const res = await showCustomDialog(t('btn_territory'), [
                 { label: t('prompt_new_territory_num'), placeholder: '78' },
                 { label: t('prompt_new_territory_map'), placeholder: 'https://www.google.com/maps/d/...' }
             ]);
             if (!res || !res[0] || !res[0].trim()) return;
-            await addDoc(collection(db, "territories"), {
-                cityId: activeCityId,
-                number: res[0].trim(),
-                mapUrl: res[1] ? res[1].trim() : '',
-                russianCount: 0,
-                history: []
-            });
-        };
+            try {
+                await addDoc(collection(db, "territories"), {
+                    cityId: activeCityId,
+                    number: res[0].trim(),
+                    mapUrl: res[1] ? res[1].trim() : '',
+                    russianCount: 0,
+                    history: []
+                });
+            } catch (e) {
+                showToast(t('err_save'));
+            }
+        }
 
-        window.issueTerritory = async (id) => {
+        async function issueTerritory(id) {
             const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
             const res = await showCustomDialog(`${t('btn_issue')} - ${t('card_territory')} №${tObj.number}`, [
@@ -872,20 +917,28 @@
             if (!res || !res[0] || !res[0].trim()) return;
             const history = tObj.history || [];
             history.push({ publisher: res[0].trim(), issuedAt: getCurrentDateFormatted(), returnedAt: null });
-            await updateDoc(doc(db, "territories", id), { history });
-        };
+            try {
+                await updateDoc(doc(db, "territories", id), { history });
+            } catch (e) {
+                showToast(t('err_save'));
+            }
+        }
 
-        window.returnTerritory = async (id) => {
+        async function returnTerritory(id) {
             const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
             const history = tObj.history || [];
             if (history.length > 0) {
                 history[history.length - 1].returnedAt = getCurrentDateFormatted();
-                await updateDoc(doc(db, "territories", id), { history });
+                try {
+                    await updateDoc(doc(db, "territories", id), { history });
+                } catch (e) {
+                    showToast(t('err_save'));
+                }
             }
-        };
+        }
 
-        window.showHistory = (id) => {
+        function showHistory(id) {
             currentEditingTerritoryId = id;
             const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
@@ -901,14 +954,15 @@
                 tObj.history.forEach((h, index) => {
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'bg-slate-950/80 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 text-xs shadow-sm';
+                    
                     itemDiv.innerHTML = `
                         <div class="space-y-0.5">
                             <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
                             <p class="text-slate-400 text-[11px]">${t('issued_by')} <span class="text-slate-200">${formatDate(h.issuedAt)}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${formatDate(h.returnedAt) || t('in_progress')}</span></p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="w-8 h-8 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="w-8 h-8 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                            <button data-action="edit-history" data-index="${index}" title="Редактировать запись" class="w-8 h-8 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button data-action="delete-history" data-index="${index}" title="Удалить запись" class="w-8 h-8 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
                     `;
                     listContainer.appendChild(itemDiv);
@@ -917,15 +971,15 @@
 
             document.getElementById('history-modal').classList.remove('hidden');
             document.getElementById('history-modal').classList.add('flex');
-        };
+        }
 
-        window.closeHistoryModal = () => {
+        function closeHistoryModal() {
             currentEditingTerritoryId = null;
             document.getElementById('history-modal').classList.add('hidden');
             document.getElementById('history-modal').classList.remove('flex');
-        };
+        }
 
-        window.editHistoryItem = async (index) => {
+        async function editHistoryItem(index) {
             const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
             if (!tObj || !tObj.history[index]) return;
             const h = tObj.history[index];
@@ -947,26 +1001,34 @@
                 returnedAt: newReturnedFormatted !== null && newReturnedFormatted !== '' ? newReturnedFormatted : null
             };
 
-            await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
-            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
-        };
+            try {
+                await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
+                if (currentEditingTerritoryId) showHistory(currentEditingTerritoryId);
+            } catch (e) {
+                showToast(t('err_save'));
+            }
+        }
 
-        window.deleteHistoryItem = async (index) => {
+        async function deleteHistoryItem(index) {
             const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
             if (!tObj || !tObj.history[index]) return;
 
-            const confirmed = await showCustomConfirm(`${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`);
+            const confirmed = await showCustomDialog(t('confirm_title'), [], true, `${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`);
             if (confirmed) {
                 tObj.history.splice(index, 1);
-                await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
-                if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
+                try {
+                    await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
+                    if (currentEditingTerritoryId) showHistory(currentEditingTerritoryId);
+                } catch (e) {
+                    showToast(t('err_save'));
+                }
             }
-        };
+        }
 
-        window.copyTerritoryLink = (url) => {
+        function copyTerritoryLink(url) {
             if (!url) return;
             navigator.clipboard.writeText(url).catch(err => console.error(err));
-        };
+        }
 
         function renderCities() {
             const container = document.getElementById('cities-container');
@@ -1072,7 +1134,7 @@
                                     <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
                                         <i class="fa-solid fa-map"></i> ${t('card_map')}
                                     </a>
-                                    <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
+                                    <button data-action="copy-link" data-url="${tObj.mapUrl}" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
                                         <i class="fa-solid fa-copy text-xs"></i>
                                     </button>
                                 ` : `
@@ -1087,13 +1149,12 @@
 
                     <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <!-- Вернули иконку карандаша fa-pen -->
-                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                            <button data-action="open-menu" data-id="${tObj.id}" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                            <button data-action="show-history" data-id="${tObj.id}" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         </div>
                         ${!isBusy 
-                            ? `<button onclick="issueTerritory('${tObj.id}')" class="h-8 px-3.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center">${t('btn_issue')}</button>`
-                            : `<button onclick="returnTerritory('${tObj.id}')" class="h-8 px-3.5 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`
+                            ? `<button data-action="issue" data-id="${tObj.id}" class="h-8 px-3.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center">${t('btn_issue')}</button>`
+                            : `<button data-action="return" data-id="${tObj.id}" class="h-8 px-3.5 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`
                         }
                     </div>
                 `;
@@ -1105,7 +1166,51 @@
             document.getElementById('st-overdue').innerText = overdue;
         }
 
-        initApp();
+        // НАЗНАЧЕНИЕ ОБРАБОТЧИКОВ СОБЫТИЙ (ОТВЯЗКА ОТ WINDOW)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btn-toggle-lang').addEventListener('click', toggleLanguage);
+            document.getElementById('btn-add-city').addEventListener('click', addCity);
+            document.getElementById('btn-city-menu-toggle').addEventListener('click', (e) => toggleCityMenu(e));
+            document.getElementById('btn-edit-city-name').addEventListener('click', () => { editCityName(); closeCityMenu(); });
+            document.getElementById('btn-edit-city-map').addEventListener('click', () => { editCityMap(); closeCityMenu(); });
+            document.getElementById('btn-export-register').addEventListener('click', exportOfficialRegister);
+            document.getElementById('btn-add-territory').addEventListener('click', addTerritory);
+
+            document.getElementById('btn-close-history').addEventListener('click', closeHistoryModal);
+            document.getElementById('btn-close-history-x').addEventListener('click', closeHistoryModal);
+
+            document.getElementById('btn-dialog-cancel').addEventListener('click', () => closeCustomDialog(false));
+            document.getElementById('btn-dialog-confirm').addEventListener('click', () => closeCustomDialog(true));
+            document.getElementById('btn-close-dialog-x').addEventListener('click', () => closeCustomDialog(false));
+
+            document.getElementById('btn-close-territory-menu').addEventListener('click', closeTerritoryMenuModal);
+            document.getElementById('btn-menu-edit-number').addEventListener('click', menuOptionEditNumber);
+            document.getElementById('btn-menu-edit-map').addEventListener('click', menuOptionEditMap);
+            document.getElementById('btn-menu-edit-russian').addEventListener('click', menuOptionEditRussianCount);
+
+            document.addEventListener('click', (e) => {
+                closeCityMenu();
+                
+                // Делегирование событий карточек
+                const targetBtn = e.target.closest('button[data-action]');
+                if (!targetBtn) return;
+
+                const action = targetBtn.dataset.action;
+                const id = targetBtn.dataset.id;
+                const index = parseInt(targetBtn.dataset.index, 10);
+                const url = targetBtn.dataset.url;
+
+                if (action === 'open-menu') openTerritoryMenu(id);
+                if (action === 'show-history') showHistory(id);
+                if (action === 'issue') issueTerritory(id);
+                if (action === 'return') returnTerritory(id);
+                if (action === 'copy-link') copyTerritoryLink(url);
+                if (action === 'edit-history') editHistoryItem(index);
+                if (action === 'delete-history') deleteHistoryItem(index);
+            });
+
+            initApp();
+        });
     </script>
 </body>
 </html>
