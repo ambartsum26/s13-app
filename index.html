@@ -588,38 +588,42 @@
 
             territoriesData.forEach(tObj => {
                 const history = tObj.history || [];
-                let publisherRowHtml = "";
-                let datesRowHtml = "";
-                
-                for (let i = 0; i < 4; i++) {
-                    const h = history[i];
-                    if (h) {
-                        publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
-                        const issuedDate = formatDate(h.issuedAt) || "";
-                        const returnedDate = h.returnedAt ? formatDate(h.returnedAt) : 'En cours';
-                        datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
-                    } else {
-                        publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
-                        datesRowHtml += `<td></td><td></td>`;
-                    }
-                }
-
-                let lastWalkedDate = "";
                 const completedItems = history.filter(h => h.returnedAt);
-                if (completedItems.length > 0) {
-                    lastWalkedDate = formatDate(completedItems[completedItems.length - 1].returnedAt);
-                }
+                const lastWalkedDate = completedItems.length > 0
+                    ? formatDate(completedItems[completedItems.length - 1].returnedAt)
+                    : "";
 
-                htmlContent += `
+                // Добавляем столько блоков по 4 выдачи, сколько нужно — без ограничения.
+                const blocks = Math.max(1, Math.ceil(history.length / 4));
+
+                for (let block = 0; block < blocks; block++) {
+                    let publisherRowHtml = "";
+                    let datesRowHtml = "";
+
+                    for (let i = 0; i < 4; i++) {
+                        const h = history[block * 4 + i];
+                        if (h) {
+                            publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
+                            const issuedDate = formatDate(h.issuedAt) || "";
+                            const returnedDate = h.returnedAt ? formatDate(h.returnedAt) : 'En cours';
+                            datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
+                        } else {
+                            publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
+                            datesRowHtml += `<td></td><td></td>`;
+                        }
+                    }
+
+                    htmlContent += `
                     <tr>
                         <td rowspan="2"><b>${tObj.number}</b></td>
-                        <td rowspan="2">${lastWalkedDate}</td>
+                        <td rowspan="2">${block === 0 ? lastWalkedDate : ""}</td>
                         ${publisherRowHtml}
                     </tr>
                     <tr>
                         ${datesRowHtml}
                     </tr>
-                `;
+                    `;
+                }
             });
 
             const totalRows = Math.max(territoriesData.length, 15);
