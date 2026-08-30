@@ -230,7 +230,6 @@
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Форматирование даты по французскому стандарту DD/MM/YYYY
         function formatDate(dateStr) {
             if (!dateStr) return '';
             const parts = dateStr.split('-');
@@ -241,7 +240,6 @@
             return dateStr;
         }
 
-        // Парсинг дат (поддерживает разделители "/" и ".")
         function parseInputDate(inputStr) {
             if (!inputStr) return null;
             const cleanStr = inputStr.trim();
@@ -876,7 +874,7 @@
                 { label: t('prompt_publisher_name'), placeholder: 'Иван Иванов' }
             ]);
             if (!res || !res[0] || !res[0].trim()) return;
-            const history = tObj.history || [];
+            const history = Array.isArray(tObj.history) ? [...tObj.history] : [];
             history.push({ publisher: res[0].trim(), issuedAt: getCurrentDateFormatted(), returnedAt: null });
             await updateDoc(doc(db, "territories", id), { history });
         };
@@ -884,9 +882,9 @@
         window.returnTerritory = async (id) => {
             const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
-            const history = tObj.history || [];
+            const history = Array.isArray(tObj.history) ? [...tObj.history] : [];
             if (history.length > 0) {
-                history[history.length - 1].returnedAt = getCurrentDateFormatted();
+                history[history.length - 1] = { ...history[history.length - 1], returnedAt: getCurrentDateFormatted() };
                 await updateDoc(doc(db, "territories", id), { history });
             }
         };
@@ -947,13 +945,14 @@
             const newIssuedFormatted = parseInputDate(res[1]);
             const newReturnedFormatted = parseInputDate(res[2]);
 
-            tObj.history[index] = {
+            const updatedHistory = [...tObj.history];
+            updatedHistory[index] = {
                 publisher: res[0].trim(),
                 issuedAt: newIssuedFormatted || h.issuedAt,
                 returnedAt: newReturnedFormatted !== null && newReturnedFormatted !== '' ? newReturnedFormatted : null
             };
 
-            await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
+            await updateDoc(doc(db, "territories", tObj.id), { history: updatedHistory });
             if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
         };
 
@@ -963,8 +962,9 @@
 
             const confirmed = await showCustomConfirm(`${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`);
             if (confirmed) {
-                tObj.history.splice(index, 1);
-                await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
+                const updatedHistory = [...tObj.history];
+                updatedHistory.splice(index, 1);
+                await updateDoc(doc(db, "territories", tObj.id), { history: updatedHistory });
                 if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
             }
         };
