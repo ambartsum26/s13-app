@@ -230,20 +230,24 @@
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Форматирование даты по французскому стандарту DD/MM/YYYY
         function formatDate(dateStr) {
             if (!dateStr) return '';
             const parts = dateStr.split('-');
             if (parts.length === 3) {
-                return `${parts[2]}.${parts[1]}.${parts[0]}`;
+                const sep = currentLang === 'fr' ? '/' : '.';
+                return `${parts[2]}${sep}${parts[1]}${sep}${parts[0]}`;
             }
             return dateStr;
         }
 
+        // Парсинг дат (поддерживает разделители "/" и ".")
         function parseInputDate(inputStr) {
             if (!inputStr) return null;
             const cleanStr = inputStr.trim();
-            if (cleanStr.includes('.')) {
-                const parts = cleanStr.split('.');
+            const sep = cleanStr.includes('/') ? '/' : (cleanStr.includes('.') ? '.' : null);
+            if (sep) {
+                const parts = cleanStr.split(sep);
                 if (parts.length === 3) {
                     return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                 }
@@ -282,6 +286,7 @@
                 status_busy: "В обработке",
                 status_overdue: "Просрочен",
                 days_text: "дн.",
+                due_date_label: "Срок сдачи (4 мес.):",
                 card_map: "Карта",
                 no_map_link: "Ссылка не добавлена",
                 not_issued: "Никому не выдан",
@@ -301,8 +306,8 @@
                 prompt_edit_territory_map: "Введите новую ссылку на карту участка:",
                 prompt_publisher_name: "ФИО возвещателя, которому выдаётся участок:",
                 prompt_edit_publisher: "ФИО возвещателя:",
-                prompt_edit_issued_date: "Дата выдачи (ДД.ММ.ГГГГ):",
-                prompt_edit_returned_date: "Дата возврата (ДД.ММ.ГГГГ или оставьте пустым, если в обработке):",
+                prompt_edit_issued_date: "Дата выдачи (ДД/ММ/ГГГГ):",
+                prompt_edit_returned_date: "Дата возврата (ДД/ММ/ГГГГ или оставьте пустым, если в обработке):",
                 prompt_delete_history: "Удалить запись #",
                 btn_cancel: "Отмена",
                 btn_ok: "ОК",
@@ -336,6 +341,7 @@
                 status_busy: "Attribué",
                 status_overdue: "En retard",
                 days_text: "j.",
+                due_date_label: "Échéance (4 mois) :",
                 card_map: "Carte",
                 no_map_link: "Aucun lien",
                 not_issued: "Non attribué",
@@ -355,8 +361,8 @@
                 prompt_edit_territory_map: "Entrez le nouveau lien de la carte du territoire :",
                 prompt_publisher_name: "Nom du proclamateur :",
                 prompt_edit_publisher: "Nom du proclamateur :",
-                prompt_edit_issued_date: "Date d'attribution (JJ.MM.AAAA) :",
-                prompt_edit_returned_date: "Date de retour (JJ.MM.AAAA ou laisser vide si en cours) :",
+                prompt_edit_issued_date: "Date d'attribution (JJ/MM/AAAA) :",
+                prompt_edit_returned_date: "Date de retour (JJ/MM/AAAA ou laisser vide si en cours) :",
                 prompt_delete_history: "Supprimer l'entrée n°",
                 btn_cancel: "Annuler",
                 btn_ok: "OK",
@@ -1026,12 +1032,22 @@
                 const lastRec = tObj.history && tObj.history.length > 0 ? tObj.history[tObj.history.length - 1] : null;
                 const isBusy = lastRec && !lastRec.returnedAt;
                 
-                let days = 0, isOverdue = false;
+                let days = 0, isOverdue = false, dueDateFormatted = '-';
                 if (isBusy && lastRec.issuedAt) {
                     const parsedDate = new Date(lastRec.issuedAt);
                     if (!isNaN(parsedDate.getTime())) {
                         days = Math.floor((new Date() - parsedDate) / (1000 * 60 * 60 * 24));
-                        if (days > 120) isOverdue = true;
+                        
+                        // Расчет даты окончания 4 месяцев
+                        const dueDate = new Date(parsedDate);
+                        dueDate.setMonth(dueDate.getMonth() + 4);
+                        const d = String(dueDate.getDate()).padStart(2, '0');
+                        const m = String(dueDate.getMonth() + 1).padStart(2, '0');
+                        const y = dueDate.getFullYear();
+                        const sep = currentLang === 'fr' ? '/' : '.';
+                        dueDateFormatted = `${d}${sep}${m}${sep}${y}`;
+
+                        if (new Date() > dueDate) isOverdue = true;
                     }
                 }
 
@@ -1065,9 +1081,13 @@
                     </div>
                     
                     <div class="space-y-2 text-xs text-slate-200">
-                        ${isBusy ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>` : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`}
+                        ${isBusy 
+                            ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>
+                               <p class="text-[11px] text-slate-300/80"><i class="fa-regular fa-calendar-check mr-1"></i> ${t('due_date_label')} <strong class="${isOverdue ? 'text-rose-400' : 'text-slate-200'}">${dueDateFormatted}</strong></p>` 
+                            : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`
+                        }
                         
-                        <!-- Отображение только иконки и числа -->
+                        <!-- Отображение количества русскоговорящих -->
                         <p class="flex items-center gap-1.5 font-medium text-slate-300" title="${t('label_russian_speakers')} ${ruCount}">
                             <i class="fa-solid fa-user-group text-sky-400"></i> 
                             <strong class="text-white font-bold">${ruCount}</strong>
