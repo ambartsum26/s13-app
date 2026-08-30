@@ -422,6 +422,11 @@
             mapUrl: "",
             history: []
         }));
+        const romansTerritories = Array.from({ length: 40 }, (_, index) => ({
+            number: String(index + 1),
+            mapUrl: "",
+            history: []
+        }));
 
         async function initApp() {
             try {
@@ -435,7 +440,8 @@
                     "Guilherand-Granges": "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low",
                     "Saint-Marcel-lès-Valence": "",
                     "Saint-Péray": "",
-                    "Tournon-sur-Rhône": ""
+                    "Tournon-sur-Rhône": "",
+                    "Romans-sur-Isère": ""
                 };
 
                 for (const [cityName, mapUrl] of Object.entries(cityMaps)) {
@@ -447,6 +453,7 @@
                         if (cityName === "Saint-Marcel-lès-Valence") territoriesList = saintMarcelTerritories;
                         if (cityName === "Saint-Péray") territoriesList = saintPerayTerritories;
                         if (cityName === "Tournon-sur-Rhône") territoriesList = tournonTerritories;
+                        if (cityName === "Romans-sur-Isère") territoriesList = romansTerritories;
 
                         const ref = await addDoc(collection(db, "cities"), { name: cityName, mapUrl: mapUrl });
                         for (const item of territoriesList) {
