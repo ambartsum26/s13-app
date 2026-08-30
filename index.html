@@ -12,48 +12,61 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .scrollbar-none::-webkit-scrollbar { display: none; }
-        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white p-4 sm:p-6 md:p-8">
 
     <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
-    <header class="max-w-6xl mx-auto bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="flex items-center space-x-3.5 w-full md:w-auto justify-between md:justify-start">
+    <header class="max-w-6xl mx-auto bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-4">
+        <!-- Блок названия и статуса -->
+        <div class="flex items-center space-x-3.5 w-full lg:w-auto justify-between lg:justify-start">
             <div class="flex items-center space-x-3.5">
-                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-600/30">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-lg shadow-lg shadow-indigo-600/30">
                     <i class="fa-solid fa-location-dot"></i>
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-base md:text-lg tracking-tight text-white" data-i18n="app_title">Ассистент по участкам</h1>
-                    <p class="text-xs text-emerald-400 font-medium flex items-center gap-1.5 mt-0.5" id="db-status">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Подключение...
+                    <!-- ЗАГОЛОВОК КАПСЛОКОМ -->
+                    <h1 class="font-extrabold text-base tracking-tight text-white leading-tight uppercase" data-i18n="app_title">АССИСТЕНТ ПО УЧАСТКАМ</h1>
+                    <p class="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5 mt-0.5" id="db-status">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Подключение к Firebase...
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="w-full md:w-auto flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none max-w-full justify-start md:justify-center bg-slate-950/40 p-1.5 rounded-2xl border border-slate-800/80" id="cities-container"></div>
+        <!-- Переключатель городов -->
+        <div class="grid grid-cols-2 gap-2 bg-slate-950/40 p-2 rounded-2xl border border-slate-800/80 w-full lg:w-auto" id="cities-container"></div>
 
-        <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
-            <button onclick="toggleLanguage()" title="Сменить язык / Changer de langue" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700/60 text-indigo-400 transition shadow-sm flex items-center gap-1.5">
-                <i class="fa-solid fa-globe"></i> <span id="lang-btn">FR</span>
+        <!-- Кнопки управления и Язык -->
+        <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
+            
+            <!-- ТОГГЛ-КНОПКА ПЕРЕКЛЮЧЕНИЯ ЯЗЫКА -->
+            <button onclick="toggleLanguage()" title="Сменить язык / Changer de langue" class="relative w-24 h-10 bg-slate-950 rounded-xl border border-slate-800 p-1 flex items-center justify-between select-none cursor-pointer overflow-hidden shadow-inner">
+                <div id="lang-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-emerald-500 rounded-lg transition-all duration-300 transform translate-x-0 shadow-md"></div>
+                <span id="lang-label-ru" class="relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300">RU</span>
+                <span id="lang-label-fr" class="relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300">FR</span>
             </button>
 
-            <button onclick="openModal('modal-add-city')" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
+            <button onclick="addCity()" class="h-10 px-3.5 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
                 <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_city">Город</span>
             </button>
             
             <div class="relative">
-                <button onclick="toggleCityMenu(event)" title="Управление городом" class="p-2.5 bg-slate-800/80 hover:bg-slate-700 text-xs rounded-xl border border-slate-700/60 text-slate-300 hover:text-white transition shadow-sm">
+                <button onclick="toggleCityMenu(event)" title="Управление городом" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-xs rounded-xl border border-slate-700/60 text-slate-300 hover:text-white transition shadow-sm flex items-center justify-center">
                     <i class="fa-solid fa-pen"></i>
                 </button>
                 <div id="city-dropdown-menu" class="hidden absolute right-0 mt-2.5 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 text-xs backdrop-blur-xl">
-                    <button onclick="openEditCityName(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
+                    <button onclick="editCityName(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
                         <i class="fa-solid fa-signature text-indigo-400 w-4"></i> <span data-i18n="menu_edit_city">Изменить название</span>
                     </button>
-                    <button onclick="openEditCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
+                    <button onclick="editCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
                         <i class="fa-solid fa-earth-americas text-emerald-400 w-4"></i> <span data-i18n="menu_edit_map">Изменить ссылку на карту</span>
                     </button>
                 </div>
@@ -63,210 +76,87 @@
 
     <!-- ОСНОВНОЙ КОНТЕНТ -->
     <main class="max-w-6xl mx-auto space-y-6">
+
+        <!-- ПАНЕЛЬ СТАТИСТИКИ И ДЕЙСТВИЙ -->
         <section class="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/90 backdrop-blur-xl border border-slate-800/90 p-4 md:p-5 rounded-3xl shadow-2xl">
             <div class="flex flex-wrap items-center gap-3 md:gap-4 text-xs font-medium">
-                <div class="flex items-center gap-2.5 bg-emerald-950/30 px-3.5 py-2.5 rounded-2xl border border-emerald-500/20 shadow-inner">
-                    <div class="w-6 h-6 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                        <i class="fa-solid fa-circle-check text-xs"></i>
+                <div class="flex items-center gap-2.5 bg-emerald-950/30 px-3.5 py-2 rounded-2xl border border-emerald-500/20 shadow-inner h-10">
+                    <div class="w-5 h-5 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-circle-check text-[10px]"></i>
                     </div>
                     <div>
-                        <span data-i18n="st_free_label" class="text-slate-400 text-[10px] block uppercase tracking-wider font-semibold">Свободно</span>
-                        <strong id="st-free" class="text-emerald-400 text-sm font-extrabold">0</strong>
+                        <span data-i18n="st_free_label" class="text-slate-400 text-[9px] block uppercase tracking-wider font-semibold leading-none">Свободно</span>
+                        <strong id="st-free" class="text-emerald-400 text-xs font-extrabold leading-tight">0</strong>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2.5 bg-blue-950/30 px-3.5 py-2.5 rounded-2xl border border-blue-500/20 shadow-inner">
-                    <div class="w-6 h-6 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
-                        <i class="fa-solid fa-clock text-xs"></i>
+                <div class="flex items-center gap-2.5 bg-blue-950/30 px-3.5 py-2 rounded-2xl border border-blue-500/20 shadow-inner h-10">
+                    <div class="w-5 h-5 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                        <i class="fa-solid fa-clock text-[10px]"></i>
                     </div>
                     <div>
-                        <span data-i18n="st_busy_label" class="text-slate-400 text-[10px] block uppercase tracking-wider font-semibold">В обработке</span>
-                        <strong id="st-busy" class="text-blue-400 text-sm font-extrabold">0</strong>
+                        <span data-i18n="st_busy_label" class="text-slate-400 text-[9px] block uppercase tracking-wider font-semibold leading-none">В обработке</span>
+                        <strong id="st-busy" class="text-blue-400 text-xs font-extrabold leading-tight">0</strong>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2.5 bg-rose-950/30 px-3.5 py-2.5 rounded-2xl border border-rose-500/20 shadow-inner">
-                    <div class="w-6 h-6 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
-                        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                <div class="flex items-center gap-2.5 bg-rose-950/30 px-3.5 py-2 rounded-2xl border border-rose-500/20 shadow-inner h-10">
+                    <div class="w-5 h-5 rounded-lg bg-rose-500/20 flex items-center justify-center text-rose-400">
+                        <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
                     </div>
                     <div>
-                        <span data-i18n="st_overdue_label" class="text-slate-400 text-[10px] block uppercase tracking-wider font-semibold">Просрочено</span>
-                        <strong id="st-overdue" class="text-rose-400 text-sm font-extrabold">0</strong>
+                        <span data-i18n="st_overdue_label" class="text-slate-400 text-[9px] block uppercase tracking-wider font-semibold leading-none">Просрочено</span>
+                        <strong id="st-overdue" class="text-rose-400 text-xs font-extrabold leading-tight">0</strong>
                     </div>
                 </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2.5">
-                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="px-3.5 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 rounded-2xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-file-word"></i> <span class="hidden sm:inline">S-13</span>
+            <!-- Действия -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 rounded-xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-download text-sm"></i>
                 </button>
 
-                <a id="map-link" href="#" target="_blank" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30">
-                    <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="btn_general_map">Общая карта</span>
+                <!-- НАДПИСЬ ИЗМЕНЕНА С "ОБЩАЯ КАРТА" НА "КАРТА" -->
+                <a id="map-link" href="#" target="_blank" class="h-10 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30">
+                    <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="btn_general_map">Карта</span>
                 </a>
                 
-                <button onclick="openModal('modal-add-territory')" class="px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-2xl transition shadow-md flex items-center gap-1.5 text-slate-200">
+                <button onclick="addTerritory()" class="h-10 px-4 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-xl transition shadow-md flex items-center gap-1.5 text-slate-200">
                     <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_territory">Участок</span>
                 </button>
             </div>
         </section>
 
+        <!-- СЕТКА УЧАСТКОВ -->
         <section id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5"></section>
     </main>
 
-    <!-- МОДАЛЬНЫЕ ОКНА (ВСЕ ВСПЛЫВАЮЩИЕ ИНТЕРФЕЙСЫ) -->
-
-    <!-- 1. Модалка добавления города -->
-    <div id="modal-add-city" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-white" data-i18n="prompt_new_city">Добавить новый город</h3>
-            <div class="space-y-3">
-                <input type="text" id="input-city-name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="Название города">
-                <input type="text" id="input-city-map" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="Ссылка на общую карту Google Maps">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeModal('modal-add-city')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="submitAddCity()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-xl font-semibold text-white" data-i18n="btn_save">Сохранить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. Модалка редактирования имени города -->
-    <div id="modal-edit-city-name" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-white" data-i18n="prompt_edit_city_name">Изменить название города</h3>
-            <input type="text" id="input-edit-city-name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeModal('modal-edit-city-name')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="submitEditCityName()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-xl font-semibold text-white" data-i18n="btn_save">Сохранить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. Модалка редактирования карты города -->
-    <div id="modal-edit-city-map" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-white" data-i18n="prompt_edit_city_map">Изменить ссылку на общую карту</h3>
-            <input type="text" id="input-edit-city-map" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeModal('modal-edit-city-map')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="submitEditCityMap()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-xl font-semibold text-white" data-i18n="btn_save">Сохранить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. Модалка добавления участка -->
-    <div id="modal-add-territory" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-white" data-i18n="btn_territory">Добавить участок</h3>
-            <div class="space-y-3">
-                <input type="text" id="input-territory-num" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="Номер участка (напр. 15 или 12-А)">
-                <input type="text" id="input-territory-map" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="Ссылка на карту участка (необязательно)">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeModal('modal-add-territory')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="submitAddTerritory()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-xl font-semibold text-white" data-i18n="btn_save">Сохранить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5. Меню/Модалка редактирования участка (Карандаш на карточке) -->
-    <div id="modal-edit-territory" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-base text-white" id="modal-edit-territory-title">Редактировать участок</h3>
-                <button onclick="closeModal('modal-edit-territory')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="space-y-3">
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1" data-i18n="prompt_edit_territory_num">Номер участка</label>
-                    <input type="text" id="input-edit-territory-num" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1" data-i18n="prompt_edit_territory_map">Ссылка на карту</label>
-                    <input type="text" id="input-edit-territory-map" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-            </div>
-            <div class="flex justify-between items-center pt-2">
-                <button onclick="confirmArchiveTerritory()" class="px-3 py-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/40 text-xs rounded-xl font-semibold flex items-center gap-1.5">
-                    <i class="fa-solid fa-box-archive"></i> <span data-i18n="btn_archive">В архив</span>
-                </button>
-                <div class="flex gap-2">
-                    <button onclick="closeModal('modal-edit-territory')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                    <button onclick="submitEditTerritory()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-xl font-semibold text-white" data-i18n="btn_save">Сохранить</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 6. Модалка выдачи участка -->
-    <div id="modal-issue-territory" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-white" data-i18n="prompt_publisher_name">Выдать участок</h3>
-            <input type="text" id="input-issue-publisher" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" placeholder="ФИО возвещателя">
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeModal('modal-issue-territory')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="submitIssueTerritory()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-xl font-semibold text-white" data-i18n="btn_issue">Выдать</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 7. Модалка редактирования записи истории -->
-    <div id="modal-edit-history" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-white">Редактировать запись истории</h3>
-            <div class="space-y-3">
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1" data-i18n="prompt_edit_publisher">ФИО возвещателя</label>
-                    <input type="text" id="input-edit-history-pub" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1" data-i18n="prompt_edit_issued_date">Дата выдачи (ГГГГ-ММ-ДД)</label>
-                    <input type="date" id="input-edit-history-issued" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1" data-i18n="prompt_edit_returned_date">Дата возврата</label>
-                    <input type="date" id="input-edit-history-returned" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-                </div>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeModal('modal-edit-history')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="submitEditHistoryItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-xl font-semibold text-white" data-i18n="btn_save">Сохранить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 8. Модалка подтверждения (Кастомный Confirm) -->
-    <div id="modal-confirm" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
-            <div class="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto text-xl">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 class="font-bold text-sm text-white" id="confirm-message">Вы уверены?</h3>
-            <div class="flex justify-center gap-2 pt-2">
-                <button onclick="closeModal('modal-confirm')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl font-semibold" data-i18n="btn_cancel">Отмена</button>
-                <button id="confirm-action-btn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-xs rounded-xl font-semibold text-white">Подтвердить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 9. Просмотр истории участка -->
+    <!-- МОДАЛЬНОЕ ОКНОИСТОРИИ И КАРТЫ -->
     <div id="history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
-        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-4">
                 <h3 id="modal-title" class="font-bold text-base text-white" data-i18n="modal_title">Управление участком</h3>
                 <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-                    <i class="fa-solid fa-xmark text-sm"></i>
+                    <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2 shadow-inner">
+                <label class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block" data-i18n="modal_map_label">Ссылка на карту участка</label>
+                <div class="flex gap-2">
+                    <input type="text" id="modal-territory-map-url" placeholder="https://www.google.com/maps/d/..." class="w-full h-10 bg-slate-900 border border-slate-800 rounded-xl px-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                    <button onclick="saveTerritoryMapUrl()" class="h-10 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition shadow-md shadow-indigo-600/30 whitespace-nowrap" data-i18n="btn_save">Сохранить</button>
+                </div>
             </div>
 
             <div class="space-y-2">
                 <h4 class="text-xs font-bold text-slate-300" data-i18n="history_title">История выдач:</h4>
-                <div id="modal-history-list" class="space-y-2.5 max-h-[38vh] overflow-y-auto pr-1"></div>
+                <div id="modal-history-list" class="space-y-2 max-h-[38vh] overflow-y-auto pr-1"></div>
             </div>
 
             <div class="flex justify-end pt-3 border-t border-slate-800/80">
-                <button onclick="closeHistoryModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
+                <button onclick="closeHistoryModal()" class="h-10 px-5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
             </div>
         </div>
     </div>
@@ -278,22 +168,53 @@
             getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Вспомогательная функция для форматирования даты в формате ДД.ММ.ГГГГ
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        // Преобразование из ДД.ММ.ГГГГ или YYYY-MM-DD в YYYY-MM-DD для сохранения
+        function parseInputDate(inputStr) {
+            if (!inputStr) return null;
+            const cleanStr = inputStr.trim();
+            if (cleanStr.includes('.')) {
+                const parts = cleanStr.split('.');
+                if (parts.length === 3) {
+                    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                }
+            }
+            return cleanStr;
+        }
+
+        function getCurrentDateFormatted() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            return `${year}-${month}-${day}`;
+        }
+
         const translations = {
             ru: {
-                app_title: "Ассистент по участкам",
+                app_title: "АССИСТЕНТ ПО УЧАСТКАМ",
                 db_connected: "● Firebase подключен",
+                db_connecting: "● Подключение к Firebase...",
                 btn_city: "Город",
                 menu_edit_city: "Изменить название",
                 menu_edit_map: "Изменить ссылку на карту",
                 st_free_label: "Свободно",
                 st_busy_label: "В обработке",
                 st_overdue_label: "Просрочено",
-                btn_general_map: "Общая карта",
+                btn_general_map: "Карта",
                 btn_territory: "Участок",
-                modal_title: "История участка",
+                modal_title: "Управление участком",
+                modal_map_label: "Ссылка на карту участка",
                 btn_save: "Сохранить",
-                btn_cancel: "Отмена",
-                btn_archive: "В архив",
                 history_title: "История выдач:",
                 btn_close: "Закрыть",
                 card_territory: "Участок",
@@ -310,31 +231,35 @@
                 issued_by: "Выдан:",
                 returned_by: "Сдан:",
                 in_progress: "В ОБРАБОТКЕ",
-                prompt_new_city: "Добавить новый город",
-                prompt_edit_city_name: "Изменить название города",
-                prompt_edit_city_map: "Изменить ссылку на общую карту",
-                prompt_edit_territory_num: "Номер участка",
-                prompt_edit_territory_map: "Ссылка на карту участка",
-                prompt_publisher_name: "ФИО возвещателя:",
+                prompt_new_city: "Название нового города:",
+                prompt_new_city_map: "Ссылка на общую карту Google My Maps для этого города:",
+                prompt_edit_city_name: "Новое название города:",
+                prompt_edit_city_map: "Введите новую ссылку на общую карту Google My Maps для этого города:",
+                prompt_new_territory_num: "Номер участка (например: 78 или 12-А):",
+                prompt_new_territory_map: "Ссылка на карту этого участка (необязательно):",
+                prompt_edit_territory_num: "Новый номер участка:",
+                prompt_archive_confirm: "Архивировать участок №",
+                prompt_publisher_name: "ФИО возвещателя, которому выдаётся участок:",
                 prompt_edit_publisher: "ФИО возвещателя:",
-                prompt_edit_issued_date: "Дата выдачи (ГГГГ-ММ-ДД):",
-                prompt_edit_returned_date: "Дата возврата:"
+                prompt_edit_issued_date: "Дата выдачи (ДД.ММ.ГГГГ):",
+                prompt_edit_returned_date: "Дата возврата (ДД.ММ.ГГГГ или оставьте пустым, если в обработке):",
+                prompt_delete_history: "Удалить запись #"
             },
             fr: {
-                app_title: "Assistant de Territoires",
+                app_title: "ASSISTANT DE TERRITOIRES",
                 db_connected: "● Firebase connecté",
+                db_connecting: "● Connexion à Firebase...",
                 btn_city: "Ville",
                 menu_edit_city: "Modifier le nom",
                 menu_edit_map: "Modifier le lien de la carte",
                 st_free_label: "Libres",
                 st_busy_label: "Attribués",
                 st_overdue_label: "En retard",
-                btn_general_map: "Carte générale",
+                btn_general_map: "Carte",
                 btn_territory: "Territoire",
-                modal_title: "Historique du territoire",
+                modal_title: "Gestion du territoire",
+                modal_map_label: "Lien de la carte du territoire",
                 btn_save: "Enregistrer",
-                btn_cancel: "Annuler",
-                btn_archive: "Archiver",
                 history_title: "Historique des attributions :",
                 btn_close: "Fermer",
                 card_territory: "Territoire",
@@ -351,45 +276,45 @@
                 issued_by: "Attribué :",
                 returned_by: "Rendu :",
                 in_progress: "EN COURS",
-                prompt_new_city: "Ajouter une nouvelle ville",
-                prompt_edit_city_name: "Modifier le nom de la ville",
-                prompt_edit_city_map: "Modifier le lien de la carte générale",
-                prompt_edit_territory_num: "Numéro du territoire",
-                prompt_edit_territory_map: "Lien de la carte du territoire",
+                prompt_new_city: "Nom de la nouvelle ville :",
+                prompt_new_city_map: "Lien de la carte Google My Maps pour cette ville :",
+                prompt_edit_city_name: "Nouveau nom de la ville :",
+                prompt_edit_city_map: "Entrez le nouveau lien de la carte générale Google My Maps :",
+                prompt_new_territory_num: "Numéro du territoire (ex: 78 ou 12-A) :",
+                prompt_new_territory_map: "Lien vers la carte de ce territoire (facultatif) :",
+                prompt_edit_territory_num: "Nouveau numéro du territoire :",
+                prompt_archive_confirm: "Archiver le territoire n°",
                 prompt_publisher_name: "Nom du proclamateur :",
                 prompt_edit_publisher: "Nom du proclamateur :",
-                prompt_edit_issued_date: "Date d'attribution (AAAA-MM-JJ) :",
-                prompt_edit_returned_date: "Date de retour :"
+                prompt_edit_issued_date: "Date d'attribution (JJ.MM.AAAA) :",
+                prompt_edit_returned_date: "Date de retour (JJ.MM.AAAA ou laisser vide si en cours) :",
+                prompt_delete_history: "Supprimer l'entrée n°"
             }
         };
 
         let currentLang = 'ru';
 
-        // Глобальные хелперы модалок
-        window.openModal = (id) => {
-            const el = document.getElementById(id);
-            if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
-        };
-
-        window.closeModal = (id) => {
-            const el = document.getElementById(id);
-            if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
-        };
-
-        window.showConfirm = (msg, onConfirm) => {
-            document.getElementById('confirm-message').innerText = msg;
-            const btn = document.getElementById('confirm-action-btn');
-            btn.onclick = async () => {
-                await onConfirm();
-                closeModal('modal-confirm');
-            };
-            openModal('modal-confirm');
-        };
-
         window.toggleLanguage = () => {
             currentLang = currentLang === 'ru' ? 'fr' : 'ru';
-            document.getElementById('lang-btn').innerText = currentLang === 'ru' ? 'FR' : 'RU';
             document.getElementById('html-root').lang = currentLang;
+            
+            const slider = document.getElementById('lang-slider');
+            const labelRu = document.getElementById('lang-label-ru');
+            const labelFr = document.getElementById('lang-label-fr');
+
+            if (currentLang === 'fr') {
+                slider.classList.remove('translate-x-0', 'bg-emerald-500');
+                slider.classList.add('translate-x-[calc(100%+4px)]', 'bg-rose-500');
+                
+                labelRu.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300';
+                labelFr.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300';
+            } else {
+                slider.classList.remove('translate-x-[calc(100%+4px)]', 'bg-rose-500');
+                slider.classList.add('translate-x-0', 'bg-emerald-500');
+                
+                labelRu.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300';
+                labelFr.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300';
+            }
             
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -420,7 +345,7 @@
                     body { font-family: Arial, sans-serif; font-size: 9pt; margin: 20px; color: #000; }
                     h2 { text-align: center; margin-bottom: 2px; font-size: 13pt; font-weight: bold; }
                     .subtitle { font-weight: bold; margin-bottom: 15px; font-size: 10pt; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 5px; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
                     th, td { border: 0.5pt solid #000; padding: 3px; text-align: center; vertical-align: middle; font-size: 8pt; }
                     th { background-color: #f2f2f2; font-weight: bold; }
                     .publisher-row { font-weight: bold; font-size: 8.5pt; background-color: #fafafa; text-align: center; height: 18px; }
@@ -430,7 +355,8 @@
             </head>
             <body>
                 <h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2>
-                <div class="subtitle">Année de service : ${new Date().getFullYear()}      Ville : ${city.name}</div>
+                <div class="subtitle">Année de service : ${new Date().getFullYear()} &nbsp;&nbsp;&nbsp;&nbsp; Ville : ${city.name}</div>
+                
                 <table>
                     <thead>
                         <tr>
@@ -464,8 +390,8 @@
                     const h = history[i];
                     if (h) {
                         publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
-                        const issuedDate = h.issuedAt || "";
-                        const returnedDate = h.returnedAt ? h.returnedAt : 'En cours';
+                        const issuedDate = formatDate(h.issuedAt) || "";
+                        const returnedDate = h.returnedAt ? formatDate(h.returnedAt) : 'En cours';
                         datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
                     } else {
                         publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
@@ -476,7 +402,7 @@
                 let lastWalkedDate = "";
                 const completedItems = history.filter(h => h.returnedAt);
                 if (completedItems.length > 0) {
-                    lastWalkedDate = completedItems[completedItems.length - 1].returnedAt;
+                    lastWalkedDate = formatDate(completedItems[completedItems.length - 1].returnedAt);
                 }
 
                 htmlContent += `
@@ -495,7 +421,7 @@
             for (let i = territoriesData.length; i < totalRows; i++) {
                 htmlContent += `
                     <tr>
-                        <td rowspan="2"> </td>
+                        <td rowspan="2">&nbsp;</td>
                         <td rowspan="2"></td>
                         <td colspan="2" class="publisher-row"></td>
                         <td colspan="2" class="publisher-row"></td>
@@ -511,7 +437,9 @@
             htmlContent += `
                     </tbody>
                 </table>
-                <div class="note">* Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.</div>
+                <div class="note">
+                    * Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.
+                </div>
                 <div class="footer-code">S-13-F 1/22</div>
             </body>
             </html>
@@ -544,7 +472,6 @@
         let citiesData = [];
         let territoriesData = [];
         let currentEditingTerritoryId = null;
-        let currentEditingHistoryIndex = null;
 
         const valenceTerritories = [
             {number: "1", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
@@ -578,8 +505,16 @@
             {number: "19", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
             {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
         ];
-        const tournonTerritories = Array.from({ length: 22 }, (_, index) => ({ number: String(index + 1), mapUrl: "", history: [] }));
-        const romansTerritories = Array.from({ length: 40 }, (_, index) => ({ number: String(index + 1), mapUrl: "", history: [] }));
+        const tournonTerritories = Array.from({ length: 22 }, (_, index) => ({
+            number: String(index + 1),
+            mapUrl: "",
+            history: []
+        }));
+        const romansTerritories = Array.from({ length: 40 }, (_, index) => ({
+            number: String(index + 1),
+            mapUrl: "",
+            history: []
+        }));
 
         async function initApp() {
             try {
@@ -639,8 +574,8 @@
                 });
 
             } catch (error) {
-                console.error("Firebase error:", error);
-                document.getElementById('db-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> Ошибка подключения';
+                console.error("Firebase connection error:", error);
+                document.getElementById('db-status').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span> ● Ошибка подключения';
             }
         }
 
@@ -682,118 +617,67 @@
 
         document.addEventListener('click', () => closeCityMenu());
 
-        // --- ДЕЙСТВИЯ С ГОРОДАМИ ---
-        window.submitAddCity = async () => {
-            const name = document.getElementById('input-city-name').value;
-            const mapUrl = document.getElementById('input-city-map').value;
+        window.addCity = async () => {
+            const name = prompt(t('prompt_new_city'));
             if (!name || !name.trim()) return;
-            await addDoc(collection(db, "cities"), { name: name.trim(), mapUrl: mapUrl ? mapUrl.trim() : '#' });
-            document.getElementById('input-city-name').value = '';
-            document.getElementById('input-city-map').value = '';
-            closeModal('modal-add-city');
+            const mapLink = prompt(t('prompt_new_city_map'), 'https://www.google.com/maps/d/');
+            await addDoc(collection(db, "cities"), { name: name.trim(), mapUrl: mapLink ? mapLink.trim() : '#' });
         };
 
-        window.openEditCityName = () => {
+        window.editCityName = async () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
-            document.getElementById('input-edit-city-name').value = city.name || '';
-            openModal('modal-edit-city-name');
+            const newName = prompt(t('prompt_edit_city_name'), city.name);
+            if (!newName || !newName.trim()) return;
+            await updateDoc(doc(db, "cities", activeCityId), { name: newName.trim() });
         };
 
-        window.submitEditCityName = async () => {
-            const name = document.getElementById('input-edit-city-name').value;
-            if (!name || !name.trim()) return;
-            await updateDoc(doc(db, "cities", activeCityId), { name: name.trim() });
-            closeModal('modal-edit-city-name');
-        };
-
-        window.openEditCityMap = () => {
+        window.editCityMap = async () => {
             const city = citiesData.find(c => c.id === activeCityId);
             if (!city) return;
-            document.getElementById('input-edit-city-map').value = city.mapUrl || '';
-            openModal('modal-edit-city-map');
+            const newMapUrl = prompt(t('prompt_edit_city_map'), city.mapUrl || '');
+            if (newMapUrl === null) return;
+            await updateDoc(doc(db, "cities", activeCityId), { mapUrl: newMapUrl.trim() });
         };
 
-        window.submitEditCityMap = async () => {
-            const mapUrl = document.getElementById('input-edit-city-map').value;
-            await updateDoc(doc(db, "cities", activeCityId), { mapUrl: mapUrl ? mapUrl.trim() : '' });
-            closeModal('modal-edit-city-map');
-        };
-
-        // --- ДЕЙСТВИЯ С УЧАСТКАМИ ---
-        window.submitAddTerritory = async () => {
-            const num = document.getElementById('input-territory-num').value;
-            const mapUrl = document.getElementById('input-territory-map').value;
-            if (!num || !num.trim()) return;
+        window.addTerritory = async () => {
+            const num = prompt(t('prompt_new_territory_num'));
+            if (!num) return;
+            const mapLink = prompt(t('prompt_new_territory_map'), '');
             await addDoc(collection(db, "territories"), {
                 cityId: activeCityId,
                 number: num.trim(),
-                mapUrl: mapUrl ? mapUrl.trim() : '',
+                mapUrl: mapLink ? mapLink.trim() : '',
                 isArchived: false,
                 history: []
             });
-            document.getElementById('input-territory-num').value = '';
-            document.getElementById('input-territory-map').value = '';
-            closeModal('modal-add-territory');
         };
 
-        // Редактирование участка (Вызывается по клику на КАРАНДАШ на карточке)
-        window.editTerritory = (id) => {
-            currentEditingTerritoryId = id;
+        window.editTerritory = async (id) => {
             const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
-
-            document.getElementById('modal-edit-territory-title').innerText = `${t('card_territory')} №${tObj.number}`;
-            document.getElementById('input-edit-territory-num').value = tObj.number || '';
-            document.getElementById('input-edit-territory-map').value = tObj.mapUrl || '';
-
-            openModal('modal-edit-territory');
+            const newNum = prompt(t('prompt_edit_territory_num'), tObj.number);
+            if (newNum !== null && newNum.trim() !== '') {
+                await updateDoc(doc(db, "territories", id), { number: newNum.trim() });
+            }
         };
 
-        window.submitEditTerritory = async () => {
-            if (!currentEditingTerritoryId) return;
-            const newNum = document.getElementById('input-edit-territory-num').value;
-            const newMap = document.getElementById('input-edit-territory-map').value;
-
-            await updateDoc(doc(db, "territories", currentEditingTerritoryId), {
-                number: newNum.trim(),
-                mapUrl: newMap.trim()
-            });
-            closeModal('modal-edit-territory');
-        };
-
-        window.confirmArchiveTerritory = () => {
-            const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
+        window.archiveTerritory = async (id) => {
+            const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
-            closeModal('modal-edit-territory');
-            showConfirm(`Архивировать участок №${tObj.number}?`, async () => {
-                await updateDoc(doc(db, "territories", tObj.id), { isArchived: true });
-            });
+            if (confirm(`${t('prompt_archive_confirm')}№${tObj.number}?`)) {
+                await updateDoc(doc(db, "territories", id), { isArchived: true });
+            }
         };
 
-        window.archiveTerritoryDirect = (id) => {
-            currentEditingTerritoryId = id;
-            confirmArchiveTerritory();
-        };
-
-        // --- ВЫДАЧА И СДАЧА ---
-        window.openIssueTerritory = (id) => {
-            currentEditingTerritoryId = id;
-            document.getElementById('input-issue-publisher').value = '';
-            openModal('modal-issue-territory');
-        };
-
-        window.submitIssueTerritory = async () => {
-            const name = document.getElementById('input-issue-publisher').value;
-            if (!name || !name.trim() || !currentEditingTerritoryId) return;
-            
-            const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
+        window.issueTerritory = async (id) => {
+            const name = prompt(t('prompt_publisher_name'));
+            if (!name) return;
+            const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
-
             const history = tObj.history || [];
-            history.push({ publisher: name.trim(), issuedAt: new Date().toISOString().split('T')[0], returnedAt: null });
-            await updateDoc(doc(db, "territories", tObj.id), { history });
-            closeModal('modal-issue-territory');
+            history.push({ publisher: name.trim(), issuedAt: getCurrentDateFormatted(), returnedAt: null });
+            await updateDoc(doc(db, "territories", id), { history });
         };
 
         window.returnTerritory = async (id) => {
@@ -801,18 +685,19 @@
             if (!tObj) return;
             const history = tObj.history || [];
             if (history.length > 0) {
-                history[history.length - 1].returnedAt = new Date().toISOString().split('T')[0];
+                history[history.length - 1].returnedAt = getCurrentDateFormatted();
                 await updateDoc(doc(db, "territories", id), { history });
             }
         };
 
-        // --- УПРАВЛЕНИЕ ИСТОРИЕЙ ---
         window.showHistory = (id) => {
             currentEditingTerritoryId = id;
             const tObj = territoriesData.find(item => item.id === id);
             if (!tObj) return;
 
             document.getElementById('modal-title').innerText = `${t('modal_title')} №${tObj.number}`;
+            document.getElementById('modal-territory-map-url').value = tObj.mapUrl || '';
+
             const listContainer = document.getElementById('modal-history-list');
             listContainer.innerHTML = '';
 
@@ -821,69 +706,72 @@
             } else {
                 tObj.history.forEach((h, index) => {
                     const itemDiv = document.createElement('div');
-                    itemDiv.className = 'bg-slate-950/80 border border-slate-800 p-3 rounded-2xl flex items-center justify-between gap-2 text-xs shadow-sm';
+                    itemDiv.className = 'bg-slate-950/80 border border-slate-800 p-2.5 rounded-2xl flex items-center justify-between gap-2 text-xs shadow-sm';
                     itemDiv.innerHTML = `
-                        <div class="space-y-1">
+                        <div class="space-y-0.5">
                             <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
-                            <p class="text-slate-400">${t('issued_by')} <span class="text-slate-200">${h.issuedAt}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || t('in_progress')}</span></p>
+                            <p class="text-slate-400 text-[11px]">${t('issued_by')} <span class="text-slate-200">${formatDate(h.issuedAt)}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${formatDate(h.returnedAt) || t('in_progress')}</span></p>
                         </div>
-                        <div class="flex items-center gap-1.5">
-                            <button onclick="openEditHistoryItem(${index})" title="Редактировать запись" class="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition border border-slate-800"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="confirmDeleteHistoryItem(${index})" title="Удалить запись" class="p-2 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition border border-slate-800"><i class="fa-solid fa-trash"></i></button>
+                        <div class="flex items-center gap-1">
+                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="w-8 h-8 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="w-8 h-8 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
                     `;
                     listContainer.appendChild(itemDiv);
                 });
             }
 
-            openModal('history-modal');
+            document.getElementById('history-modal').classList.remove('hidden');
+            document.getElementById('history-modal').classList.add('flex');
         };
 
         window.closeHistoryModal = () => {
-            closeModal('history-modal');
+            currentEditingTerritoryId = null;
+            document.getElementById('history-modal').classList.add('hidden');
+            document.getElementById('history-modal').classList.remove('flex');
         };
 
-        window.openEditHistoryItem = (index) => {
-            currentEditingHistoryIndex = index;
+        window.saveTerritoryMapUrl = async () => {
+            if (!currentEditingTerritoryId) return;
+            const newUrl = document.getElementById('modal-territory-map-url').value;
+            await updateDoc(doc(db, "territories", currentEditingTerritoryId), { mapUrl: newUrl.trim() });
+            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
+        };
+
+        window.editHistoryItem = async (index) => {
             const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
             if (!tObj || !tObj.history[index]) return;
-
             const h = tObj.history[index];
-            document.getElementById('input-edit-history-pub').value = h.publisher || '';
-            document.getElementById('input-edit-history-issued').value = h.issuedAt || '';
-            document.getElementById('input-edit-history-returned').value = h.returnedAt || '';
 
-            openModal('modal-edit-history');
-        };
+            const newPub = prompt(t('prompt_edit_publisher'), h.publisher);
+            if (newPub === null) return;
+            const newIssuedInput = prompt(t('prompt_edit_issued_date'), formatDate(h.issuedAt));
+            if (newIssuedInput === null) return;
+            const newReturnedInput = prompt(t('prompt_edit_returned_date'), formatDate(h.returnedAt));
+            if (newReturnedInput === null) return;
 
-        window.submitEditHistoryItem = async () => {
-            const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
-            if (!tObj || currentEditingHistoryIndex === null) return;
+            const newIssuedFormatted = parseInputDate(newIssuedInput);
+            const newReturnedFormatted = parseInputDate(newReturnedInput);
 
-            const pub = document.getElementById('input-edit-history-pub').value;
-            const issued = document.getElementById('input-edit-history-issued').value;
-            const returned = document.getElementById('input-edit-history-returned').value;
-
-            tObj.history[currentEditingHistoryIndex] = {
-                publisher: pub.trim(),
-                issuedAt: issued.trim(),
-                returnedAt: returned.trim() !== '' ? returned.trim() : null
+            tObj.history[index] = {
+                publisher: newPub.trim(),
+                issuedAt: newIssuedFormatted || h.issuedAt,
+                returnedAt: newReturnedFormatted !== null && newReturnedFormatted !== '' ? newReturnedFormatted : null
             };
 
             await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
-            closeModal('modal-edit-history');
-            showHistory(tObj.id);
+            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
         };
 
-        window.confirmDeleteHistoryItem = (index) => {
+        window.deleteHistoryItem = async (index) => {
             const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
             if (!tObj || !tObj.history[index]) return;
 
-            showConfirm(`Удалить запись #${index + 1} (${tObj.history[index].publisher})?`, async () => {
+            if (confirm(`${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`)) {
                 tObj.history.splice(index, 1);
                 await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
-                showHistory(tObj.id);
-            });
+                if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
+            }
         };
 
         window.copyTerritoryLink = (url) => {
@@ -893,10 +781,12 @@
 
         function renderCities() {
             const container = document.getElementById('cities-container');
+            
             container.innerHTML = '';
             citiesData.forEach(c => {
                 const btn = document.createElement('button');
                 btn.dataset.cityId = c.id;
+                btn.title = c.name;
                 btn.innerText = c.name;
                 btn.onclick = () => { 
                     if (activeCityId !== c.id) {
@@ -908,6 +798,7 @@
                 };
                 container.appendChild(btn);
             });
+            
             updateActiveCityStyles();
             updateActiveCityMapLink();
         }
@@ -927,10 +818,12 @@
             const container = document.getElementById('cities-container');
             Array.from(container.children).forEach(btn => {
                 const cId = btn.dataset.cityId;
+                const basePill = "h-10 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center border truncate shadow-sm";
+                
                 if (cId === activeCityId) {
-                    btn.className = "px-3.5 py-2 rounded-xl text-xs transition inline-block text-center bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/30";
+                    btn.className = `${basePill} bg-indigo-600 text-white border-indigo-500 shadow-indigo-600/30`;
                 } else {
-                    btn.className = "px-3.5 py-2 rounded-xl text-xs transition inline-block text-center bg-transparent text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium";
+                    btn.className = `${basePill} bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-800/80`;
                 }
             });
         }
@@ -983,11 +876,11 @@
                         
                         <div class="flex items-center gap-1.5 pt-1">
                             ${tObj.mapUrl ? `
-                                <a href="${tObj.mapUrl}" target="_blank" class="px-3 py-1.5 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm">
+                                <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
                                     <i class="fa-solid fa-map"></i> ${t('card_map')}
                                 </a>
-                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="p-2 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm">
-                                    <i class="fa-solid fa-copy"></i>
+                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
+                                    <i class="fa-solid fa-copy text-xs"></i>
                                 </button>
                             ` : `
                                 <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
@@ -997,13 +890,13 @@
 
                     <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер и карту" class="p-2 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="showHistory('${tObj.id}')" title="История" class="p-2 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                            <button onclick="archiveTerritoryDirect('${tObj.id}')" title="В архив" class="p-2 bg-black/30 hover:bg-rose-950/80 text-rose-300 rounded-xl text-xs transition border border-white/10"><i class="fa-solid fa-box-archive"></i></button>
+                            <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                            <button onclick="archiveTerritory('${tObj.id}')" title="В архив" class="w-8 h-8 bg-black/30 hover:bg-rose-950/80 text-rose-300 rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-box-archive"></i></button>
                         </div>
                         ${!isBusy 
-                            ? `<button onclick="openIssueTerritory('${tObj.id}')" class="px-3.5 py-2 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition">${t('btn_issue')}</button>`
-                            : `<button onclick="returnTerritory('${tObj.id}')" class="px-3.5 py-2 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20">${t('btn_return')}</button>`
+                            ? `<button onclick="issueTerritory('${tObj.id}')" class="h-8 px-3.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center">${t('btn_issue')}</button>`
+                            : `<button onclick="returnTerritory('${tObj.id}')" class="h-8 px-3.5 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`
                         }
                     </div>
                 `;
