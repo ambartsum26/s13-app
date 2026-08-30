@@ -40,8 +40,8 @@
             </div>
         </div>
 
-        <!-- Переключатель городов (Четкая сетка для отображения городов в 2 ряда / ровные колонки) -->
-        <div class="w-full lg:w-auto grid grid-cols-3 sm:grid-cols-6 lg:flex lg:flex-wrap items-center gap-1.5 bg-slate-950/40 p-1.5 rounded-2xl border border-slate-800/80" id="cities-container"></div>
+        <!-- Переключатель городов: 2 параллельных столбца по 3 города в кружках -->
+        <div class="grid grid-cols-2 gap-3 bg-slate-950/40 p-2.5 rounded-3xl border border-slate-800/80 justify-items-center items-center" id="cities-container"></div>
 
         <!-- Кнопки управления и Язык (Правый блок) -->
         <div class="flex items-center gap-2.5 w-full lg:w-auto justify-end">
@@ -729,6 +729,7 @@
             citiesData.forEach(c => {
                 const btn = document.createElement('button');
                 btn.dataset.cityId = c.id;
+                btn.title = c.name;
                 btn.innerText = c.name;
                 btn.onclick = () => { 
                     if (activeCityId !== c.id) {
@@ -760,10 +761,13 @@
             const container = document.getElementById('cities-container');
             Array.from(container.children).forEach(btn => {
                 const cId = btn.dataset.cityId;
+                // Базовый стиль круглых элементов с авто-переносом текста/сокращением
+                const baseCircle = "w-20 h-20 sm:w-24 sm:h-24 rounded-full text-[11px] sm:text-xs font-bold transition flex items-center justify-center text-center p-2 leading-tight shadow-md border break-all overflow-hidden";
+                
                 if (cId === activeCityId) {
-                    btn.className = "px-2.5 py-1.5 rounded-xl text-xs transition text-center bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/30 truncate";
+                    btn.className = `${baseCircle} bg-indigo-600 text-white border-indigo-400 shadow-indigo-600/40 ring-2 ring-indigo-400/50 scale-105`;
                 } else {
-                    btn.className = "px-2.5 py-1.5 rounded-xl text-xs transition text-center bg-transparent text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium truncate";
+                    btn.className = `${baseCircle} bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-700/80 hover:border-slate-500`;
                 }
             });
         }
