@@ -550,8 +550,8 @@
                     body { font-family: Arial, sans-serif; font-size: 9pt; margin: 20px; color: #000; }
                     h2 { text-align: center; margin-bottom: 2px; font-size: 13pt; font-weight: bold; }
                     .subtitle { font-weight: bold; margin-bottom: 15px; font-size: 10pt; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 5px; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                    th, td { border: 0.5pt solid #000; padding: 3px; text-align: center; vertical-align: middle; font-size: 8pt; }
+                    table { border-collapse: collapse; margin-top: 5px; }
+                    th, td { border: 0.5pt solid #000; padding: 3px; text-align: center; vertical-align: middle; font-size: 8pt; white-space: nowrap; }
                     th { background-color: #f2f2f2; font-weight: bold; }
                     .publisher-row { font-weight: bold; font-size: 8.5pt; background-color: #fafafa; text-align: center; height: 18px; }
                     .note { font-size: 7.5pt; margin-top: 15px; font-style: italic; }
@@ -561,107 +561,74 @@
             <body>
                 <h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2>
                 <div class="subtitle">Année de service : ${new Date().getFullYear()} &nbsp;&nbsp;&nbsp;&nbsp; Ville : ${city.name}</div>
-                
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="width: 35px;">Terr. n°</th>
-                            <th rowspan="2" style="width: 80px;">Parcouru pour la dernière fois le*</th>
-                            <th colspan="2">Attribué à</th>
-                            <th colspan="2">Attribué à</th>
-                            <th colspan="2">Attribué à</th>
-                            <th colspan="2">Attribué à</th>
+                            <th rowspan="2" style="width:35px;">Terr. n°</th>
+                            <th rowspan="2" style="width:80px;">Parcouru pour la dernière fois le*</th>
+                            ${(() => {
+                                const maxHistory = Math.max(1, ...territoriesData.map(t => (t.history || []).length));
+                                return Array.from({ length: maxHistory }, () => '<th colspan="2">Attribué à</th>').join('');
+                            })()}
                         </tr>
                         <tr>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
-                            <th style="width: 65px;">Attribué le</th>
-                            <th style="width: 65px;">Entièrement parcouru le</th>
+                            ${(() => {
+                                const maxHistory = Math.max(1, ...territoriesData.map(t => (t.history || []).length));
+                                return Array.from({ length: maxHistory }, () => '<th style="width:65px;">Attribué le</th><th style="width:65px;">Entièrement parcouru le</th>').join('');
+                            })()}
                         </tr>
                     </thead>
                     <tbody>
             `;
 
+            const maxHistory = Math.max(1, ...territoriesData.map(t => (t.history || []).length));
+
             territoriesData.forEach(tObj => {
                 const history = tObj.history || [];
-                const completedItems = history.filter(h => h.returnedAt);
-                const lastWalkedDate = completedItems.length > 0
-                    ? formatDate(completedItems[completedItems.length - 1].returnedAt)
-                    : "";
+                let publisherRowHtml = '';
+                let datesRowHtml = '';
 
-                // Добавляем столько блоков по 4 выдачи, сколько нужно — без ограничения.
-                const blocks = Math.max(1, Math.ceil(history.length / 4));
-
-                for (let block = 0; block < blocks; block++) {
-                    let publisherRowHtml = "";
-                    let datesRowHtml = "";
-
-                    for (let i = 0; i < 4; i++) {
-                        const h = history[block * 4 + i];
-                        if (h) {
-                            publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
-                            const issuedDate = formatDate(h.issuedAt) || "";
-                            const returnedDate = h.returnedAt ? formatDate(h.returnedAt) : 'En cours';
-                            datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
-                        } else {
-                            publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
-                            datesRowHtml += `<td></td><td></td>`;
-                        }
+                for (let i = 0; i < maxHistory; i++) {
+                    const h = history[i];
+                    if (h) {
+                        publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
+                        datesRowHtml += `<td>${formatDate(h.issuedAt) || ''}</td><td>${h.returnedAt ? formatDate(h.returnedAt) : 'En cours'}</td>`;
+                    } else {
+                        publisherRowHtml += '<td colspan="2" class="publisher-row"></td>';
+                        datesRowHtml += '<td></td><td></td>';
                     }
-
-                    htmlContent += `
-                    <tr>
-                        <td rowspan="2"><b>${tObj.number}</b></td>
-                        <td rowspan="2">${block === 0 ? lastWalkedDate : ""}</td>
-                        ${publisherRowHtml}
-                    </tr>
-                    <tr>
-                        ${datesRowHtml}
-                    </tr>
-                    `;
                 }
-            });
 
-            const totalRows = Math.max(territoriesData.length, 15);
-            for (let i = territoriesData.length; i < totalRows; i++) {
+                const completedItems = history.filter(h => h.returnedAt);
+                const lastWalkedDate = completedItems.length > 0 ? formatDate(completedItems[completedItems.length - 1].returnedAt) : '';
+
                 htmlContent += `
                     <tr>
-                        <td rowspan="2">&nbsp;</td>
-                        <td rowspan="2"></td>
-                        <td colspan="2" class="publisher-row"></td>
-                        <td colspan="2" class="publisher-row"></td>
-                        <td colspan="2" class="publisher-row"></td>
-                        <td colspan="2" class="publisher-row"></td>
+                        <td rowspan="2"><b>${tObj.number}</b></td>
+                        <td rowspan="2">${lastWalkedDate}</td>
+                        ${publisherRowHtml}
                     </tr>
-                    <tr>
-                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                    </tr>
+                    <tr>${datesRowHtml}</tr>
                 `;
-            }
+            });
 
             htmlContent += `
                     </tbody>
                 </table>
-                <div class="note">
-                    * Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.
-                </div>
+                <div class="note">* Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.</div>
                 <div class="footer-code">S-13-F 1/22</div>
             </body>
-            </html>
-            `;
+            </html>`;
 
             const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
             const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
+            const link = document.createElement('a');
             link.href = url;
             link.download = `S-13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.doc`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         };
 
         const firebaseConfig = {
