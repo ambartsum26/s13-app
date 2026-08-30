@@ -210,14 +210,17 @@
                 </button>
             </div>
             <div class="space-y-2">
+                <!-- Изменить номер (иконка человечка) -->
                 <button onclick="menuOptionEditNumber()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-pen-to-square text-indigo-400 w-4"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
+                    <i class="fa-solid fa-user text-indigo-400 w-4"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
                 </button>
+                <!-- Изменить ссылку на карту -->
                 <button onclick="menuOptionEditMap()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-map text-emerald-400 w-4"></i> <span data-i18n="menu_edit_territory_map">Изменить ссылку на карту</span>
                 </button>
-                <button onclick="menuOptionArchive()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-900/40 rounded-2xl text-xs font-medium text-rose-400 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-box-archive text-rose-400 w-4"></i> <span data-i18n="menu_archive_territory">Заархивировать участок</span>
+                <!-- Количество русскоязычных -->
+                <button onclick="menuOptionEditRussianCount()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                    <i class="fa-solid fa-language text-sky-400 w-4"></i> <span data-i18n="menu_edit_russian_count">Количество русскоязычных</span>
                 </button>
             </div>
         </div>
@@ -299,19 +302,19 @@
                 prompt_new_territory_map: "Ссылка на карту этого участка (необязательно):",
                 prompt_edit_territory_num: "Новый номер участка:",
                 prompt_edit_territory_map: "Введите новую ссылку на карту участка:",
-                prompt_archive_confirm: "Архивировать участок №",
                 prompt_publisher_name: "ФИО возвещателя, которому выдаётся участок:",
                 prompt_edit_publisher: "ФИО возвещателя:",
                 prompt_edit_issued_date: "Дата выдачи (ДД.ММ.ГГГГ):",
                 prompt_edit_returned_date: "Дата возврата (ДД.ММ.ГГГГ или оставьте пустым, если в обработке):",
                 prompt_delete_history: "Удалить запись #",
+                prompt_russian_count: "Введите количество найденных русскоязычных:",
                 btn_cancel: "Отмена",
                 btn_ok: "ОК",
                 btn_confirm: "Подтвердить",
                 confirm_title: "Подтверждение",
                 menu_edit_number: "Изменить номер",
                 menu_edit_territory_map: "Изменить ссылку на карту",
-                menu_archive_territory: "Заархивировать участок"
+                menu_edit_russian_count: "Количество русскоязычных"
             },
             fr: {
                 app_title: "ASSISTANT DE TERRITOIRES",
@@ -352,19 +355,19 @@
                 prompt_new_territory_map: "Lien vers la carte de ce territoire (facultatif) :",
                 prompt_edit_territory_num: "Nouveau numéro du territoire :",
                 prompt_edit_territory_map: "Entrez le nouveau lien de la carte du territoire :",
-                prompt_archive_confirm: "Archiver le territoire n°",
                 prompt_publisher_name: "Nom du proclamateur :",
                 prompt_edit_publisher: "Nom du proclamateur :",
                 prompt_edit_issued_date: "Date d'attribution (JJ.MM.AAAA) :",
                 prompt_edit_returned_date: "Date de retour (JJ.MM.AAAA ou laisser vide si en cours) :",
                 prompt_delete_history: "Supprimer l'entrée n°",
+                prompt_russian_count: "Entrez le nombre de russophones trouvés :",
                 btn_cancel: "Annuler",
                 btn_ok: "OK",
                 btn_confirm: "Confirmer",
                 confirm_title: "Confirmation",
                 menu_edit_number: "Modifier le numéro",
                 menu_edit_territory_map: "Modifier le lien de la carte",
-                menu_archive_territory: "Archiver le territoire"
+                menu_edit_russian_count: "Nombre de russophones"
             }
         };
 
@@ -515,12 +518,20 @@
             }
         };
 
-        window.menuOptionArchive = async () => {
+        window.menuOptionEditRussianCount = async () => {
             closeTerritoryMenuModal();
             if (!activeTerritoryForMenu) return;
-            const confirmed = await showCustomConfirm(`${t('prompt_archive_confirm')}№${activeTerritoryForMenu.number}?`);
-            if (confirmed) {
-                await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { isArchived: true });
+            const currentCount = activeTerritoryForMenu.russianCount || 0;
+            const res = await showCustomDialog(t('menu_edit_russian_count'), [
+                { label: t('prompt_russian_count'), defaultValue: String(currentCount) }
+            ]);
+            if (res !== null && res[0] !== undefined) {
+                const newCount = parseInt(res[0], 10);
+                if (!isNaN(newCount) && newCount >= 0) {
+                    await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { russianCount: newCount });
+                } else {
+                    alert("Пожалуйста, введите корректное число.");
+                }
             }
         };
 
@@ -737,7 +748,7 @@
 
                         const ref = await addDoc(collection(db, "cities"), { name: cityName, mapUrl: mapUrl });
                         for (const item of territoriesList) {
-                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", russianCount: 0, history: item.history });
                         }
                     } else {
                         if (mapUrl && existingCity.mapUrl !== mapUrl) {
@@ -782,8 +793,7 @@
 
             const q = query(
                 collection(db, "territories"), 
-                where("cityId", "==", activeCityId),
-                where("isArchived", "==", false)
+                where("cityId", "==", activeCityId)
             );
 
             unsubscribeTerritories = onSnapshot(q, (snapshot) => {
@@ -848,7 +858,7 @@
                 cityId: activeCityId,
                 number: res[0].trim(),
                 mapUrl: res[1] ? res[1].trim() : '',
-                isArchived: false,
+                russianCount: 0,
                 history: []
             });
         };
@@ -1056,23 +1066,28 @@
                     <div class="space-y-2 text-xs text-slate-200">
                         ${isBusy ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>` : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`}
                         
-                        <div class="flex items-center gap-1.5 pt-1">
-                            ${tObj.mapUrl ? `
-                                <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
-                                    <i class="fa-solid fa-map"></i> ${t('card_map')}
-                                </a>
-                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
-                                    <i class="fa-solid fa-copy text-xs"></i>
-                                </button>
-                            ` : `
-                                <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
-                            `}
+                        <div class="flex items-center justify-between gap-1.5 pt-1">
+                            <div class="flex items-center gap-1.5">
+                                ${tObj.mapUrl ? `
+                                    <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
+                                        <i class="fa-solid fa-map"></i> ${t('card_map')}
+                                    </a>
+                                    <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
+                                        <i class="fa-solid fa-copy text-xs"></i>
+                                    </button>
+                                ` : `
+                                    <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
+                                `}
+                            </div>
+                            <span class="text-[11px] text-sky-400 font-semibold bg-sky-950/40 px-2 py-1 rounded-lg border border-sky-500/20" title="Количество русскоязычных">
+                                <i class="fa-solid fa-language mr-1"></i>${tObj.russianCount || 0}
+                            </span>
                         </div>
                     </div>
 
                     <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-user"></i></button>
                             <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
                         </div>
                         ${!isBusy 
