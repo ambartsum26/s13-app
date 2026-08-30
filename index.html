@@ -647,11 +647,11 @@
             listContainer.innerHTML = '';
 
             if (!tObj.history || tObj.history.length === 0) {
-                listContainer.innerHTML = `<p class="text-xs text-slate-500 italic py-2">${t('history_empty')}</p>`;
+                listContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-2">${t('history_empty')}</p>`;
             } else {
                 tObj.history.forEach((h, index) => {
                     const itemDiv = document.createElement('div');
-                    itemDiv.className = 'bg-slate-950 border border-slate-800/80 p-3 rounded-2xl flex items-center justify-between gap-2 text-xs shadow-sm';
+                    itemDiv.className = 'bg-slate-950/80 border border-slate-800 p-3 rounded-2xl flex items-center justify-between gap-2 text-xs shadow-sm';
                     itemDiv.innerHTML = `
                         <div class="space-y-1">
                             <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
@@ -787,56 +787,56 @@
 
                 if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
 
-                // Стили плитки в зависимости от статуса (свободные зеленые, в обработке синие, просроченные красные)
-                let badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${t('status_free')}</span>`;
-                let cardStyle = "bg-emerald-950/20 border-emerald-500/40 hover:border-emerald-500/70 shadow-lg shadow-emerald-950/10";
+                // Плотная заливка карточек (полностью окрашены в зеленый, синий или красный)
+                let badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-400/30">${t('status_free')}</span>`;
+                let cardStyle = "bg-emerald-900/40 border-emerald-500/60 hover:border-emerald-400 shadow-xl shadow-emerald-950/40";
                 
                 if (isBusy && !isOverdue) {
-                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">${t('status_busy')} (${days} ${t('days_text')})</span>`;
-                    cardStyle = "bg-blue-950/25 border-blue-500/40 hover:border-blue-500/70 shadow-xl shadow-blue-950/20";
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-950/60 text-blue-300 border border-blue-400/30">${t('status_busy')} (${days} ${t('days_text')})</span>`;
+                    cardStyle = "bg-blue-900/40 border-blue-500/60 hover:border-blue-400 shadow-xl shadow-blue-950/40";
                 }
                 if (isOverdue) {
-                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
-                    cardStyle = "bg-rose-950/30 border-rose-500/50 hover:border-rose-500/80 shadow-2xl shadow-rose-950/30";
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-rose-950/60 text-rose-300 border border-rose-400/30">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
+                    cardStyle = "bg-rose-900/40 border-rose-500/70 hover:border-rose-400 shadow-2xl shadow-rose-950/50";
                 }
 
                 const card = document.createElement('div');
-                card.className = `backdrop-blur-xl border ${cardStyle} rounded-3xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-300 hover:-translate-y-0.5`;
+                card.className = `backdrop-blur-2xl border ${cardStyle} rounded-3xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-300 hover:-translate-y-0.5`;
                 card.innerHTML = `
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${t('card_territory')}</span>
+                            <span class="text-[10px] text-slate-300/80 font-bold uppercase tracking-wider">${t('card_territory')}</span>
                             <h3 class="text-xl font-extrabold text-white tracking-tight">№ ${tObj.number}</h3>
                         </div>
                         ${badge}
                     </div>
                     
-                    <div class="space-y-2 text-xs text-slate-300">
-                        ${isBusy ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-indigo-400"></i> <strong class="text-white">${lastRec.publisher}</strong></p>` : `<p class="text-slate-500 italic">${t('not_issued')}</p>`}
+                    <div class="space-y-2 text-xs text-slate-200">
+                        ${isBusy ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>` : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`}
                         
                         <div class="flex items-center gap-1.5 pt-1">
                             ${tObj.mapUrl ? `
-                                <a href="${tObj.mapUrl}" target="_blank" class="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-900 text-indigo-400 hover:text-indigo-300 rounded-xl font-medium flex items-center gap-1.5 transition border border-slate-700/60 shadow-sm">
+                                <a href="${tObj.mapUrl}" target="_blank" class="px-3 py-1.5 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm">
                                     <i class="fa-solid fa-map"></i> ${t('card_map')}
                                 </a>
-                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="p-2 bg-slate-900/80 hover:bg-slate-900 text-slate-300 hover:text-white rounded-xl transition border border-slate-700/60 shadow-sm">
+                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="p-2 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm">
                                     <i class="fa-solid fa-copy"></i>
                                 </button>
                             ` : `
-                                <span class="text-[10px] text-slate-500 italic">${t('no_map_link')}</span>
+                                <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
                             `}
                         </div>
                     </div>
 
-                    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                    <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер" class="p-2 bg-slate-900/80 hover:bg-slate-900 text-slate-300 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="p-2 bg-slate-900/80 hover:bg-slate-900 text-slate-300 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                            <button onclick="archiveTerritory('${tObj.id}')" title="В архив" class="p-2 bg-slate-900/80 hover:bg-rose-950/50 text-rose-400 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-box-archive"></i></button>
+                            <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер" class="p-2 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="p-2 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                            <button onclick="archiveTerritory('${tObj.id}')" title="В архив" class="p-2 bg-black/30 hover:bg-rose-950/80 text-rose-300 rounded-xl text-xs transition border border-white/10"><i class="fa-solid fa-box-archive"></i></button>
                         </div>
                         ${!isBusy 
-                            ? `<button onclick="issueTerritory('${tObj.id}')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition">${t('btn_issue')}</button>`
-                            : `<button onclick="returnTerritory('${tObj.id}')" class="px-3.5 py-2 bg-slate-900 hover:bg-emerald-600 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-700/60">${t('btn_return')}</button>`
+                            ? `<button onclick="issueTerritory('${tObj.id}')" class="px-3.5 py-2 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition">${t('btn_issue')}</button>`
+                            : `<button onclick="returnTerritory('${tObj.id}')" class="px-3.5 py-2 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20">${t('btn_return')}</button>`
                         }
                     </div>
                 `;
