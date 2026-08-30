@@ -46,7 +46,6 @@
                     <i class="fa-solid fa-location-dot"></i>
                 </div>
                 <div>
-                    <!-- ЗАГОЛОВОК КАПСЛОКОМ -->
                     <h1 class="font-extrabold text-base tracking-tight text-white leading-tight uppercase" data-i18n="app_title">АССИСТЕНТ ПО УЧАСТКАМ</h1>
                     <p class="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5 mt-0.5" id="db-status">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Подключение к Firebase...
@@ -58,30 +57,22 @@
         <!-- Переключатель городов -->
         <div class="grid grid-cols-2 gap-2 bg-slate-950/40 p-2 rounded-2xl border border-slate-800/80 w-full lg:w-auto" id="cities-container"></div>
 
-        <!-- Кнопки управления и Язык -->
+        <!-- Кнопки управления -->
         <div class="flex items-center gap-2 w-full lg:w-auto justify-end">
-            
-            <!-- ТОГГЛ-КНОПКА ПЕРЕКЛЮЧЕНИЯ ЯЗЫКА -->
-            <button onclick="toggleLanguage()" title="Сменить язык / Changer de langue" class="relative w-24 h-10 bg-slate-950 rounded-xl border border-slate-800 p-1 flex items-center justify-between select-none cursor-pointer overflow-hidden shadow-inner">
-                <div id="lang-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-emerald-500 rounded-lg transition-all duration-300 transform translate-x-0 shadow-md"></div>
-                <span id="lang-label-ru" class="relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300">RU</span>
-                <span id="lang-label-fr" class="relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300">FR</span>
-            </button>
-
-            <button onclick="addCity()" class="h-10 px-3.5 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
-                <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_city">Город</span>
+            <button onclick="addCity()" class="group h-10 px-3.5 bg-slate-800/80 hover:bg-emerald-600 text-slate-200 hover:text-white text-xs font-semibold rounded-xl border border-slate-700/60 hover:border-emerald-500 transition-colors duration-200 shadow-none flex items-center gap-1.5">
+                <i class="fa-solid fa-plus text-indigo-400 group-hover:text-white transition-colors duration-200"></i> <span data-i18n="btn_city">Город</span>
             </button>
             
             <div class="relative">
-                <button onclick="toggleCityMenu(event)" title="Управление городом" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-xs rounded-xl border border-slate-700/60 text-slate-300 hover:text-white transition shadow-sm flex items-center justify-center">
-                    <i class="fa-solid fa-pen"></i>
+                <button onclick="toggleCityMenu(event)" title="Управление городом" class="group h-10 w-10 bg-slate-800/80 hover:bg-emerald-600 text-slate-300 hover:text-white text-xs rounded-xl border border-slate-700/60 hover:border-emerald-500 transition-colors duration-200 shadow-none flex items-center justify-center">
+                    <i class="fa-solid fa-pen text-slate-300 group-hover:text-white transition-colors duration-200"></i>
                 </button>
                 <div id="city-dropdown-menu" class="hidden absolute right-0 mt-2.5 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 text-xs backdrop-blur-xl">
-                    <button onclick="editCityName(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
-                        <i class="fa-solid fa-signature text-indigo-400 w-4"></i> <span data-i18n="menu_edit_city">Изменить название</span>
+                    <button onclick="editCityName(); closeCityMenu();" class="group w-full text-left px-4 py-2.5 hover:bg-emerald-600 text-slate-200 hover:text-white flex items-center gap-3 transition-colors duration-200">
+                        <i class="fa-solid fa-signature text-indigo-400 group-hover:text-white w-4 transition-colors duration-200"></i> <span data-i18n="menu_edit_city">Изменить название</span>
                     </button>
-                    <button onclick="editCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2.5 hover:bg-slate-800 text-slate-200 flex items-center gap-3 transition">
-                        <i class="fa-solid fa-earth-americas text-emerald-400 w-4"></i> <span data-i18n="menu_edit_map">Изменить ссылку на карту</span>
+                    <button onclick="editCityMap(); closeCityMenu();" class="group w-full text-left px-4 py-2.5 hover:bg-emerald-600 text-slate-200 hover:text-white flex items-center gap-3 transition-colors duration-200">
+                        <i class="fa-solid fa-earth-americas text-emerald-400 group-hover:text-white w-4 transition-colors duration-200"></i> <span data-i18n="menu_edit_map">Изменить ссылку на карту</span>
                     </button>
                 </div>
             </div>
@@ -127,16 +118,16 @@
 
             <!-- Действия -->
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="h-10 w-10 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 hover:text-emerald-300 rounded-xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center">
-                    <i class="fa-solid fa-download text-sm"></i>
+                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="group h-10 w-10 bg-slate-800/80 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-xl text-xs font-semibold transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none flex items-center justify-center">
+                    <i class="fa-solid fa-download text-sm text-emerald-400 group-hover:text-white transition-colors duration-200"></i>
                 </button>
 
                 <a id="map-link" href="#" target="_blank" class="group flex items-center gap-1.5 h-10 px-4 bg-slate-800/80 hover:bg-emerald-600 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none">
                     <i class="fa-solid fa-map-location-dot text-emerald-400 group-hover:text-white transition-colors duration-200"></i> <span data-i18n="btn_general_map">Карта</span>
                 </a>
                 
-                <button onclick="addTerritory()" class="h-10 px-4 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-xl transition shadow-md flex items-center gap-1.5 text-slate-200">
-                    <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_territory">Участок</span>
+                <button onclick="addTerritory()" class="group h-10 px-4 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 text-xs font-semibold rounded-xl transition-colors duration-200 shadow-none flex items-center gap-1.5 text-slate-200 hover:text-white">
+                    <i class="fa-solid fa-plus text-indigo-400 group-hover:text-white transition-colors duration-200"></i> <span data-i18n="btn_territory">Участок</span>
                 </button>
             </div>
         </section>
@@ -150,8 +141,8 @@
         <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-4">
                 <h3 id="modal-title" class="font-bold text-base text-white" data-i18n="history_modal_title">История выдач участка</h3>
-                <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-                    <i class="fa-solid fa-xmark text-xs"></i>
+                <button onclick="closeHistoryModal()" class="group w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-emerald-600 text-slate-400 hover:text-white border border-slate-700/60 hover:border-emerald-500 flex items-center justify-center transition-colors duration-200 shadow-none">
+                    <i class="fa-solid fa-xmark text-xs text-slate-400 group-hover:text-white transition-colors duration-200"></i>
                 </button>
             </div>
 
@@ -161,7 +152,7 @@
             </div>
 
             <div class="flex justify-end pt-3 border-t border-slate-800/80">
-                <button onclick="closeHistoryModal()" class="h-10 px-5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
+                <button onclick="closeHistoryModal()" class="h-10 px-5 bg-slate-800/80 hover:bg-emerald-600 text-xs font-semibold rounded-xl border border-slate-700/60 hover:border-emerald-500 transition-colors duration-200 text-slate-200 hover:text-white shadow-none" data-i18n="btn_close">Закрыть</button>
             </div>
         </div>
     </div>
@@ -171,14 +162,14 @@
         <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-3">
                 <h3 id="custom-dialog-title" class="font-bold text-sm text-white">Заголовок</h3>
-                <button onclick="closeCustomDialog(false)" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-                    <i class="fa-solid fa-xmark text-xs"></i>
+                <button onclick="closeCustomDialog(false)" class="group w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-emerald-600 text-slate-400 hover:text-white border border-slate-700/60 hover:border-emerald-500 flex items-center justify-center transition-colors duration-200 shadow-none">
+                    <i class="fa-solid fa-xmark text-xs text-slate-400 group-hover:text-white transition-colors duration-200"></i>
                 </button>
             </div>
             <div id="custom-dialog-fields" class="space-y-3"></div>
             <div class="flex justify-end gap-2 pt-3 border-t border-slate-800/80">
-                <button onclick="closeCustomDialog(false)" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="closeCustomDialog(true)" class="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-indigo-600/30" data-i18n="btn_ok">ОК</button>
+                <button onclick="closeCustomDialog(false)" class="h-10 px-4 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 text-xs font-semibold rounded-xl transition-colors duration-200 text-slate-300 hover:text-white shadow-none" data-i18n="btn_cancel">Отмена</button>
+                <button onclick="closeCustomDialog(true)" class="h-10 px-5 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 text-xs font-semibold rounded-xl transition-colors duration-200 text-slate-200 hover:text-white shadow-none" data-i18n="btn_ok">ОК</button>
             </div>
         </div>
     </div>
@@ -194,8 +185,8 @@
             </div>
             <p id="custom-confirm-message" class="text-xs text-slate-300 leading-relaxed"></p>
             <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeCustomConfirm(false)" class="h-10 px-4 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-300" data-i18n="btn_cancel">Отмена</button>
-                <button onclick="closeCustomConfirm(true)" class="h-10 px-5 bg-rose-600 hover:bg-rose-500 text-xs font-semibold rounded-xl transition text-white shadow-md shadow-rose-600/30" data-i18n="btn_confirm">Подтвердить</button>
+                <button onclick="closeCustomConfirm(false)" class="h-10 px-4 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 text-xs font-semibold rounded-xl transition-colors duration-200 text-slate-300 hover:text-white shadow-none" data-i18n="btn_cancel">Отмена</button>
+                <button onclick="closeCustomConfirm(true)" class="h-10 px-5 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 text-xs font-semibold rounded-xl transition-colors duration-200 text-slate-200 hover:text-white shadow-none" data-i18n="btn_confirm">Подтвердить</button>
             </div>
         </div>
     </div>
@@ -205,22 +196,19 @@
         <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-3">
                 <h3 id="territory-menu-title" class="font-bold text-sm text-white">Участок</h3>
-                <button onclick="closeTerritoryMenuModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
-                    <i class="fa-solid fa-xmark text-xs"></i>
+                <button onclick="closeTerritoryMenuModal()" class="group w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-emerald-600 text-slate-400 hover:text-white border border-slate-700/60 hover:border-emerald-500 flex items-center justify-center transition-colors duration-200 shadow-none">
+                    <i class="fa-solid fa-xmark text-xs text-slate-400 group-hover:text-white transition-colors duration-200"></i>
                 </button>
             </div>
             <div class="space-y-2">
-                <!-- Изменить номер -->
-                <button onclick="menuOptionEditNumber()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-hashtag text-indigo-400 w-4"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
+                <button onclick="menuOptionEditNumber()" class="group w-full text-left p-3 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 rounded-2xl text-xs font-medium text-slate-200 hover:text-white flex items-center gap-3 transition-colors duration-200 shadow-none">
+                    <i class="fa-solid fa-hashtag text-indigo-400 group-hover:text-white w-4 transition-colors duration-200"></i> <span data-i18n="menu_edit_number">Изменить номер</span>
                 </button>
-                <!-- Изменить ссылку на карту -->
-                <button onclick="menuOptionEditMap()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-map text-emerald-400 w-4"></i> <span data-i18n="menu_edit_territory_map">Изменить ссылку на карту</span>
+                <button onclick="menuOptionEditMap()" class="group w-full text-left p-3 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 rounded-2xl text-xs font-medium text-slate-200 hover:text-white flex items-center gap-3 transition-colors duration-200 shadow-none">
+                    <i class="fa-solid fa-map text-emerald-400 group-hover:text-white w-4 transition-colors duration-200"></i> <span data-i18n="menu_edit_territory_map">Изменить ссылку на карту</span>
                 </button>
-                <!-- Количество русскоговорящих (с иконкой человечка fa-user) -->
-                <button onclick="menuOptionEditRussianCount()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-user text-sky-400 w-4"></i> <span data-i18n="menu_edit_russian_count">Количество русскоговорящих</span>
+                <button onclick="menuOptionEditRussianCount()" class="group w-full text-left p-3 bg-slate-800/80 hover:bg-emerald-600 border border-slate-700/60 hover:border-emerald-500 rounded-2xl text-xs font-medium text-slate-200 hover:text-white flex items-center gap-3 transition-colors duration-200 shadow-none">
+                    <i class="fa-solid fa-user text-sky-400 group-hover:text-white w-4 transition-colors duration-200"></i> <span data-i18n="menu_edit_russian_count">Количество русскоговорящих</span>
                 </button>
             </div>
         </div>
@@ -315,97 +303,10 @@
                 menu_edit_number: "Изменить номер",
                 menu_edit_territory_map: "Изменить ссылку на карту",
                 menu_edit_russian_count: "Количество русскоговорящих"
-            },
-            fr: {
-                app_title: "ASSISTANT DE TERRITOIRES",
-                db_connected: "● Firebase connecté",
-                db_connecting: "● Connexion à Firebase...",
-                btn_city: "Ville",
-                menu_edit_city: "Modifier le nom",
-                menu_edit_map: "Modifier le lien de la carte",
-                st_free_label: "Libres",
-                st_busy_label: "Attribués",
-                st_overdue_label: "En retard",
-                btn_general_map: "Carte",
-                btn_territory: "Territoire",
-                history_modal_title: "Historique du territoire",
-                modal_map_label: "Lien de la carte du territoire",
-                btn_save: "Enregistrer",
-                history_title: "Historique des attributions :",
-                btn_close: "Fermer",
-                card_territory: "Territoire",
-                status_free: "Libre",
-                status_busy: "Attribué",
-                status_overdue: "En retard",
-                days_text: "j.",
-                card_map: "Carte",
-                no_map_link: "Aucun lien",
-                not_issued: "Non attribué",
-                btn_issue: "Attribuer",
-                btn_return: "Rendre",
-                history_empty: "L'historique est vide.",
-                issued_by: "Attribué :",
-                returned_by: "Rendu :",
-                in_progress: "EN COURS",
-                prompt_new_city: "Nom de la nouvelle ville :",
-                prompt_new_city_map: "Lien de la carte Google My Maps pour cette ville :",
-                prompt_edit_city_name: "Nouveau nom de la ville :",
-                prompt_edit_city_map: "Entrez le nouveau lien de la carte générale Google My Maps :",
-                prompt_new_territory_num: "Numéro du territoire (ex: 78 ou 12-A) :",
-                prompt_new_territory_map: "Lien vers la carte de ce territoire (facultatif) :",
-                prompt_edit_territory_num: "Nouveau numéro du territoire :",
-                prompt_edit_territory_map: "Entrez le nouveau lien de la carte du territoire :",
-                prompt_publisher_name: "Nom du proclamateur :",
-                prompt_edit_publisher: "Nom du proclamateur :",
-                prompt_edit_issued_date: "Date d'attribution (JJ.MM.AAAA) :",
-                prompt_edit_returned_date: "Date de retour (JJ.MM.AAAA ou laisser vide si en cours) :",
-                prompt_delete_history: "Supprimer l'entrée n°",
-                prompt_russian_count: "Entrez le nombre de russophones trouvés :",
-                btn_cancel: "Annuler",
-                btn_ok: "OK",
-                btn_confirm: "Confirmer",
-                confirm_title: "Confirmation",
-                menu_edit_number: "Modifier le numéro",
-                menu_edit_territory_map: "Modifier le lien de la carte",
-                menu_edit_russian_count: "Nombre de russophones"
             }
         };
 
-        let currentLang = 'ru';
-
-        window.toggleLanguage = () => {
-            currentLang = currentLang === 'ru' ? 'fr' : 'ru';
-            document.getElementById('html-root').lang = currentLang;
-            
-            const slider = document.getElementById('lang-slider');
-            const labelRu = document.getElementById('lang-label-ru');
-            const labelFr = document.getElementById('lang-label-fr');
-
-            if (currentLang === 'fr') {
-                slider.classList.remove('translate-x-0', 'bg-emerald-500');
-                slider.classList.add('translate-x-[calc(100%+4px)]', 'bg-rose-500');
-                
-                labelRu.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300';
-                labelFr.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300';
-            } else {
-                slider.classList.remove('translate-x-[calc(100%+4px)]', 'bg-rose-500');
-                slider.classList.add('translate-x-0', 'bg-emerald-500');
-                
-                labelRu.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-white transition-colors duration-300';
-                labelFr.className = 'relative z-10 w-1/2 text-center text-xs font-bold text-slate-400 transition-colors duration-300';
-            }
-            
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (translations[currentLang][key]) {
-                    el.innerText = translations[currentLang][key];
-                }
-            });
-
-            if (citiesData.length > 0) renderCities();
-            if (territoriesData.length > 0) renderTerritories();
-            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
-        };
+        const currentLang = 'ru';
 
         function t(key) {
             return translations[currentLang][key] || key;
@@ -432,7 +333,7 @@
                     input.id = `custom-field-${idx}`;
                     input.value = f.defaultValue || '';
                     input.placeholder = f.placeholder || '';
-                    input.className = 'w-full h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition shadow-inner';
+                    input.className = 'w-full h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition shadow-inner';
 
                     fieldWrapper.appendChild(label);
                     fieldWrapper.appendChild(input);
@@ -907,8 +808,8 @@
                             <p class="text-slate-400 text-[11px]">${t('issued_by')} <span class="text-slate-200">${formatDate(h.issuedAt)}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${formatDate(h.returnedAt) || t('in_progress')}</span></p>
                         </div>
                         <div class="flex items-center gap-1">
-                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="w-8 h-8 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="w-8 h-8 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition border border-slate-800 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="group w-8 h-8 bg-slate-800/80 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-xl transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none flex items-center justify-center"><i class="fa-solid fa-pen text-xs text-slate-300 group-hover:text-white transition-colors duration-200"></i></button>
+                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="group w-8 h-8 bg-slate-800/80 hover:bg-emerald-600 text-rose-400 hover:text-white rounded-xl transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none flex items-center justify-center"><i class="fa-solid fa-trash text-xs text-rose-400 group-hover:text-white transition-colors duration-200"></i></button>
                         </div>
                     `;
                     listContainer.appendChild(itemDiv);
@@ -1007,12 +908,12 @@
             const container = document.getElementById('cities-container');
             Array.from(container.children).forEach(btn => {
                 const cId = btn.dataset.cityId;
-                const basePill = "h-10 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center border truncate shadow-sm";
+                const basePill = "h-10 px-3 rounded-xl text-xs font-semibold transition-colors duration-200 flex items-center justify-center border truncate shadow-none";
                 
                 if (cId === activeCityId) {
-                    btn.className = `${basePill} bg-indigo-600 text-white border-indigo-500 shadow-indigo-600/30`;
+                    btn.className = `${basePill} bg-indigo-600 text-white border-indigo-500`;
                 } else {
-                    btn.className = `${basePill} bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-800/80`;
+                    btn.className = `${basePill} bg-slate-800/80 text-slate-300 hover:text-white hover:bg-emerald-600 border-slate-700/60 hover:border-emerald-500`;
                 }
             });
         }
@@ -1069,11 +970,11 @@
                         <div class="flex items-center justify-between gap-1.5 pt-1">
                             <div class="flex items-center gap-1.5">
                                 ${tObj.mapUrl ? `
-                                    <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
-                                        <i class="fa-solid fa-map"></i> ${t('card_map')}
+                                    <a href="${tObj.mapUrl}" target="_blank" class="group h-8 px-3 bg-slate-800/80 hover:bg-emerald-600 text-slate-200 hover:text-white rounded-xl font-medium flex items-center gap-1.5 transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none text-xs">
+                                        <i class="fa-solid fa-map text-emerald-400 group-hover:text-white transition-colors duration-200"></i> ${t('card_map')}
                                     </a>
-                                    <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl transition border border-white/10 shadow-sm flex items-center justify-center">
-                                        <i class="fa-solid fa-copy text-xs"></i>
+                                    <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="group w-8 h-8 bg-slate-800/80 hover:bg-emerald-600 text-slate-200 hover:text-white rounded-xl transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none flex items-center justify-center">
+                                        <i class="fa-solid fa-copy text-xs text-slate-300 group-hover:text-white transition-colors duration-200"></i>
                                     </button>
                                 ` : `
                                     <span class="text-[10px] text-slate-300/70 italic">${t('no_map_link')}</span>
@@ -1087,13 +988,16 @@
 
                     <div class="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <!-- Вернули иконку карандаша fa-pen -->
-                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="w-8 h-8 bg-black/30 hover:bg-black/50 text-white rounded-xl text-xs transition border border-white/10 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                            <button onclick="openTerritoryMenu('${tObj.id}')" title="Управление участком" class="group w-8 h-8 bg-slate-800/80 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-xl text-xs transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none flex items-center justify-center">
+                                <i class="fa-solid fa-pen text-slate-300 group-hover:text-white transition-colors duration-200"></i>
+                            </button>
+                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="group w-8 h-8 bg-slate-800/80 hover:bg-emerald-600 text-slate-300 hover:text-white rounded-xl text-xs transition-colors duration-200 border border-slate-700/60 hover:border-emerald-500 shadow-none flex items-center justify-center">
+                                <i class="fa-solid fa-clock-rotate-left text-slate-300 group-hover:text-white transition-colors duration-200"></i>
+                            </button>
                         </div>
                         ${!isBusy 
-                            ? `<button onclick="issueTerritory('${tObj.id}')" class="h-8 px-3.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl text-xs font-bold shadow-lg transition flex items-center justify-center">${t('btn_issue')}</button>`
-                            : `<button onclick="returnTerritory('${tObj.id}')" class="h-8 px-3.5 bg-black/40 hover:bg-black/60 text-white rounded-xl text-xs font-semibold transition border border-white/20 flex items-center justify-center">${t('btn_return')}</button>`
+                            ? `<button onclick="issueTerritory('${tObj.id}')" class="h-8 px-3.5 bg-slate-800/80 hover:bg-emerald-600 text-slate-200 hover:text-white border border-slate-700/60 hover:border-emerald-500 rounded-xl text-xs font-semibold shadow-none transition-colors duration-200 flex items-center justify-center">${t('btn_issue')}</button>`
+                            : `<button onclick="returnTerritory('${tObj.id}')" class="h-8 px-3.5 bg-slate-800/80 hover:bg-emerald-600 text-slate-200 hover:text-white border border-slate-700/60 hover:border-emerald-500 rounded-xl text-xs font-semibold shadow-none transition-colors duration-200 flex items-center justify-center">${t('btn_return')}</button>`
                         }
                     </div>
                 `;
