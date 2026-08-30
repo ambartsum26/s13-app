@@ -417,6 +417,11 @@
             {number: "19", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
             {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
         ];
+        const tournonTerritories = Array.from({ length: 22 }, (_, index) => ({
+            number: String(index + 1),
+            mapUrl: "",
+            history: []
+        }));
 
         async function initApp() {
             try {
@@ -429,7 +434,8 @@
                     "Valence": "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13",
                     "Guilherand-Granges": "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low",
                     "Saint-Marcel-lès-Valence": "",
-                    "Saint-Péray": ""
+                    "Saint-Péray": "",
+                    "Tournon-sur-Rhône": ""
                 };
 
                 for (const [cityName, mapUrl] of Object.entries(cityMaps)) {
@@ -440,6 +446,7 @@
                         if (cityName === "Guilherand-Granges") territoriesList = guilherandTerritories;
                         if (cityName === "Saint-Marcel-lès-Valence") territoriesList = saintMarcelTerritories;
                         if (cityName === "Saint-Péray") territoriesList = saintPerayTerritories;
+                        if (cityName === "Tournon-sur-Rhône") territoriesList = tournonTerritories;
 
                         const ref = await addDoc(collection(db, "cities"), { name: cityName, mapUrl: mapUrl });
                         for (const item of territoriesList) {
