@@ -24,29 +24,32 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white p-4 sm:p-6 md:p-8">
 
     <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
-    <header class="max-w-6xl mx-auto bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center space-x-3.5">
-            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-600/30">
-                <i class="fa-solid fa-location-dot"></i>
-            </div>
-            <div>
-                <h1 class="font-extrabold text-base md:text-lg tracking-tight text-white" data-i18n="app_title">Ассистент по участкам</h1>
-                <p class="text-xs text-emerald-400 font-medium flex items-center gap-1.5 mt-0.5" id="db-status">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Подключение к Firebase...
-                </p>
+    <header class="max-w-6xl mx-auto bg-slate-900/80 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-4 md:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- Блок названия и статуса -->
+        <div class="flex items-center space-x-3.5 w-full md:w-auto justify-between md:justify-start">
+            <div class="flex items-center space-x-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-600/30">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-base md:text-lg tracking-tight text-white" data-i18n="app_title">Ассистент по участкам</h1>
+                    <p class="text-xs text-emerald-400 font-medium flex items-center gap-1.5 mt-0.5" id="db-status">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Подключение к Firebase...
+                    </p>
+                </div>
             </div>
         </div>
 
-        <!-- Переключатель городов -->
-        <div class="flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none max-w-full" id="cities-container"></div>
+        <!-- Переключатель городов (Центральный блок) -->
+        <div class="w-full md:w-auto flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none max-w-full justify-start md:justify-center bg-slate-950/40 p-1.5 rounded-2xl border border-slate-800/80" id="cities-container"></div>
 
-        <!-- Кнопки управления и Язык -->
-        <div class="flex items-center gap-2.5">
-            <button onclick="toggleLanguage()" class="px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700/60 text-indigo-400 transition shadow-sm" id="lang-btn">
-                FR
+        <!-- Кнопки управления и Язык (Правый блок) -->
+        <div class="flex items-center gap-2.5 w-full md:w-auto justify-end">
+            <button onclick="toggleLanguage()" title="Сменить язык / Changer de langue" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-700/60 text-indigo-400 transition shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-globe"></i> <span id="lang-btn">FR</span>
             </button>
 
-            <button onclick="addCity()" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5">
+            <button onclick="addCity()" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold rounded-xl border border-slate-700/60 transition shadow-sm flex items-center gap-1.5 text-slate-200">
                 <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_city">Город</span>
             </button>
             
@@ -70,32 +73,49 @@
     <main class="max-w-6xl mx-auto space-y-6">
 
         <!-- ПАНЕЛЬ СТАТИСТИКИ И ДЕЙСТВИЙ -->
-        <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/60 backdrop-blur-md border border-slate-800/80 p-4 md:p-5 rounded-3xl shadow-xl">
-            <div class="flex flex-wrap items-center gap-3 md:gap-6 text-xs font-medium">
-                <div class="flex items-center gap-2 bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
-                    <span data-i18n="st_free_label" class="text-slate-400">Свободно</span>: <strong id="st-free" class="text-white text-sm">0</strong>
+        <section class="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/90 backdrop-blur-xl border border-slate-800/90 p-4 md:p-5 rounded-3xl shadow-2xl">
+            <div class="flex flex-wrap items-center gap-3 md:gap-4 text-xs font-medium">
+                <div class="flex items-center gap-2.5 bg-emerald-950/30 px-3.5 py-2.5 rounded-2xl border border-emerald-500/20 shadow-inner">
+                    <div class="w-6 h-6 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-circle-check text-xs"></i>
+                    </div>
+                    <div>
+                        <span data-i18n="st_free_label" class="text-slate-400 text-[10px] block uppercase tracking-wider font-semibold">Свободно</span>
+                        <strong id="st-free" class="text-emerald-400 text-sm font-extrabold">0</strong>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></span>
-                    <span data-i18n="st_busy_label" class="text-slate-400">В обработке</span>: <strong id="st-busy" class="text-white text-sm">0</strong>
+
+                <div class="flex items-center gap-2.5 bg-blue-950/30 px-3.5 py-2.5 rounded-2xl border border-blue-500/20 shadow-inner">
+                    <div class="w-6 h-6 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
+                        <i class="fa-solid fa-clock text-xs"></i>
+                    </div>
+                    <div>
+                        <span data-i18n="st_busy_label" class="text-slate-400 text-[10px] block uppercase tracking-wider font-semibold">В обработке</span>
+                        <strong id="st-busy" class="text-blue-400 text-sm font-extrabold">0</strong>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800">
-                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
-                    <span data-i18n="st_overdue_label" class="text-slate-400">Просрочено</span>: <strong id="st-overdue" class="text-white text-sm">0</strong>
+
+                <div class="flex items-center gap-2.5 bg-rose-950/30 px-3.5 py-2.5 rounded-2xl border border-rose-500/20 shadow-inner">
+                    <div class="w-6 h-6 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+                        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                    </div>
+                    <div>
+                        <span data-i18n="st_overdue_label" class="text-slate-400 text-[10px] block uppercase tracking-wider font-semibold">Просрочено</span>
+                        <strong id="st-overdue" class="text-rose-400 text-sm font-extrabold">0</strong>
+                    </div>
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5">
-                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 rounded-xl text-xs font-semibold transition border border-slate-700/60 shadow-sm flex items-center justify-center gap-1.5">
+                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="px-3.5 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-emerald-400 rounded-2xl text-xs font-semibold transition border border-slate-700/60 shadow-md flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-file-word"></i> <span class="hidden sm:inline">S-13</span>
                 </button>
 
-                <a id="map-link" href="#" target="_blank" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30">
+                <a id="map-link" href="#" target="_blank" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30">
                     <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="btn_general_map">Общая карта</span>
                 </a>
                 
-                <button onclick="addTerritory()" class="px-4 py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-xl transition shadow-sm flex items-center gap-1.5">
+                <button onclick="addTerritory()" class="px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs font-semibold rounded-2xl transition shadow-md flex items-center gap-1.5 text-slate-200">
                     <i class="fa-solid fa-plus text-indigo-400"></i> <span data-i18n="btn_territory">Участок</span>
                 </button>
             </div>
@@ -106,8 +126,8 @@
     </main>
 
     <!-- МОДАЛЬНОЕ ОКНО -->
-    <div id="history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50 transition-all">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+    <div id="history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-50 transition-all">
+        <div class="bg-slate-900 border border-slate-800/90 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-4">
                 <h3 id="modal-title" class="font-bold text-base text-white" data-i18n="modal_title">Управление участком</h3>
                 <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
@@ -115,7 +135,7 @@
                 </button>
             </div>
 
-            <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl space-y-2">
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2 shadow-inner">
                 <label class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider block" data-i18n="modal_map_label">Ссылка на карту участка</label>
                 <div class="flex gap-2">
                     <input type="text" id="modal-territory-map-url" placeholder="https://www.google.com/maps/d/..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
@@ -129,7 +149,7 @@
             </div>
 
             <div class="flex justify-end pt-3 border-t border-slate-800/80">
-                <button onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition" data-i18n="btn_close">Закрыть</button>
+                <button onclick="closeHistoryModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition text-slate-200" data-i18n="btn_close">Закрыть</button>
             </div>
         </div>
     </div>
@@ -631,15 +651,15 @@
             } else {
                 tObj.history.forEach((h, index) => {
                     const itemDiv = document.createElement('div');
-                    itemDiv.className = 'bg-slate-950 border border-slate-800/80 p-3 rounded-2xl flex items-center justify-between gap-2 text-xs';
+                    itemDiv.className = 'bg-slate-950 border border-slate-800/80 p-3 rounded-2xl flex items-center justify-between gap-2 text-xs shadow-sm';
                     itemDiv.innerHTML = `
                         <div class="space-y-1">
                             <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
                             <p class="text-slate-400">${t('issued_by')} <span class="text-slate-200">${h.issuedAt}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || t('in_progress')}</span></p>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="p-2 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl transition border border-slate-800"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="p-2 bg-slate-900 hover:bg-rose-950/40 text-rose-400 rounded-xl transition border border-slate-800"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     `;
                     listContainer.appendChild(itemDiv);
@@ -742,7 +762,7 @@
                 if (cId === activeCityId) {
                     btn.className = "px-3.5 py-2 rounded-xl text-xs transition inline-block text-center bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-600/30";
                 } else {
-                    btn.className = "px-3.5 py-2 rounded-xl text-xs transition inline-block text-center bg-slate-800/80 text-slate-300 hover:bg-slate-700 font-medium border border-slate-700/60";
+                    btn.className = "px-3.5 py-2 rounded-xl text-xs transition inline-block text-center bg-transparent text-slate-300 hover:text-white hover:bg-slate-800/60 font-medium";
                 }
             });
         }
@@ -767,19 +787,21 @@
 
                 if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
 
-                let badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${t('status_free')}</span>`;
-                let borderGlow = "border-slate-800/80 hover:border-slate-700";
+                // Стили плитки в зависимости от статуса (свободные зеленые, в обработке синие, просроченные красные)
+                let badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${t('status_free')}</span>`;
+                let cardStyle = "bg-emerald-950/20 border-emerald-500/40 hover:border-emerald-500/70 shadow-lg shadow-emerald-950/10";
+                
                 if (isBusy && !isOverdue) {
-                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">${t('status_busy')} (${days} ${t('days_text')})</span>`;
-                    borderGlow = "border-blue-500/30 hover:border-blue-500/50";
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">${t('status_busy')} (${days} ${t('days_text')})</span>`;
+                    cardStyle = "bg-blue-950/25 border-blue-500/40 hover:border-blue-500/70 shadow-xl shadow-blue-950/20";
                 }
                 if (isOverdue) {
-                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
-                    borderGlow = "border-rose-500/40 hover:border-rose-500/60 shadow-lg shadow-rose-950/20";
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
+                    cardStyle = "bg-rose-950/30 border-rose-500/50 hover:border-rose-500/80 shadow-2xl shadow-rose-950/30";
                 }
 
                 const card = document.createElement('div');
-                card.className = `bg-slate-900/80 backdrop-blur-md border ${borderGlow} rounded-2xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-200`;
+                card.className = `backdrop-blur-xl border ${cardStyle} rounded-3xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-300 hover:-translate-y-0.5`;
                 card.innerHTML = `
                     <div class="flex items-start justify-between gap-2">
                         <div>
@@ -794,10 +816,10 @@
                         
                         <div class="flex items-center gap-1.5 pt-1">
                             ${tObj.mapUrl ? `
-                                <a href="${tObj.mapUrl}" target="_blank" class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 rounded-xl font-medium flex items-center gap-1.5 transition border border-slate-700/60">
+                                <a href="${tObj.mapUrl}" target="_blank" class="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-900 text-indigo-400 hover:text-indigo-300 rounded-xl font-medium flex items-center gap-1.5 transition border border-slate-700/60 shadow-sm">
                                     <i class="fa-solid fa-map"></i> ${t('card_map')}
                                 </a>
-                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition border border-slate-700/60">
+                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="p-2 bg-slate-900/80 hover:bg-slate-900 text-slate-300 hover:text-white rounded-xl transition border border-slate-700/60 shadow-sm">
                                     <i class="fa-solid fa-copy"></i>
                                 </button>
                             ` : `
@@ -808,13 +830,13 @@
 
                     <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                         <div class="flex space-x-1">
-                            <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер" class="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                            <button onclick="archiveTerritory('${tObj.id}')" title="В архив" class="p-2 bg-slate-800/80 hover:bg-rose-950/50 text-rose-400 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-box-archive"></i></button>
+                            <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер" class="p-2 bg-slate-900/80 hover:bg-slate-900 text-slate-300 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="p-2 bg-slate-900/80 hover:bg-slate-900 text-slate-300 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                            <button onclick="archiveTerritory('${tObj.id}')" title="В архив" class="p-2 bg-slate-900/80 hover:bg-rose-950/50 text-rose-400 rounded-xl text-xs transition border border-slate-700/60"><i class="fa-solid fa-box-archive"></i></button>
                         </div>
                         ${!isBusy 
                             ? `<button onclick="issueTerritory('${tObj.id}')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition">${t('btn_issue')}</button>`
-                            : `<button onclick="returnTerritory('${tObj.id}')" class="px-3.5 py-2 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-700/60">${t('btn_return')}</button>`
+                            : `<button onclick="returnTerritory('${tObj.id}')" class="px-3.5 py-2 bg-slate-900 hover:bg-emerald-600 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-700/60">${t('btn_return')}</button>`
                         }
                     </div>
                 `;
