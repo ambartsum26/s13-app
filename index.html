@@ -1,684 +1,809 @@
-<!-- FIREBASE SDK И СКРИПТ -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-        getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const translations = {
-        ru: {
-            app_title: "Помощник по участкам",
-            db_connected: "● Firebase подключен",
-            db_connecting: "● Подключение к Firebase...",
-            btn_city: "Город",
-            menu_edit_city: "Изменить название",
-            menu_edit_map: "Изменить ссылку на карту",
-            st_free_label: "🟢 Свободно",
-            st_busy_label: "🔵 В обработке",
-            st_overdue_label: "🔴 Просрочено",
-            btn_general_map: "Общая карта",
-            btn_territory: "Участок",
-            modal_title: "Управление участком",
-            modal_map_label: "Ссылка на карту участка",
-            btn_save: "Сохранить",
-            history_title: "История выдач:",
-            btn_close: "Закрыть",
-            card_territory: "Участок",
-            status_free: "Свободен",
-            status_busy: "В обработке",
-            status_overdue: "Просрочен",
-            days_text: "дн.",
-            card_map: "Карта",
-            no_map_link: "Ссылка на карту не добавлена",
-            not_issued: "Никому не выдан",
-            btn_issue: "Выдать",
-            btn_return: "Сдать",
-            history_empty: "История пуста.",
-            issued_by: "Выдан:",
-            returned_by: "Сдан:",
-            in_progress: "В ОБРАБОТКЕ",
-            prompt_new_city: "Название нового города:",
-            prompt_new_city_map: "Ссылка на общую карту Google My Maps для этого города:",
-            prompt_edit_city_name: "Новое название города:",
-            prompt_edit_city_map: "Введите новую ссылку на общую карту Google My Maps для этого города:",
-            prompt_new_territory_num: "Номер участка (например: 78 или 12-А):",
-            prompt_new_territory_map: "Ссылка на карту этого участка (необязательно):",
-            prompt_edit_territory_num: "Новый номер участка:",
-            prompt_archive_confirm: "Архивировать участок №",
-            prompt_publisher_name: "ФИО возвещателя, которому выдаётся участок:",
-            prompt_edit_publisher: "ФИО возвещателя:",
-            prompt_edit_issued_date: "Дата выдачи (ГГГГ-ММ-ДД):",
-            prompt_edit_returned_date: "Дата возврата (ГГГГ-ММ-ДД или оставьте пустым, если в обработке):",
-            prompt_delete_history: "Удалить запись #"
-        },
-        fr: {
-            app_title: "Assistant de Territoires",
-            db_connected: "● Firebase connecté",
-            db_connecting: "● Connexion à Firebase...",
-            btn_city: "Ville",
-            menu_edit_city: "Modifier le nom",
-            menu_edit_map: "Modifier le lien de la carte",
-            st_free_label: "🟢 Libres",
-            st_busy_label: "🔵 Attribués",
-            st_overdue_label: "🔴 En retard",
-            btn_general_map: "Carte générale",
-            btn_territory: "Territoire",
-            modal_title: "Gestion du territoire",
-            modal_map_label: "Lien de la carte du territoire",
-            btn_save: "Enregistrer",
-            history_title: "Historique des attributions :",
-            btn_close: "Fermer",
-            card_territory: "Territoire",
-            status_free: "Libre",
-            status_busy: "Attribué",
-            status_overdue: "En retard",
-            days_text: "j.",
-            card_map: "Carte",
-            no_map_link: "Aucun lien de carte",
-            not_issued: "Non attribué",
-            btn_issue: "Attribuer",
-            btn_return: "Rendre",
-            history_empty: "L'historique est vide.",
-            issued_by: "Attribué :",
-            returned_by: "Rendu :",
-            in_progress: "EN COURS",
-            prompt_new_city: "Nom de la nouvelle ville :",
-            prompt_new_city_map: "Lien de la carte Google My Maps pour cette ville :",
-            prompt_edit_city_name: "Nouveau nom de la ville :",
-            prompt_edit_city_map: "Entrez le nouveau lien de la carte générale Google My Maps :",
-            prompt_new_territory_num: "Numéro du territoire (ex: 78 ou 12-A) :",
-            prompt_new_territory_map: "Lien vers la carte de ce territoire (facultatif) :",
-            prompt_edit_territory_num: "Nouveau numéro du territoire :",
-            prompt_archive_confirm: "Archiver le territoire n°",
-            prompt_publisher_name: "Nom du proclamateur :",
-            prompt_edit_publisher: "Nom du proclamateur :",
-            prompt_edit_issued_date: "Date d'attribution (AAAA-MM-JJ) :",
-            prompt_edit_returned_date: "Date de retour (AAAA-MM-JJ ou laisser vide si en cours) :",
-            prompt_delete_history: "Supprimer l'entrée n°"
+<!DOCTYPE html>
+<html lang="ru" id="html-root" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учёт территорий</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .scrollbar-none::-webkit-scrollbar {
+            display: none;
         }
-    };
-
-    let currentLang = 'ru';
-
-    window.toggleLanguage = () => {
-        currentLang = currentLang === 'ru' ? 'fr' : 'ru';
-        document.getElementById('lang-btn').innerText = currentLang === 'ru' ? 'FR' : 'RU';
-        document.getElementById('html-root').lang = currentLang;
-        
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (translations[currentLang][key]) {
-                el.innerText = translations[currentLang][key];
-            }
-        });
-
-        if (citiesData.length > 0) renderCities();
-        if (territoriesData.length > 0) renderTerritories();
-        if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
-    };
-
-    function t(key) {
-        return translations[currentLang][key] || key;
-    }
-
-    window.exportOfficialRegister = () => {
-        const city = citiesData.find(c => c.id === activeCityId);
-        if (!city) return;
-
-        let htmlContent = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-            <meta charset="UTF-8">
-            <title>S-13</title>
-            <style>
-                body { font-family: Arial, sans-serif; font-size: 9pt; margin: 20px; color: #000; }
-                h2 { text-align: center; margin-bottom: 2px; font-size: 13pt; font-weight: bold; }
-                .subtitle { font-weight: bold; margin-bottom: 15px; font-size: 10pt; }
-                table { width: 100%; border-collapse: collapse; margin-top: 5px; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                th, td { border: 0.5pt solid #000; padding: 3px; text-align: center; vertical-align: middle; font-size: 8pt; }
-                th { background-color: #f2f2f2; font-weight: bold; }
-                .publisher-row { font-weight: bold; font-size: 8.5pt; background-color: #fafafa; text-align: center; height: 18px; }
-                .note { font-size: 7.5pt; margin-top: 15px; font-style: italic; }
-                .footer-code { font-size: 7.5pt; margin-top: 5px; }
-            </style>
-        </head>
-        <body>
-            <h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2>
-            <div class="subtitle">Année de service : ${new Date().getFullYear()} &nbsp;&nbsp;&nbsp;&nbsp; Ville : ${city.name}</div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th rowspan="2" style="width: 35px;">Terr. n°</th>
-                        <th rowspan="2" style="width: 80px;">Parcouru pour la dernière fois le*</th>
-                        <th colspan="2">Attribué à</th>
-                        <th colspan="2">Attribué à</th>
-                        <th colspan="2">Attribué à</th>
-                        <th colspan="2">Attribué à</th>
-                    </tr>
-                    <tr>
-                        <th style="width: 65px;">Attribué le</th>
-                        <th style="width: 65px;">Entièrement parcouru le</th>
-                        <th style="width: 65px;">Attribué le</th>
-                        <th style="width: 65px;">Entièrement parcouru le</th>
-                        <th style="width: 65px;">Attribué le</th>
-                        <th style="width: 65px;">Entièrement parcouru le</th>
-                        <th style="width: 65px;">Attribué le</th>
-                        <th style="width: 65px;">Entièrement parcouru le</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        territoriesData.forEach(tObj => {
-            const history = tObj.history || [];
-            let publisherRowHtml = "";
-            let datesRowHtml = "";
-            
-            for (let i = 0; i < 4; i++) {
-                const h = history[i];
-                if (h) {
-                    publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
-                    const issuedDate = h.issuedAt || "";
-                    const returnedDate = h.returnedAt ? h.returnedAt : 'En cours';
-                    datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
-                } else {
-                    publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
-                    datesRowHtml += `<td></td><td></td>`;
-                }
-            }
-
-            let lastWalkedDate = "";
-            const completedItems = history.filter(h => h.returnedAt);
-            if (completedItems.length > 0) {
-                lastWalkedDate = completedItems[completedItems.length - 1].returnedAt;
-            }
-
-            htmlContent += `
-                <tr>
-                    <td rowspan="2"><b>${tObj.number}</b></td>
-                    <td rowspan="2">${lastWalkedDate}</td>
-                    ${publisherRowHtml}
-                </tr>
-                <tr>
-                    ${datesRowHtml}
-                </tr>
-            `;
-        });
-
-        const totalRows = Math.max(territoriesData.length, 15);
-        for (let i = territoriesData.length; i < totalRows; i++) {
-            htmlContent += `
-                <tr>
-                    <td rowspan="2">&nbsp;</td>
-                    <td rowspan="2"></td>
-                    <td colspan="2" class="publisher-row"></td>
-                    <td colspan="2" class="publisher-row"></td>
-                    <td colspan="2" class="publisher-row"></td>
-                    <td colspan="2" class="publisher-row"></td>
-                </tr>
-                <tr>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                </tr>
-            `;
+        .scrollbar-none {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-6">
 
-        htmlContent += `
-                </tbody>
-            </table>
-            <div class="note">
-                * Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+    <header class="max-w-6xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-600/30">
+                <i class="fa-solid fa-cloud"></i>
             </div>
-            <div class="footer-code">S-13-F 1/22</div>
-        </body>
-        </html>
-        `;
+            <div>
+                <h1 class="font-bold text-lg leading-tight" data-i18n="app_title">Помощник по участкам</h1>
+                <p class="text-xs text-emerald-400 font-medium" id="db-status">● Подключение к Firebase...</p>
+            </div>
+        </div>
 
-        const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `S-13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.doc`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+        <!-- Переключатель городов -->
+        <div class="flex items-center gap-2 overflow-x-auto py-1 whitespace-nowrap scrollbar-none" id="cities-container"></div>
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
-        authDomain: "fir-13-app.firebaseapp.com",
-        projectId: "fir-13-app",
-        storageBucket: "fir-13-app.firebasestorage.app",
-        messagingSenderId: "1080215970738",
-        appId: "1:1080215970738:web:2d66b3b8a9ea26f1e6baab",
-        measurementId: "G-70HBSY6MC6"
-    };
+        <!-- Кнопки управления и Язык -->
+        <div class="flex items-center gap-2">
+            <button onclick="toggleLanguage()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg border border-slate-700 text-indigo-400 transition" id="lang-btn">
+                FR
+            </button>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let activeCityId = null;
-    let citiesData = [];
-    let territoriesData = [];
-    let currentEditingTerritoryId = null;
-
-    const valenceTerritories = [
-        {number: "1", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
-        {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]}
-    ];
-    const guilherandTerritories = [
-        {number: "1", mapUrl: "https://www.google.com/maps/d/edit?mid=1lZ2YTYdPAsSnnuqRZm4GojR7UCsr95c&usp=drive_link", history: [{publisher: "Stella", issuedAt: "2025-04-27", returnedAt: null}]}
-    ];
-    const saintMarcelTerritories = [
-        {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]}
-    ];
-    const saintPerayTerritories = [
-        {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
-        {number: "2", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
-        {number: "3", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
-        {number: "4", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
-        {number: "5", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-10-31", returnedAt: "2025-11-23"}]},
-        {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-        {number: "7", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-11", returnedAt: "2025-12-14"}]},
-        {number: "8", mapUrl: "", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-11-07", returnedAt: "2026-01-10"}]},
-        {number: "9", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-06", returnedAt: "2025-11-08"}]},
-        {number: "10", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-05", returnedAt: "2025-12-14"}]},
-        {number: "11", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-        {number: "12", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-        {number: "13", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
-        {number: "14", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
-        {number: "15", mapUrl: "", history: [{publisher: "Valera (+участок 21)", issuedAt: "2026-01-16", returnedAt: "2026-05-24"}]},
-        {number: "16", mapUrl: "", history: [{publisher: "Brozik Zinaida", issuedAt: "2025-11-24", returnedAt: "2025-12-21"}]},
-        {number: "17", mapUrl: "", history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-11-24", returnedAt: "2026-01-03"}]},
-        {number: "18", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
-        {number: "19", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
-        {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
-    ];
-
-    async function initApp() {
-        try {
-            const citiesSnapshot = await getDocs(collection(db, "cities"));
-            citiesData = citiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-            const findCity = (searchName) => citiesData.find(c => c.name && c.name.normalize("NFC") === searchName.normalize("NFC"));
-
-            let createdAny = false;
-
-            if (!findCity("Valence")) {
-                const ref = await addDoc(collection(db, "cities"), { 
-                    name: "Valence",
-                    mapUrl: "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13"
-                });
-                for (const item of valenceTerritories) {
-                    await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
-                }
-                createdAny = true;
-            }
-
-            if (!findCity("Guilherand-Granges")) {
-                const ref = await addDoc(collection(db, "cities"), { 
-                    name: "Guilherand-Granges",
-                    mapUrl: "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low"
-                });
-                for (const item of guilherandTerritories) {
-                    await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
-                }
-                createdAny = true;
-            }
-
-            if (!findCity("Saint-Marcel-lès-Valence")) {
-                const ref = await addDoc(collection(db, "cities"), { name: "Saint-Marcel-lès-Valence", mapUrl: "" });
-                for (const item of saintMarcelTerritories) {
-                    await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
-                }
-                createdAny = true;
-            }
-
-            if (!findCity("Saint-Péray")) {
-                const ref = await addDoc(collection(db, "cities"), { name: "Saint-Péray", mapUrl: "" });
-                for (const item of saintPerayTerritories) {
-                    await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
-                }
-                createdAny = true;
-            }
-
-            if (createdAny) {
-                const updatedCitiesSnapshot = await getDocs(collection(db, "cities"));
-                citiesData = updatedCitiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            }
-
-            document.getElementById('db-status').innerText = t('db_connected');
-
-            if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
-                activeCityId = citiesData[0]?.id || null;
-            }
-
-            if (activeCityId) {
-                renderCities();
-                subscribeToTerritories();
-            }
-
-            onSnapshot(collection(db, "cities"), (snapshot) => {
-                citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderCities();
-            });
-
-        } catch (error) {
-            console.error("Firebase connection error:", error);
-            document.getElementById('db-status').innerText = "● Ошибка подключения";
-        }
-    }
-
-    let unsubscribeTerritories = null;
-    function subscribeToTerritories() {
-        if (typeof unsubscribeTerritories === 'function') {
-            unsubscribeTerritories();
-            unsubscribeTerritories = null;
-        }
-
-        if (!activeCityId) return;
-
-        const q = query(
-            collection(db, "territories"), 
-            where("cityId", "==", activeCityId),
-            where("isArchived", "==", false)
-        );
-
-        unsubscribeTerritories = onSnapshot(q, (snapshot) => {
-            territoriesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            territoriesData.sort((a, b) => parseInt(a.number) - parseInt(b.number) || a.number.localeCompare(b.number));
-            renderTerritories();
+            <button onclick="addCity()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                <i class="fa-solid fa-plus text-indigo-400 mr-1"></i> <span data-i18n="btn_city">Город</span>
+            </button>
             
-            if (currentEditingTerritoryId) {
-                window.showHistory(currentEditingTerritoryId);
+            <div class="relative">
+                <button onclick="toggleCityMenu(event)" title="Управление городом" class="p-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-300 hover:text-white transition">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <div id="city-dropdown-menu" class="hidden absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
+                    <button onclick="editCityName(); closeCityMenu();" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
+                        <i class="fa-solid fa-signature text-indigo-400 w-4"></i> <span data-i18n="menu_edit_city">Изменить название</span>
+                    </button>
+                    <button onclick="editCityMap(); closeCityMenu();" class="w-full text-left px-4 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
+                        <i class="fa-solid fa-map-location-dot text-emerald-400 w-4"></i> <span data-i18n="menu_edit_map">Изменить ссылку на карту</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="max-w-6xl mx-auto space-y-6">
+
+        <section class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg">
+            <div class="flex items-center space-x-4 text-xs">
+                <span><span data-i18n="st_free_label">🟢 Свободно</span>: <strong id="st-free" class="text-white">0</strong></span>
+                <span><span data-i18n="st_busy_label">🔵 В обработке</span>: <strong id="st-busy" class="text-white">0</strong></span>
+                <span><span data-i18n="st_overdue_label">🔴 Просрочено</span>: <strong id="st-overdue" class="text-white">0</strong></span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="exportOfficialRegister()" title="Télécharger le registre officiel (S-13)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg text-xs font-semibold transition border border-slate-700 shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+
+                <a id="map-link" href="#" target="_blank" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md">
+                    <i class="fa-solid fa-location-dot"></i> <span data-i18n="btn_general_map">Общая карта</span>
+                </a>
+                
+                <button onclick="addTerritory()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold rounded-lg transition shadow-md">
+                    <i class="fa-solid fa-plus mr-1 text-indigo-400"></i> <span data-i18n="btn_territory">Участок</span>
+                </button>
+            </div>
+        </section>
+
+        <section id="grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></section>
+    </main>
+
+    <!-- МОДАЛЬНОЕ ОКНО -->
+    <div id="history-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 id="modal-title" class="font-bold text-base text-white" data-i18n="modal_title">Управление участком</h3>
+                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white text-sm">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
+                <label class="text-[10px] text-indigo-400 font-bold uppercase block" data-i18n="modal_map_label">Ссылка на карту участка</label>
+                <div class="flex gap-2">
+                    <input type="text" id="modal-territory-map-url" placeholder="https://www.google.com/maps/d/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <button onclick="saveTerritoryMapUrl()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition" data-i18n="btn_save">Сохранить</button>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <h4 class="text-xs font-bold text-slate-300" data-i18n="history_title">История выдач:</h4>
+                <div id="modal-history-list" class="space-y-3 max-h-[40vh] overflow-y-auto pr-1"></div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-slate-800">
+                <button onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg" data-i18n="btn_close">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDK И СКРИПТ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, query, where, getDocs 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const translations = {
+            ru: {
+                app_title: "Помощник по участкам",
+                db_connected: "● Firebase подключен",
+                db_connecting: "● Подключение к Firebase...",
+                btn_city: "Город",
+                menu_edit_city: "Изменить название",
+                menu_edit_map: "Изменить ссылку на карту",
+                st_free_label: "🟢 Свободно",
+                st_busy_label: "🔵 В обработке",
+                st_overdue_label: "🔴 Просрочено",
+                btn_general_map: "Общая карта",
+                btn_territory: "Участок",
+                modal_title: "Управление участком",
+                modal_map_label: "Ссылка на карту участка",
+                btn_save: "Сохранить",
+                history_title: "История выдач:",
+                btn_close: "Закрыть",
+                card_territory: "Участок",
+                status_free: "Свободен",
+                status_busy: "В обработке",
+                status_overdue: "Просрочен",
+                days_text: "дн.",
+                card_map: "Карта",
+                no_map_link: "Ссылка на карту не добавлена",
+                not_issued: "Никому не выдан",
+                btn_issue: "Выдать",
+                btn_return: "Сдать",
+                history_empty: "История пуста.",
+                issued_by: "Выдан:",
+                returned_by: "Сдан:",
+                in_progress: "В ОБРАБОТКЕ",
+                prompt_new_city: "Название нового города:",
+                prompt_new_city_map: "Ссылка на общую карту Google My Maps для этого города:",
+                prompt_edit_city_name: "Новое название города:",
+                prompt_edit_city_map: "Введите новую ссылку на общую карту Google My Maps для этого города:",
+                prompt_new_territory_num: "Номер участка (например: 78 или 12-А):",
+                prompt_new_territory_map: "Ссылка на карту этого участка (необязательно):",
+                prompt_edit_territory_num: "Новый номер участка:",
+                prompt_archive_confirm: "Архивировать участок №",
+                prompt_publisher_name: "ФИО возвещателя, которому выдаётся участок:",
+                prompt_edit_publisher: "ФИО возвещателя:",
+                prompt_edit_issued_date: "Дата выдачи (ГГГГ-ММ-ДД):",
+                prompt_edit_returned_date: "Дата возврата (ГГГГ-ММ-ДД или оставьте пустым, если в обработке):",
+                prompt_delete_history: "Удалить запись #"
+            },
+            fr: {
+                app_title: "Assistant de Territoires",
+                db_connected: "● Firebase connecté",
+                db_connecting: "● Connexion à Firebase...",
+                btn_city: "Ville",
+                menu_edit_city: "Modifier le nom",
+                menu_edit_map: "Modifier le lien de la carte",
+                st_free_label: "🟢 Libres",
+                st_busy_label: "🔵 Attribués",
+                st_overdue_label: "🔴 En retard",
+                btn_general_map: "Carte générale",
+                btn_territory: "Territoire",
+                modal_title: "Gestion du territoire",
+                modal_map_label: "Lien de la carte du territoire",
+                btn_save: "Enregistrer",
+                history_title: "Historique des attributions :",
+                btn_close: "Fermer",
+                card_territory: "Territoire",
+                status_free: "Libre",
+                status_busy: "Attribué",
+                status_overdue: "En retard",
+                days_text: "j.",
+                card_map: "Carte",
+                no_map_link: "Aucun lien de carte",
+                not_issued: "Non attribué",
+                btn_issue: "Attribuer",
+                btn_return: "Rendre",
+                history_empty: "L'historique est vide.",
+                issued_by: "Attribué :",
+                returned_by: "Rendu :",
+                in_progress: "EN COURS",
+                prompt_new_city: "Nom de la nouvelle ville :",
+                prompt_new_city_map: "Lien de la carte Google My Maps pour cette ville :",
+                prompt_edit_city_name: "Nouveau nom de la ville :",
+                prompt_edit_city_map: "Entrez le nouveau lien de la carte générale Google My Maps :",
+                prompt_new_territory_num: "Numéro du territoire (ex: 78 ou 12-A) :",
+                prompt_new_territory_map: "Lien vers la carte de ce territoire (facultatif) :",
+                prompt_edit_territory_num: "Nouveau numéro du territoire :",
+                prompt_archive_confirm: "Archiver le territoire n°",
+                prompt_publisher_name: "Nom du proclamateur :",
+                prompt_edit_publisher: "Nom du proclamateur :",
+                prompt_edit_issued_date: "Date d'attribution (AAAA-MM-JJ) :",
+                prompt_edit_returned_date: "Date de retour (AAAA-MM-JJ ou laisser vide si en cours) :",
+                prompt_delete_history: "Supprimer l'entrée n°"
             }
-        });
-    }
-
-    window.toggleCityMenu = (event) => {
-        event.stopPropagation();
-        document.getElementById('city-dropdown-menu').classList.toggle('hidden');
-    };
-
-    window.closeCityMenu = () => {
-        const menu = document.getElementById('city-dropdown-menu');
-        if (menu) menu.classList.add('hidden');
-    };
-
-    document.addEventListener('click', () => closeCityMenu());
-
-    window.addCity = async () => {
-        const name = prompt(t('prompt_new_city'));
-        if (!name || !name.trim()) return;
-        const mapLink = prompt(t('prompt_new_city_map'), 'https://www.google.com/maps/d/');
-        await addDoc(collection(db, "cities"), { name: name.trim(), mapUrl: mapLink ? mapLink.trim() : '#' });
-    };
-
-    window.editCityName = async () => {
-        const city = citiesData.find(c => c.id === activeCityId);
-        if (!city) return;
-        const newName = prompt(t('prompt_edit_city_name'), city.name);
-        if (!newName || !newName.trim()) return;
-        await updateDoc(doc(db, "cities", activeCityId), { name: newName.trim() });
-    };
-
-    window.editCityMap = async () => {
-        const city = citiesData.find(c => c.id === activeCityId);
-        if (!city) return;
-        const newMapUrl = prompt(t('prompt_edit_city_map'), city.mapUrl || '');
-        if (newMapUrl === null) return;
-        await updateDoc(doc(db, "cities", activeCityId), { mapUrl: newMapUrl.trim() });
-    };
-
-    window.addTerritory = async () => {
-        const num = prompt(t('prompt_new_territory_num'));
-        if (!num) return;
-        const mapLink = prompt(t('prompt_new_territory_map'), '');
-        await addDoc(collection(db, "territories"), {
-            cityId: activeCityId,
-            number: num.trim(),
-            mapUrl: mapLink ? mapLink.trim() : '',
-            isArchived: false,
-            history: []
-        });
-    };
-
-    window.editTerritory = async (id) => {
-        const tObj = territoriesData.find(item => item.id === id);
-        if (!tObj) return;
-        const newNum = prompt(t('prompt_edit_territory_num'), tObj.number);
-        if (newNum !== null && newNum.trim() !== '') {
-            await updateDoc(doc(db, "territories", id), { number: newNum.trim() });
-        }
-    };
-
-    window.archiveTerritory = async (id) => {
-        const tObj = territoriesData.find(item => item.id === id);
-        if (!tObj) return;
-        if (confirm(`${t('prompt_archive_confirm')}№${tObj.number}?`)) {
-            await updateDoc(doc(db, "territories", id), { isArchived: true });
-        }
-    };
-
-    window.issueTerritory = async (id) => {
-        const name = prompt(t('prompt_publisher_name'));
-        if (!name) return;
-        const tObj = territoriesData.find(item => item.id === id);
-        if (!tObj) return;
-        const history = tObj.history || [];
-        history.push({ publisher: name.trim(), issuedAt: new Date().toISOString().split('T')[0], returnedAt: null });
-        await updateDoc(doc(db, "territories", id), { history });
-    };
-
-    window.returnTerritory = async (id) => {
-        const tObj = territoriesData.find(item => item.id === id);
-        if (!tObj) return;
-        const history = tObj.history || [];
-        if (history.length > 0) {
-            history[history.length - 1].returnedAt = new Date().toISOString().split('T')[0];
-            await updateDoc(doc(db, "territories", id), { history });
-        }
-    };
-
-    window.showHistory = (id) => {
-        currentEditingTerritoryId = id;
-        const tObj = territoriesData.find(item => item.id === id);
-        if (!tObj) return;
-
-        document.getElementById('modal-title').innerText = `${t('modal_title')} №${tObj.number}`;
-        document.getElementById('modal-territory-map-url').value = tObj.mapUrl || '';
-
-        const listContainer = document.getElementById('modal-history-list');
-        listContainer.innerHTML = '';
-
-        if (!tObj.history || tObj.history.length === 0) {
-            listContainer.innerHTML = `<p class="text-xs text-slate-500 italic py-2">${t('history_empty')}</p>`;
-        } else {
-            tObj.history.forEach((h, index) => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2 text-xs';
-                itemDiv.innerHTML = `
-                    <div class="space-y-1">
-                        <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
-                        <p class="text-slate-400">${t('issued_by')} <span class="text-slate-200">${h.issuedAt}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || t('in_progress')}</span></p>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
-                listContainer.appendChild(itemDiv);
-            });
-        }
-
-        document.getElementById('history-modal').classList.remove('hidden');
-        document.getElementById('history-modal').classList.add('flex');
-    };
-
-    window.closeHistoryModal = () => {
-        currentEditingTerritoryId = null;
-        document.getElementById('history-modal').classList.add('hidden');
-        document.getElementById('history-modal').classList.remove('flex');
-    };
-
-    window.saveTerritoryMapUrl = async () => {
-        if (!currentEditingTerritoryId) return;
-        const newUrl = document.getElementById('modal-territory-map-url').value;
-        await updateDoc(doc(db, "territories", currentEditingTerritoryId), { mapUrl: newUrl.trim() });
-        if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
-    };
-
-    window.editHistoryItem = async (index) => {
-        const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
-        if (!tObj || !tObj.history[index]) return;
-        const h = tObj.history[index];
-
-        const newPub = prompt(t('prompt_edit_publisher'), h.publisher);
-        if (newPub === null) return;
-        const newIssued = prompt(t('prompt_edit_issued_date'), h.issuedAt);
-        if (newIssued === null) return;
-        const newReturned = prompt(t('prompt_edit_returned_date'), h.returnedAt || '');
-        if (newReturned === null) return;
-
-        tObj.history[index] = {
-            publisher: newPub.trim(),
-            issuedAt: newIssued.trim(),
-            returnedAt: newReturned.trim() !== '' ? newReturned.trim() : null
         };
 
-        await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
-        if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
-    };
+        let currentLang = 'ru';
 
-    window.deleteHistoryItem = async (index) => {
-        const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
-        if (!tObj || !tObj.history[index]) return;
+        window.toggleLanguage = () => {
+            currentLang = currentLang === 'ru' ? 'fr' : 'ru';
+            document.getElementById('lang-btn').innerText = currentLang === 'ru' ? 'FR' : 'RU';
+            document.getElementById('html-root').lang = currentLang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
 
-        if (confirm(`${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`)) {
-            tObj.history.splice(index, 1);
+            if (citiesData.length > 0) renderCities();
+            if (territoriesData.length > 0) renderTerritories();
+            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
+        };
+
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        window.exportOfficialRegister = () => {
+            const city = citiesData.find(c => c.id === activeCityId);
+            if (!city) return;
+
+            let htmlContent = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="UTF-8">
+                <title>S-13</title>
+                <style>
+                    body { font-family: Arial, sans-serif; font-size: 9pt; margin: 20px; color: #000; }
+                    h2 { text-align: center; margin-bottom: 2px; font-size: 13pt; font-weight: bold; }
+                    .subtitle { font-weight: bold; margin-bottom: 15px; font-size: 10pt; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 5px; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+                    th, td { border: 0.5pt solid #000; padding: 3px; text-align: center; vertical-align: middle; font-size: 8pt; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    .publisher-row { font-weight: bold; font-size: 8.5pt; background-color: #fafafa; text-align: center; height: 18px; }
+                    .note { font-size: 7.5pt; margin-top: 15px; font-style: italic; }
+                    .footer-code { font-size: 7.5pt; margin-top: 5px; }
+                </style>
+            </head>
+            <body>
+                <h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2>
+                <div class="subtitle">Année de service : ${new Date().getFullYear()} &nbsp;&nbsp;&nbsp;&nbsp; Ville : ${city.name}</div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 35px;">Terr. n°</th>
+                            <th rowspan="2" style="width: 80px;">Parcouru pour la dernière fois le*</th>
+                            <th colspan="2">Attribué à</th>
+                            <th colspan="2">Attribué à</th>
+                            <th colspan="2">Attribué à</th>
+                            <th colspan="2">Attribué à</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
+                            <th style="width: 65px;">Attribué le</th>
+                            <th style="width: 65px;">Entièrement parcouru le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            territoriesData.forEach(tObj => {
+                const history = tObj.history || [];
+                let publisherRowHtml = "";
+                let datesRowHtml = "";
+                
+                for (let i = 0; i < 4; i++) {
+                    const h = history[i];
+                    if (h) {
+                        publisherRowHtml += `<td colspan="2" class="publisher-row">${h.publisher}</td>`;
+                        const issuedDate = h.issuedAt || "";
+                        const returnedDate = h.returnedAt ? h.returnedAt : 'En cours';
+                        datesRowHtml += `<td>${issuedDate}</td><td>${returnedDate}</td>`;
+                    } else {
+                        publisherRowHtml += `<td colspan="2" class="publisher-row"></td>`;
+                        datesRowHtml += `<td></td><td></td>`;
+                    }
+                }
+
+                let lastWalkedDate = "";
+                const completedItems = history.filter(h => h.returnedAt);
+                if (completedItems.length > 0) {
+                    lastWalkedDate = completedItems[completedItems.length - 1].returnedAt;
+                }
+
+                htmlContent += `
+                    <tr>
+                        <td rowspan="2"><b>${tObj.number}</b></td>
+                        <td rowspan="2">${lastWalkedDate}</td>
+                        ${publisherRowHtml}
+                    </tr>
+                    <tr>
+                        ${datesRowHtml}
+                    </tr>
+                `;
+            });
+
+            const totalRows = Math.max(territoriesData.length, 15);
+            for (let i = territoriesData.length; i < totalRows; i++) {
+                htmlContent += `
+                    <tr>
+                        <td rowspan="2">&nbsp;</td>
+                        <td rowspan="2"></td>
+                        <td colspan="2" class="publisher-row"></td>
+                        <td colspan="2" class="publisher-row"></td>
+                        <td colspan="2" class="publisher-row"></td>
+                        <td colspan="2" class="publisher-row"></td>
+                    </tr>
+                    <tr>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                `;
+            }
+
+            htmlContent += `
+                    </tbody>
+                </table>
+                <div class="note">
+                    * Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.
+                </div>
+                <div class="footer-code">S-13-F 1/22</div>
+            </body>
+            </html>
+            `;
+
+            const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `S-13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8",
+            authDomain: "fir-13-app.firebaseapp.com",
+            projectId: "fir-13-app",
+            storageBucket: "fir-13-app.firebasestorage.app",
+            messagingSenderId: "1080215970738",
+            appId: "1:1080215970738:web:2d66b3b8a9ea26f1e6baab",
+            measurementId: "G-70HBSY6MC6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let activeCityId = null;
+        let citiesData = [];
+        let territoriesData = [];
+        let currentEditingTerritoryId = null;
+
+        const valenceTerritories = [
+            {number: "1", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
+            {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]}
+        ];
+        const guilherandTerritories = [
+            {number: "1", mapUrl: "https://www.google.com/maps/d/edit?mid=1lZ2YTYdPAsSnnuqRZm4GojR7UCsr95c&usp=drive_link", history: [{publisher: "Stella", issuedAt: "2025-04-27", returnedAt: null}]}
+        ];
+        const saintMarcelTerritories = [
+            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]}
+        ];
+        const saintPerayTerritories = [
+            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
+            {number: "2", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
+            {number: "3", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
+            {number: "4", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
+            {number: "5", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-10-31", returnedAt: "2025-11-23"}]},
+            {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "7", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-11", returnedAt: "2025-12-14"}]},
+            {number: "8", mapUrl: "", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-11-07", returnedAt: "2026-01-10"}]},
+            {number: "9", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-06", returnedAt: "2025-11-08"}]},
+            {number: "10", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-05", returnedAt: "2025-12-14"}]},
+            {number: "11", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "12", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "13", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
+            {number: "14", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
+            {number: "15", mapUrl: "", history: [{publisher: "Valera (+участок 21)", issuedAt: "2026-01-16", returnedAt: "2026-05-24"}]},
+            {number: "16", mapUrl: "", history: [{publisher: "Brozik Zinaida", issuedAt: "2025-11-24", returnedAt: "2025-12-21"}]},
+            {number: "17", mapUrl: "", history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-11-24", returnedAt: "2026-01-03"}]},
+            {number: "18", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
+            {number: "19", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
+            {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
+        ];
+
+        async function initApp() {
+            try {
+                const citiesSnapshot = await getDocs(collection(db, "cities"));
+                citiesData = citiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                const findCity = (searchName) => citiesData.find(c => c.name && c.name.normalize("NFC") === searchName.normalize("NFC"));
+
+                let createdAny = false;
+
+                if (!findCity("Valence")) {
+                    const ref = await addDoc(collection(db, "cities"), { 
+                        name: "Valence",
+                        mapUrl: "https://www.google.com/maps/d/edit?mid=1F--67sV9pTds54DmFxs1Lmz7SwRHlsw&ll=44.91635564862983%2C4.904553349999974&z=13"
+                    });
+                    for (const item of valenceTerritories) {
+                        await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                    }
+                    createdAny = true;
+                }
+
+                if (!findCity("Guilherand-Granges")) {
+                    const ref = await addDoc(collection(db, "cities"), { 
+                        name: "Guilherand-Granges",
+                        mapUrl: "https://www.google.com/maps/d/viewer?mid=1HTtzXu4-uTSSwQPb9Ip1xKSrdVB0low"
+                    });
+                    for (const item of guilherandTerritories) {
+                        await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                    }
+                    createdAny = true;
+                }
+
+                if (!findCity("Saint-Marcel-lès-Valence")) {
+                    const ref = await addDoc(collection(db, "cities"), { name: "Saint-Marcel-lès-Valence", mapUrl: "" });
+                    for (const item of saintMarcelTerritories) {
+                        await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                    }
+                    createdAny = true;
+                }
+
+                if (!findCity("Saint-Péray")) {
+                    const ref = await addDoc(collection(db, "cities"), { name: "Saint-Péray", mapUrl: "" });
+                    for (const item of saintPerayTerritories) {
+                        await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                    }
+                    createdAny = true;
+                }
+
+                if (createdAny) {
+                    const updatedCitiesSnapshot = await getDocs(collection(db, "cities"));
+                    citiesData = updatedCitiesSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                }
+
+                document.getElementById('db-status').innerText = t('db_connected');
+
+                if (!activeCityId || !citiesData.find(c => c.id === activeCityId)) {
+                    activeCityId = citiesData[0]?.id || null;
+                }
+
+                if (activeCityId) {
+                    renderCities();
+                    subscribeToTerritories();
+                }
+
+                onSnapshot(collection(db, "cities"), (snapshot) => {
+                    citiesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    renderCities();
+                });
+
+            } catch (error) {
+                console.error("Firebase connection error:", error);
+                document.getElementById('db-status').innerText = "● Ошибка подключения";
+            }
+        }
+
+        let unsubscribeTerritories = null;
+        function subscribeToTerritories() {
+            if (typeof unsubscribeTerritories === 'function') {
+                unsubscribeTerritories();
+                unsubscribeTerritories = null;
+            }
+
+            if (!activeCityId) return;
+
+            const q = query(
+                collection(db, "territories"), 
+                where("cityId", "==", activeCityId),
+                where("isArchived", "==", false)
+            );
+
+            unsubscribeTerritories = onSnapshot(q, (snapshot) => {
+                territoriesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                territoriesData.sort((a, b) => parseInt(a.number) - parseInt(b.number) || a.number.localeCompare(b.number));
+                renderTerritories();
+                
+                if (currentEditingTerritoryId) {
+                    window.showHistory(currentEditingTerritoryId);
+                }
+            });
+        }
+
+        window.toggleCityMenu = (event) => {
+            event.stopPropagation();
+            document.getElementById('city-dropdown-menu').classList.toggle('hidden');
+        };
+
+        window.closeCityMenu = () => {
+            const menu = document.getElementById('city-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
+        };
+
+        document.addEventListener('click', () => closeCityMenu());
+
+        window.addCity = async () => {
+            const name = prompt(t('prompt_new_city'));
+            if (!name || !name.trim()) return;
+            const mapLink = prompt(t('prompt_new_city_map'), 'https://www.google.com/maps/d/');
+            await addDoc(collection(db, "cities"), { name: name.trim(), mapUrl: mapLink ? mapLink.trim() : '#' });
+        };
+
+        window.editCityName = async () => {
+            const city = citiesData.find(c => c.id === activeCityId);
+            if (!city) return;
+            const newName = prompt(t('prompt_edit_city_name'), city.name);
+            if (!newName || !newName.trim()) return;
+            await updateDoc(doc(db, "cities", activeCityId), { name: newName.trim() });
+        };
+
+        window.editCityMap = async () => {
+            const city = citiesData.find(c => c.id === activeCityId);
+            if (!city) return;
+            const newMapUrl = prompt(t('prompt_edit_city_map'), city.mapUrl || '');
+            if (newMapUrl === null) return;
+            await updateDoc(doc(db, "cities", activeCityId), { mapUrl: newMapUrl.trim() });
+        };
+
+        window.addTerritory = async () => {
+            const num = prompt(t('prompt_new_territory_num'));
+            if (!num) return;
+            const mapLink = prompt(t('prompt_new_territory_map'), '');
+            await addDoc(collection(db, "territories"), {
+                cityId: activeCityId,
+                number: num.trim(),
+                mapUrl: mapLink ? mapLink.trim() : '',
+                isArchived: false,
+                history: []
+            });
+        };
+
+        window.editTerritory = async (id) => {
+            const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
+            const newNum = prompt(t('prompt_edit_territory_num'), tObj.number);
+            if (newNum !== null && newNum.trim() !== '') {
+                await updateDoc(doc(db, "territories", id), { number: newNum.trim() });
+            }
+        };
+
+        window.archiveTerritory = async (id) => {
+            const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
+            if (confirm(`${t('prompt_archive_confirm')}№${tObj.number}?`)) {
+                await updateDoc(doc(db, "territories", id), { isArchived: true });
+            }
+        };
+
+        window.issueTerritory = async (id) => {
+            const name = prompt(t('prompt_publisher_name'));
+            if (!name) return;
+            const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
+            const history = tObj.history || [];
+            history.push({ publisher: name.trim(), issuedAt: new Date().toISOString().split('T')[0], returnedAt: null });
+            await updateDoc(doc(db, "territories", id), { history });
+        };
+
+        window.returnTerritory = async (id) => {
+            const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
+            const history = tObj.history || [];
+            if (history.length > 0) {
+                history[history.length - 1].returnedAt = new Date().toISOString().split('T')[0];
+                await updateDoc(doc(db, "territories", id), { history });
+            }
+        };
+
+        window.showHistory = (id) => {
+            currentEditingTerritoryId = id;
+            const tObj = territoriesData.find(item => item.id === id);
+            if (!tObj) return;
+
+            document.getElementById('modal-title').innerText = `${t('modal_title')} №${tObj.number}`;
+            document.getElementById('modal-territory-map-url').value = tObj.mapUrl || '';
+
+            const listContainer = document.getElementById('modal-history-list');
+            listContainer.innerHTML = '';
+
+            if (!tObj.history || tObj.history.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-slate-500 italic py-2">${t('history_empty')}</p>`;
+            } else {
+                tObj.history.forEach((h, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2 text-xs';
+                    itemDiv.innerHTML = `
+                        <div class="space-y-1">
+                            <p class="font-bold text-white"><span class="text-indigo-400">#${index + 1}</span> ${h.publisher}</p>
+                            <p class="text-slate-400">${t('issued_by')} <span class="text-slate-200">${h.issuedAt}</span> | ${t('returned_by')} <span class="${h.returnedAt ? 'text-emerald-400' : 'text-amber-400 font-semibold'}">${h.returnedAt || t('in_progress')}</span></p>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="editHistoryItem(${index})" title="Редактировать запись" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteHistoryItem(${index})" title="Удалить запись" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    `;
+                    listContainer.appendChild(itemDiv);
+                });
+            }
+
+            document.getElementById('history-modal').classList.remove('hidden');
+            document.getElementById('history-modal').classList.add('flex');
+        };
+
+        window.closeHistoryModal = () => {
+            currentEditingTerritoryId = null;
+            document.getElementById('history-modal').classList.add('hidden');
+            document.getElementById('history-modal').classList.remove('flex');
+        };
+
+        window.saveTerritoryMapUrl = async () => {
+            if (!currentEditingTerritoryId) return;
+            const newUrl = document.getElementById('modal-territory-map-url').value;
+            await updateDoc(doc(db, "territories", currentEditingTerritoryId), { mapUrl: newUrl.trim() });
+            if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
+        };
+
+        window.editHistoryItem = async (index) => {
+            const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
+            if (!tObj || !tObj.history[index]) return;
+            const h = tObj.history[index];
+
+            const newPub = prompt(t('prompt_edit_publisher'), h.publisher);
+            if (newPub === null) return;
+            const newIssued = prompt(t('prompt_edit_issued_date'), h.issuedAt);
+            if (newIssued === null) return;
+            const newReturned = prompt(t('prompt_edit_returned_date'), h.returnedAt || '');
+            if (newReturned === null) return;
+
+            tObj.history[index] = {
+                publisher: newPub.trim(),
+                issuedAt: newIssued.trim(),
+                returnedAt: newReturned.trim() !== '' ? newReturned.trim() : null
+            };
+
             await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
             if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
-        }
-    };
+        };
 
-    window.copyTerritoryLink = (url) => {
-        if (!url) return;
-        navigator.clipboard.writeText(url).catch(err => console.error(err));
-    };
+        window.deleteHistoryItem = async (index) => {
+            const tObj = territoriesData.find(item => item.id === currentEditingTerritoryId);
+            if (!tObj || !tObj.history[index]) return;
 
-    function renderCities() {
-        const container = document.getElementById('cities-container');
-        
-        container.innerHTML = '';
-        citiesData.forEach(c => {
-            const btn = document.createElement('button');
-            btn.dataset.cityId = c.id;
-            btn.innerText = c.name;
-            btn.onclick = () => { 
-                if (activeCityId !== c.id) {
-                    activeCityId = c.id; 
-                    updateActiveCityStyles(); 
-                    subscribeToTerritories(); 
-                }
-            };
-            container.appendChild(btn);
-        });
-        
-        updateActiveCityStyles();
-
-        const activeCity = citiesData.find(c => c.id === activeCityId);
-        const mapLinkBtn = document.getElementById('map-link');
-        if (activeCity && activeCity.mapUrl) {
-            mapLinkBtn.href = activeCity.mapUrl;
-            mapLinkBtn.style.display = 'flex';
-        } else {
-            mapLinkBtn.style.display = 'none';
-        }
-    }
-
-    function updateActiveCityStyles() {
-        const container = document.getElementById('cities-container');
-        Array.from(container.children).forEach(btn => {
-            const cId = btn.dataset.cityId;
-            if (cId === activeCityId) {
-                btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block text-center bg-indigo-600 text-white font-semibold shadow-md";
-            } else {
-                btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block text-center bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium";
+            if (confirm(`${t('prompt_delete_history')}${index + 1} (${tObj.history[index].publisher})?`)) {
+                tObj.history.splice(index, 1);
+                await updateDoc(doc(db, "territories", tObj.id), { history: tObj.history });
+                if (currentEditingTerritoryId) window.showHistory(currentEditingTerritoryId);
             }
-        });
-    }
+        };
 
-    function renderTerritories() {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = '';
-        let free = 0, busy = 0, overdue = 0;
+        window.copyTerritoryLink = (url) => {
+            if (!url) return;
+            navigator.clipboard.writeText(url).catch(err => console.error(err));
+        };
 
-        territoriesData.forEach(tObj => {
-            const lastRec = tObj.history && tObj.history.length > 0 ? tObj.history[tObj.history.length - 1] : null;
-            const isBusy = lastRec && !lastRec.returnedAt;
+        function renderCities() {
+            const container = document.getElementById('cities-container');
             
-            let days = 0, isOverdue = false;
-            if (isBusy && lastRec.issuedAt) {
-                const parsedDate = new Date(lastRec.issuedAt);
-                if (!isNaN(parsedDate.getTime())) {
-                    days = Math.floor((new Date() - parsedDate) / (1000 * 60 * 60 * 24));
-                    if (days > 120) isOverdue = true;
-                }
-            }
-
-            if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
-
-            let badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${t('status_free')}</span>`;
-            if (isBusy && !isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">${t('status_busy')} (${days} ${t('days_text')})</span>`;
-            if (isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
-
-            const card = document.createElement('div');
-            card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3';
-            card.innerHTML = `
-                <div class="flex items-start justify-between">
-                    <div>
-                        <span class="text-[10px] text-indigo-400 font-bold uppercase">${t('card_territory')}</span>
-                        <h3 class="text-lg font-bold text-white">№ ${tObj.number}</h3>
-                    </div>
-                    ${badge}
-                </div>
-                
-                <div class="space-y-1.5 text-xs text-slate-400">
-                    ${isBusy ? `<p><i class="fa-solid fa-user text-slate-500 mr-1"></i> <strong>${lastRec.publisher}</strong></p>` : `<p class="text-slate-600 italic">${t('not_issued')}</p>`}
-                    
-                    <div class="flex items-center gap-1.5 pt-1">
-                        ${tObj.mapUrl ? `
-                            <a href="${tObj.mapUrl}" target="_blank" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 rounded font-medium flex items-center gap-1 transition">
-                                <i class="fa-solid fa-map"></i> ${t('card_map')}
-                            </a>
-                            <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded transition">
-                                <i class="fa-solid fa-copy"></i>
-                            </button>
-                        ` : `
-                            <span class="text-[10px] text-slate-600 italic">${t('no_map_link')}</span>
-                        `}
-                    </div>
-                </div>
-
-                <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1">
-                    <div class="flex space-x-1">
-                        <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"><i class="fa-solid fa-clock-rotate-left"></i></button>
-                        <button onclick="archiveTerritory('${tObj.id}')" title="В архив" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded text-xs"><i class="fa-solid fa-box-archive"></i></button>
-                    </div>
-                    ${!isBusy 
-                        ? `<button onclick="issueTerritory('${tObj.id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold">${t('btn_issue')}</button>`
-                        : `<button onclick="returnTerritory('${tObj.id}')" class="px-3 py-1 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white rounded text-xs font-semibold">${t('btn_return')}</button>`
+            container.innerHTML = '';
+            citiesData.forEach(c => {
+                const btn = document.createElement('button');
+                btn.dataset.cityId = c.id;
+                btn.innerText = c.name;
+                btn.onclick = () => { 
+                    if (activeCityId !== c.id) {
+                        activeCityId = c.id; 
+                        updateActiveCityStyles(); 
+                        subscribeToTerritories(); 
                     }
-                </div>
-            `;
-            grid.appendChild(card);
-        });
+                };
+                container.appendChild(btn);
+            });
+            
+            updateActiveCityStyles();
 
-        document.getElementById('st-free').innerText = free;
-        document.getElementById('st-busy').innerText = busy;
-        document.getElementById('st-overdue').innerText = overdue;
-    }
+            const activeCity = citiesData.find(c => c.id === activeCityId);
+            const mapLinkBtn = document.getElementById('map-link');
+            if (activeCity && activeCity.mapUrl) {
+                mapLinkBtn.href = activeCity.mapUrl;
+                mapLinkBtn.style.display = 'flex';
+            } else {
+                mapLinkBtn.style.display = 'none';
+            }
+        }
 
-    initApp();
-</script>
+        function updateActiveCityStyles() {
+            const container = document.getElementById('cities-container');
+            Array.from(container.children).forEach(btn => {
+                const cId = btn.dataset.cityId;
+                if (cId === activeCityId) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block text-center bg-indigo-600 text-white font-semibold shadow-md";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs transition inline-block text-center bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium";
+                }
+            });
+        }
+
+        function renderTerritories() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            let free = 0, busy = 0, overdue = 0;
+
+            territoriesData.forEach(tObj => {
+                const lastRec = tObj.history && tObj.history.length > 0 ? tObj.history[tObj.history.length - 1] : null;
+                const isBusy = lastRec && !lastRec.returnedAt;
+                
+                let days = 0, isOverdue = false;
+                if (isBusy && lastRec.issuedAt) {
+                    const parsedDate = new Date(lastRec.issuedAt);
+                    if (!isNaN(parsedDate.getTime())) {
+                        days = Math.floor((new Date() - parsedDate) / (1000 * 60 * 60 * 24));
+                        if (days > 120) isOverdue = true;
+                    }
+                }
+
+                if (!isBusy) free++; else if (isOverdue) overdue++; else busy++;
+
+                let badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">${t('status_free')}</span>`;
+                if (isBusy && !isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">${t('status_busy')} (${days} ${t('days_text')})</span>`;
+                if (isOverdue) badge = `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
+
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-[10px] text-indigo-400 font-bold uppercase">${t('card_territory')}</span>
+                            <h3 class="text-lg font-bold text-white">№ ${tObj.number}</h3>
+                        </div>
+                        ${badge}
+                    </div>
+                    
+                    <div class="space-y-1.5 text-xs text-slate-400">
+                        ${isBusy ? `<p><i class="fa-solid fa-user text-slate-500 mr-1"></i> <strong>${lastRec.publisher}</strong></p>` : `<p class="text-slate-600 italic">${t('not_issued')}</p>`}
+                        
+                        <div class="flex items-center gap-1.5 pt-1">
+                            ${tObj.mapUrl ? `
+                                <a href="${tObj.mapUrl}" target="_blank" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 rounded font-medium flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-map"></i> ${t('card_map')}
+                                </a>
+                                <button onclick="copyTerritoryLink('${tObj.mapUrl}')" title="Скопировать ссылку" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded transition">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            ` : `
+                                <span class="text-[10px] text-slate-600 italic">${t('no_map_link')}</span>
+                            `}
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-1">
+                        <div class="flex space-x-1">
+                            <button onclick="editTerritory('${tObj.id}')" title="Редактировать номер" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="showHistory('${tObj.id}')" title="История и ссылка" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                            <button onclick="archiveTerritory('${tObj.id}')" title="В архив" class="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded text-xs"><i class="fa-solid fa-box-archive"></i></button>
+                        </div>
+                        ${!isBusy 
+                            ? `<button onclick="issueTerritory('${tObj.id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold">${t('btn_issue')}</button>`
+                            : `<button onclick="returnTerritory('${tObj.id}')" class="px-3 py-1 bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white rounded text-xs font-semibold">${t('btn_return')}</button>`
+                        }
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            document.getElementById('st-free').innerText = free;
+            document.getElementById('st-busy').innerText = busy;
+            document.getElementById('st-overdue').innerText = overdue;
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
