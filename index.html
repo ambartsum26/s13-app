@@ -216,8 +216,8 @@
                 <button onclick="menuOptionEditMap()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
                     <i class="fa-solid fa-map text-emerald-400 w-4"></i> <span data-i18n="menu_edit_territory_map">Изменить ссылку на карту</span>
                 </button>
-                <button onclick="menuOptionArchive()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-900/40 rounded-2xl text-xs font-medium text-rose-400 flex items-center gap-3 transition">
-                    <i class="fa-solid fa-box-archive text-rose-400 w-4"></i> <span data-i18n="menu_archive_territory">Заархивировать участок</span>
+                <button onclick="menuOptionEditRussianSpeakers()" class="w-full text-left p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 flex items-center gap-3 transition">
+                    <i class="fa-solid fa-user-group text-sky-400 w-4"></i> <span data-i18n="menu_russian_speakers">Количество русскоговорящих</span>
                 </button>
             </div>
         </div>
@@ -299,7 +299,6 @@
                 prompt_new_territory_map: "Ссылка на карту этого участка (необязательно):",
                 prompt_edit_territory_num: "Новый номер участка:",
                 prompt_edit_territory_map: "Введите новую ссылку на карту участка:",
-                prompt_archive_confirm: "Архивировать участок №",
                 prompt_publisher_name: "ФИО возвещателя, которому выдаётся участок:",
                 prompt_edit_publisher: "ФИО возвещателя:",
                 prompt_edit_issued_date: "Дата выдачи (ДД.ММ.ГГГГ):",
@@ -311,7 +310,9 @@
                 confirm_title: "Подтверждение",
                 menu_edit_number: "Изменить номер",
                 menu_edit_territory_map: "Изменить ссылку на карту",
-                menu_archive_territory: "Заархивировать участок"
+                menu_russian_speakers: "Количество русскоговорящих",
+                prompt_edit_russian_speakers: "Укажите количество русскоговорящих:",
+                label_russian_speakers: "Русскоговорящие:"
             },
             fr: {
                 app_title: "ASSISTANT DE TERRITOIRES",
@@ -352,7 +353,6 @@
                 prompt_new_territory_map: "Lien vers la carte de ce territoire (facultatif) :",
                 prompt_edit_territory_num: "Nouveau numéro du territoire :",
                 prompt_edit_territory_map: "Entrez le nouveau lien de la carte du territoire :",
-                prompt_archive_confirm: "Archiver le territoire n°",
                 prompt_publisher_name: "Nom du proclamateur :",
                 prompt_edit_publisher: "Nom du proclamateur :",
                 prompt_edit_issued_date: "Date d'attribution (JJ.MM.AAAA) :",
@@ -364,7 +364,9 @@
                 confirm_title: "Confirmation",
                 menu_edit_number: "Modifier le numéro",
                 menu_edit_territory_map: "Modifier le lien de la carte",
-                menu_archive_territory: "Archiver le territoire"
+                menu_russian_speakers: "Nombre de personnes russophones",
+                prompt_edit_russian_speakers: "Entrez le nombre de personnes russophones :",
+                label_russian_speakers: "Russophones :"
             }
         };
 
@@ -515,12 +517,19 @@
             }
         };
 
-        window.menuOptionArchive = async () => {
+        window.menuOptionEditRussianSpeakers = async () => {
             closeTerritoryMenuModal();
             if (!activeTerritoryForMenu) return;
-            const confirmed = await showCustomConfirm(`${t('prompt_archive_confirm')}№${activeTerritoryForMenu.number}?`);
-            if (confirmed) {
-                await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { isArchived: true });
+            const currentCount = activeTerritoryForMenu.russianSpeakers || 0;
+            const res = await showCustomDialog(t('menu_russian_speakers'), [
+                { label: t('prompt_edit_russian_speakers'), defaultValue: currentCount.toString() }
+            ]);
+            if (res && res[0] !== undefined) {
+                const count = parseInt(res[0].trim(), 10);
+                const validCount = isNaN(count) || count < 0 ? 0 : count;
+                await updateDoc(doc(db, "territories", activeTerritoryForMenu.id), { 
+                    russianSpeakers: validCount 
+                });
             }
         };
 
@@ -666,45 +675,47 @@
         let currentEditingTerritoryId = null;
 
         const valenceTerritories = [
-            {number: "1", mapUrl: "", history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
-            {number: "2", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]}
+            {number: "1", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Kravtsov Oleksandr", issuedAt: "2024-01-28", returnedAt: "2025-08-23"}]},
+            {number: "2", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Edmond Maduncev", issuedAt: "2024-02-02", returnedAt: "2024-04-10"}, {publisher: "Brozik Zinaida", issuedAt: "2025-03-30", returnedAt: "2025-08-28"}]}
         ];
         const guilherandTerritories = [
-            {number: "1", mapUrl: "https://www.google.com/maps/d/edit?mid=1lZ2YTYdPAsSnnuqRZm4GojR7UCsr95c&usp=drive_link", history: [{publisher: "Stella", issuedAt: "2025-04-27", returnedAt: null}]}
+            {number: "1", mapUrl: "https://www.google.com/maps/d/edit?mid=1lZ2YTYdPAsSnnuqRZm4GojR7UCsr95c&usp=drive_link", russianSpeakers: 0, history: [{publisher: "Stella", issuedAt: "2025-04-27", returnedAt: null}]}
         ];
         const saintMarcelTerritories = [
-            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]}
+            {number: "1", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Edmond Maduncev", issuedAt: "2026-01-24", returnedAt: "2026-02-10"}]}
         ];
         const saintPerayTerritories = [
-            {number: "1", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
-            {number: "2", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
-            {number: "3", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
-            {number: "4", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
-            {number: "5", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-10-31", returnedAt: "2025-11-23"}]},
-            {number: "6", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-            {number: "7", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-11", returnedAt: "2025-12-14"}]},
-            {number: "8", mapUrl: "", history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-11-07", returnedAt: "2026-01-10"}]},
-            {number: "9", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-06", returnedAt: "2025-11-08"}]},
-            {number: "10", mapUrl: "", history: [{publisher: "Valera", issuedAt: "2025-11-05", returnedAt: "2025-12-14"}]},
-            {number: "11", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-            {number: "12", mapUrl: "", history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
-            {number: "13", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
-            {number: "14", mapUrl: "", history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
-            {number: "15", mapUrl: "", history: [{publisher: "Valera (+участок 21)", issuedAt: "2026-01-16", returnedAt: "2026-05-24"}]},
-            {number: "16", mapUrl: "", history: [{publisher: "Brozik Zinaida", issuedAt: "2025-11-24", returnedAt: "2025-12-21"}]},
-            {number: "17", mapUrl: "", history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-11-24", returnedAt: "2026-01-03"}]},
-            {number: "18", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
-            {number: "19", mapUrl: "", history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
-            {number: "20", mapUrl: "", history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
+            {number: "1", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
+            {number: "2", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
+            {number: "3", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Edmond Maduncev", issuedAt: "2025-10-24", returnedAt: "2026-01-24"}]},
+            {number: "4", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valera", issuedAt: "2025-10-27", returnedAt: "2025-11-05"}]},
+            {number: "5", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-10-31", returnedAt: "2025-11-23"}]},
+            {number: "6", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "7", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valera", issuedAt: "2025-11-11", returnedAt: "2025-12-14"}]},
+            {number: "8", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Kovalchyk Valerii", issuedAt: "2025-11-07", returnedAt: "2026-01-10"}]},
+            {number: "9", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-06", returnedAt: "2025-11-08"}]},
+            {number: "10", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valera", issuedAt: "2025-11-05", returnedAt: "2025-12-14"}]},
+            {number: "11", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "12", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Edmond Maduncev", issuedAt: "2025-11-15", returnedAt: "2026-01-24"}]},
+            {number: "13", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
+            {number: "14", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valentina Ermolaeva", issuedAt: "2025-11-24", returnedAt: "2025-12-14"}]},
+            {number: "15", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Valera (+участок 21)", issuedAt: "2026-01-16", returnedAt: "2026-05-24"}]},
+            {number: "16", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Brozik Zinaida", issuedAt: "2025-11-24", returnedAt: "2025-12-21"}]},
+            {number: "17", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Vitalii Litvinchuk", issuedAt: "2025-11-24", returnedAt: "2026-01-03"}]},
+            {number: "18", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
+            {number: "19", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Yaroslav Romanov", issuedAt: "2025-11-29", returnedAt: "2026-03-30"}]},
+            {number: "20", mapUrl: "", russianSpeakers: 0, history: [{publisher: "Vlad", issuedAt: "2026-01-31", returnedAt: "2026-05-23"}]}
         ];
         const tournonTerritories = Array.from({ length: 22 }, (_, index) => ({
             number: String(index + 1),
             mapUrl: "",
+            russianSpeakers: 0,
             history: []
         }));
         const romansTerritories = Array.from({ length: 40 }, (_, index) => ({
             number: String(index + 1),
             mapUrl: "",
+            russianSpeakers: 0,
             history: []
         }));
 
@@ -737,7 +748,7 @@
 
                         const ref = await addDoc(collection(db, "cities"), { name: cityName, mapUrl: mapUrl });
                         for (const item of territoriesList) {
-                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", isArchived: false, history: item.history });
+                            await addDoc(collection(db, "territories"), { cityId: ref.id, number: item.number, mapUrl: item.mapUrl || "", russianSpeakers: item.russianSpeakers || 0, history: item.history });
                         }
                     } else {
                         if (mapUrl && existingCity.mapUrl !== mapUrl) {
@@ -782,8 +793,7 @@
 
             const q = query(
                 collection(db, "territories"), 
-                where("cityId", "==", activeCityId),
-                where("isArchived", "==", false)
+                where("cityId", "==", activeCityId)
             );
 
             unsubscribeTerritories = onSnapshot(q, (snapshot) => {
@@ -848,7 +858,7 @@
                 cityId: activeCityId,
                 number: res[0].trim(),
                 mapUrl: res[1] ? res[1].trim() : '',
-                isArchived: false,
+                russianSpeakers: 0,
                 history: []
             });
         };
@@ -1039,6 +1049,7 @@
                     cardStyle = "bg-rose-900/40 border-rose-500/70 hover:border-rose-400 shadow-2xl shadow-rose-950/50";
                 }
 
+                const ruCount = tObj.russianSpeakers || 0;
                 const card = document.createElement('div');
                 const delay = Math.min(index * 0.04, 0.5);
                 card.className = `backdrop-blur-2xl border ${cardStyle} rounded-3xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-300 hover:-translate-y-0.5 animate-fade-in`;
@@ -1056,6 +1067,12 @@
                     <div class="space-y-2 text-xs text-slate-200">
                         ${isBusy ? `<p class="flex items-center gap-1.5 font-medium"><i class="fa-solid fa-user text-white/80"></i> <strong class="text-white">${lastRec.publisher}</strong></p>` : `<p class="text-slate-300/70 italic">${t('not_issued')}</p>`}
                         
+                        <p class="flex items-center gap-1.5 font-medium text-slate-300">
+                            <i class="fa-solid fa-user-group text-sky-400"></i> 
+                            <span>${t('label_russian_speakers')}</span> 
+                            <strong class="text-white font-bold">${ruCount}</strong>
+                        </p>
+
                         <div class="flex items-center gap-1.5 pt-1">
                             ${tObj.mapUrl ? `
                                 <a href="${tObj.mapUrl}" target="_blank" class="h-8 px-3 bg-black/30 hover:bg-black/50 text-white rounded-xl font-medium flex items-center gap-1.5 transition border border-white/10 shadow-sm text-xs">
