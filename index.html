@@ -614,7 +614,8 @@
                     cardStyle = "bg-blue-900/40 border-blue-500/60 hover:border-blue-400 shadow-xl";
                 }
                 if (isOverdue) {
-                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-rose-950/60 text-rose-300 border border-rose-400/70 hover:border-rose-400 shadow-2xl";
+                    badge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-rose-950/60 text-rose-300 border border-rose-400/70 hover:border-rose-400 shadow-2xl">${t('status_overdue')} (${days} ${t('days_text')})</span>`;
+                    cardStyle = "bg-rose-900/40 border-rose-500/60 hover:border-rose-400 shadow-xl";
                 }
 
                 const delay = (index * 0.05).toFixed(2);
@@ -622,6 +623,7 @@
                 card.style.animationDelay = `${delay}s`;
                 card.style.animationFillMode = 'backwards';
                 card.className = `backdrop-blur-2xl border ${cardStyle} rounded-3xl p-4 md:p-5 flex flex-col justify-between space-y-4 transition-all duration-300 hover:-translate-y-0.5 animate-fade-in`;
+                
                 card.innerHTML = `
                     <div class="flex items-start justify-between gap-2">
                         <div class="flex items-center gap-2">
