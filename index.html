@@ -3791,28 +3791,46 @@
 
 
         /* =========================================================
-           АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ
-           
-           Важно:
-           Firebase не изменяет документ сам в день окончания года.
-           Поэтому каждые 60 секунд мы просто перерисовываем карточки.
-           
-           Данные в Firebase при этом НЕ меняются.
+           АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ СТАТУСОВ
+
+           Раньше все карточки перерисовывались каждую минуту,
+           из-за чего создавалось ощущение обновления страницы.
+
+           Теперь интерфейс обновляется только один раз после
+           наступления нового календарного дня. Этого достаточно:
+           сроки и счётчики в приложении считаются по дням.
+
+           Firebase-данные при этом НЕ меняются.
         ========================================================= */
 
-        setInterval(
-            () => {
+        let dailyStatusRefreshTimer = null;
 
-                if (
-                    territoriesData.length > 0
-                ) {
+        function scheduleDailyStatusRefresh() {
 
+            if (dailyStatusRefreshTimer) {
+                clearTimeout(dailyStatusRefreshTimer);
+            }
+
+            const now = new Date();
+            const nextDay = new Date(now);
+
+            nextDay.setDate(nextDay.getDate() + 1);
+            nextDay.setHours(0, 0, 1, 0);
+
+            const delay = Math.max(1000, nextDay.getTime() - now.getTime());
+
+            dailyStatusRefreshTimer = setTimeout(() => {
+
+                if (territoriesData.length > 0) {
                     renderTerritories();
                 }
 
-            },
-            60000
-        );
+                scheduleDailyStatusRefresh();
+
+            }, delay);
+        }
+
+        scheduleDailyStatusRefresh();
 
 
         /* =========================================================
