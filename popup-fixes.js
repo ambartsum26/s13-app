@@ -1,30 +1,21 @@
 const byId = (id) => document.getElementById(id);
+const isFr = () => document.documentElement.lang === 'fr';
 
 const popupSpecs = [
-    {
-        id: 'history-modal',
-        zIndex: 80,
-        close: () => window.closeHistory?.()
-    },
-    {
-        id: 'publisher-picker-modal',
-        zIndex: 100,
-        close: () => window.closePicker?.()
-    },
-    {
-        id: 'confirm-modal',
-        zIndex: 110,
-        close: () => window.closeConfirm?.(false)
-    },
-    {
-        id: 'dialog-modal',
-        zIndex: 9999,
-        close: () => window.closeDialog?.(false)
-    }
+    { id: 'history-modal', zIndex: 80, close: () => window.closeHistory?.() },
+    { id: 'publisher-picker-modal', zIndex: 100, close: () => window.closePicker?.() },
+    { id: 'confirm-modal', zIndex: 110, close: () => window.closeConfirm?.(false) },
+    { id: 'dialog-modal', zIndex: 9999, close: () => window.closeDialog?.(false) }
 ];
 
 const isOpen = (element) =>
     !!element && !element.classList.contains('hidden');
+
+function setText(element, value) {
+    if (element && element.textContent !== value) {
+        element.textContent = value;
+    }
+}
 
 function getTopOpenPopup() {
     return [...popupSpecs]
@@ -45,19 +36,76 @@ function syncScrollLock() {
     document.body.style.overflow = anyModalOpen ? 'hidden' : '';
 }
 
+function simplifyStaticLabels() {
+    const currentCityLabel = byId('active-city-title')?.previousElementSibling;
+    currentCityLabel?.classList.add('hidden');
+
+    setText(byId('publisher-add-label'), isFr() ? 'Ajouter' : 'Добавить');
+    setText(byId('publisher-picker-title'), isFr() ? 'Proclamateur' : 'Возвещатель');
+
+    const publisherSearch = byId('publishers-search');
+    if (publisherSearch) publisherSearch.placeholder = isFr() ? 'Recherche' : 'Поиск';
+
+    const pickerSearch = byId('publisher-picker-search');
+    if (pickerSearch) pickerSearch.placeholder = isFr() ? 'Recherche' : 'Поиск';
+}
+
+function simplifyDialogLabels() {
+    const title = byId('dialog-title');
+    if (title) {
+        const replacements = isFr()
+            ? new Map([
+                ['Modifier le nom', 'Nom'],
+                ['Modifier le lien de la carte', 'Lien de carte'],
+                ['Modifier le lien de la carte principale', 'Lien de carte'],
+                ['Ajouter un proclamateur', 'Proclamateur'],
+                ['Modifier le proclamateur', 'Proclamateur']
+            ])
+            : new Map([
+                ['Изменить название', 'Название'],
+                ['Изменить ссылку на карту', 'Ссылка на карту'],
+                ['Изменить ссылку на основную карту города', 'Ссылка на карту'],
+                ['Добавить возвещателя', 'Возвещатель'],
+                ['Изменить возвещателя', 'Возвещатель']
+            ]);
+
+        if (replacements.has(title.textContent)) {
+            setText(title, replacements.get(title.textContent));
+        }
+    }
+
+    byId('dialog-fields')?.querySelectorAll('label > span').forEach((label) => {
+        const replacements = isFr()
+            ? new Map([
+                ['Nom de la ville', 'Nom'],
+                ['Numéro', 'N°'],
+                ['Modifier le nom', 'Nom'],
+                ['Proclamateurs', 'Nom']
+            ])
+            : new Map([
+                ['Название города', 'Название'],
+                ['Номер участка', 'Номер'],
+                ['Изменить название', 'Название'],
+                ['Возвещатели', 'Имя']
+            ]);
+
+        if (replacements.has(label.textContent)) {
+            setText(label, replacements.get(label.textContent));
+        }
+    });
+}
+
 function ensureCityEditControls() {
     const editButton = document.querySelector('#city-menu-wrap > button');
     if (editButton) {
         const currentLabel = byId('btn-edit-city-label')?.textContent ||
-            (document.documentElement.lang === 'fr' ? 'Modifier la ville' : 'Изменить город');
+            (isFr() ? 'Modifier la ville' : 'Изменить город');
 
         editButton.innerHTML =
             '<i class="fa-solid fa-pen"></i>' +
             `<span id="btn-edit-city-label" class="hidden">${currentLabel}</span>`;
 
-        editButton.title = document.documentElement.lang === 'fr'
-            ? 'Modifier la ville'
-            : 'Изменить город';
+        editButton.title = isFr() ? 'Ville' : 'Город';
         editButton.setAttribute('aria-label', editButton.title);
         editButton.classList.remove('px-3.5');
         editButton.classList.add('w-10', 'px-0');
@@ -70,8 +118,9 @@ function ensureCityEditControls() {
     const mapButton = menu.querySelector('button[onclick*="editCityMap"]');
 
     if (nameButton) {
-        nameButton.innerHTML = '<i class="fa-solid fa-signature w-5 mr-1"></i>' +
-            (document.documentElement.lang === 'fr' ? 'Modifier le nom' : 'Изменить название');
+        nameButton.innerHTML =
+            '<i class="fa-solid fa-signature w-5 mr-1"></i>' +
+            (isFr() ? 'Nom' : 'Название');
     }
 
     if (!mapButton) {
@@ -79,17 +128,21 @@ function ensureCityEditControls() {
         button.type = 'button';
         button.className = 'w-full text-left px-4 py-2.5 transition';
         button.setAttribute('onclick', 'editCityMap();editCityMenu()');
-        button.innerHTML = '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
-            (document.documentElement.lang === 'fr'
-                ? 'Modifier le lien de la carte principale'
-                : 'Изменить ссылку на основную карту города');
+        button.innerHTML =
+            '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
+            (isFr() ? 'Lien de carte' : 'Ссылка на карту');
         menu.appendChild(button);
     } else {
-        mapButton.innerHTML = '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
-            (document.documentElement.lang === 'fr'
-                ? 'Modifier le lien de la carte principale'
-                : 'Изменить ссылку на основную карту города');
+        mapButton.innerHTML =
+            '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
+            (isFr() ? 'Lien de carte' : 'Ссылка на карту');
     }
+}
+
+function applyCompactUi() {
+    ensureCityEditControls();
+    simplifyStaticLabels();
+    simplifyDialogLabels();
 }
 
 function setupPopupBehavior() {
@@ -108,8 +161,6 @@ function setupPopupBehavior() {
             z-index: 9999 !important;
         }
 
-        /* Меню изменения города раскрывается ВВЕРХ от карандаша,
-           чтобы оба пункта всегда были видны. */
         #city-menu {
             z-index: 500 !important;
             top: auto !important;
@@ -121,13 +172,23 @@ function setupPopupBehavior() {
     `;
     document.head.appendChild(style);
 
-    ensureCityEditControls();
+    applyCompactUi();
 
-    const langObserver = new MutationObserver(ensureCityEditControls);
+    const langObserver = new MutationObserver(() => {
+        queueMicrotask(applyCompactUi);
+    });
     langObserver.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ['lang']
     });
+
+    const dialogContentObserver = new MutationObserver(() => {
+        queueMicrotask(simplifyDialogLabels);
+    });
+    const dialogTitle = byId('dialog-title');
+    const dialogFields = byId('dialog-fields');
+    if (dialogTitle) dialogContentObserver.observe(dialogTitle, { childList: true, characterData: true, subtree: true });
+    if (dialogFields) dialogContentObserver.observe(dialogFields, { childList: true, characterData: true, subtree: true });
 
     popupSpecs.forEach((spec) => {
         const modal = byId(spec.id);
@@ -147,6 +208,7 @@ function setupPopupBehavior() {
         const observer = new MutationObserver(() => {
             if (isOpen(modal)) {
                 closeAuxiliaryMenus();
+                applyCompactUi();
                 if (spec.id === 'dialog-modal') {
                     modal.style.zIndex = '9999';
                 }
