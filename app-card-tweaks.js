@@ -145,24 +145,62 @@ textarea::placeholder {
 }
 
 .territory-card .card-icon-action,
-.territory-card a.mini-btn.card-map-action,
+.territory-card a.card-map-action,
 .territory-card .copy-map-btn.card-icon-action {
     width: 42px !important;
     min-width: 42px !important;
+    max-width: 42px !important;
     height: 42px !important;
     min-height: 42px !important;
+    max-height: 42px !important;
     padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    outline: none !important;
     border-radius: 12px !important;
+    background: #1c283a !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    line-height: 1 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    font-size: 14px !important;
+    flex: 0 0 42px !important;
+    transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease !important;
 }
 
 .territory-card .card-icon-action i,
-.territory-card a.mini-btn.card-map-action i {
+.territory-card a.card-map-action i {
     margin: 0 !important;
+    padding: 0 !important;
+    color: #fff !important;
     font-size: 14px !important;
+    line-height: 1 !important;
+}
+
+/* Dedicated map-link reset: old mini-btn sizing must never leak through. */
+.territory-card a.mini-btn.card-map-action {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    padding: 0 !important;
+    background: #1c283a !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+.territory-card a.mini-btn.card-map-action:hover,
+.territory-card .card-icon-action:not(:disabled):hover {
+    background: #10b981 !important;
+    color: #fff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 9px 20px rgba(16,185,129,.18) !important;
 }
 
 /* Issue / return / lock stay larger than ordinary controls. */
@@ -224,12 +262,16 @@ textarea::placeholder {
     }
 
     .territory-card .card-icon-action,
-    .territory-card a.mini-btn.card-map-action,
-    .territory-card .copy-map-btn.card-icon-action {
+    .territory-card a.card-map-action,
+    .territory-card .copy-map-btn.card-icon-action,
+    .territory-card a.mini-btn.card-map-action {
         width: 44px !important;
         min-width: 44px !important;
+        max-width: 44px !important;
         height: 44px !important;
         min-height: 44px !important;
+        max-height: 44px !important;
+        flex-basis: 44px !important;
     }
 }
 `;
@@ -332,7 +374,7 @@ function makeIconOnly(button, iconClass, title, main = false) {
 function cleanMapControls(card) {
     const mapLink = card.querySelector('a.mini-btn[href]');
     if (mapLink) {
-        setHtmlOnce(mapLink, '<i class="fa-solid fa-map"></i>');
+        setHtmlOnce(mapLink, '<i class="fa-solid fa-map-location-dot"></i>');
         const title = isFr() ? 'Carte' : 'Карта';
         mapLink.title = title;
         mapLink.setAttribute('aria-label', title);
