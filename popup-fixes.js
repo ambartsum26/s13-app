@@ -7,11 +7,6 @@ const popupSpecs = [
         close: () => window.closeHistory?.()
     },
     {
-        id: 'dialog-modal',
-        zIndex: 90,
-        close: () => window.closeDialog?.(false)
-    },
-    {
         id: 'publisher-picker-modal',
         zIndex: 100,
         close: () => window.closePicker?.()
@@ -20,6 +15,11 @@ const popupSpecs = [
         id: 'confirm-modal',
         zIndex: 110,
         close: () => window.closeConfirm?.(false)
+    },
+    {
+        id: 'dialog-modal',
+        zIndex: 9999,
+        close: () => window.closeDialog?.(false)
     }
 ];
 
@@ -45,6 +45,47 @@ function syncScrollLock() {
     document.body.style.overflow = anyModalOpen ? 'hidden' : '';
 }
 
+function ensureCityEditControls() {
+    const editButton = document.querySelector('#city-menu-wrap > button');
+    if (editButton) {
+        editButton.innerHTML = '<i class="fa-solid fa-pen"></i>';
+        editButton.title = document.documentElement.lang === 'fr'
+            ? 'Modifier la ville'
+            : 'Изменить город';
+        editButton.setAttribute('aria-label', editButton.title);
+        editButton.classList.remove('px-3.5');
+        editButton.classList.add('w-10', 'px-0');
+    }
+
+    const menu = byId('city-menu');
+    if (!menu) return;
+
+    const nameButton = menu.querySelector('button[onclick*="renameCity"]');
+    const mapButton = menu.querySelector('button[onclick*="editCityMap"]');
+
+    if (nameButton) {
+        nameButton.innerHTML = '<i class="fa-solid fa-signature w-5 mr-1"></i>' +
+            (document.documentElement.lang === 'fr' ? 'Modifier le nom' : 'Изменить название');
+    }
+
+    if (!mapButton) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'w-full text-left px-4 py-2.5 transition';
+        button.setAttribute('onclick', 'editCityMap();editCityMenu()');
+        button.innerHTML = '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
+            (document.documentElement.lang === 'fr'
+                ? 'Modifier le lien de la carte principale'
+                : 'Изменить ссылку на основную карту города');
+        menu.appendChild(button);
+    } else {
+        mapButton.innerHTML = '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
+            (document.documentElement.lang === 'fr'
+                ? 'Modifier le lien de la carte principale'
+                : 'Изменить ссылку на основную карту города');
+    }
+}
+
 function setupPopupBehavior() {
     const style = document.createElement('style');
     style.textContent = `
@@ -56,8 +97,24 @@ function setupPopupBehavior() {
         .s13-popup-overlay > .glass-panel {
             animation: popupSurfaceIn .18s ease-out;
         }
+
+        #dialog-modal {
+            z-index: 9999 !important;
+        }
+
+        #city-menu {
+            z-index: 500 !important;
+        }
     `;
     document.head.appendChild(style);
+
+    ensureCityEditControls();
+
+    const langObserver = new MutationObserver(ensureCityEditControls);
+    langObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['lang']
+    });
 
     popupSpecs.forEach((spec) => {
         const modal = byId(spec.id);
@@ -68,8 +125,6 @@ function setupPopupBehavior() {
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-modal', 'true');
 
-        // Клик именно по затемнённому фону закрывает окно.
-        // Клики внутри карточки окна ничего не закрывают.
         modal.addEventListener('pointerdown', (event) => {
             if (event.target === modal) {
                 spec.close();
@@ -79,17 +134,19 @@ function setupPopupBehavior() {
         const observer = new MutationObserver(() => {
             if (isOpen(modal)) {
                 closeAuxiliaryMenus();
+                if (spec.id === 'dialog-modal') {
+                    modal.style.zIndex = '9999';
+                }
             }
             syncScrollLock();
         });
 
         observer.observe(modal, {
             attributes: true,
-            attributeFilter: ['class']
+            attributeFilter: ['class', 'style']
         });
     });
 
-    // Escape закрывает только самое верхнее открытое окно.
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
 
@@ -109,7 +166,6 @@ function setupPopupBehavior() {
         byId('sidebar')?.classList.remove('mobile-open');
     });
 
-    // Мобильное боковое меню закрывается при клике вне него.
     document.addEventListener('pointerdown', (event) => {
         if (window.innerWidth >= 1024) return;
 
