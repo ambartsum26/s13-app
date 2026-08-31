@@ -4,7 +4,7 @@ const isFr = () => document.documentElement.lang === 'fr';
 const style = document.createElement('style');
 style.id = 's13-card-tweaks';
 style.textContent = `
-/* Global application typography: bold, uppercase, work-focused. */
+/* Bold uppercase application typography. Inputs keep their entered value unchanged. */
 body,
 button,
 a,
@@ -35,7 +35,7 @@ textarea::placeholder {
     text-transform: uppercase !important;
 }
 
-/* Top status blocks: keep only the quantity; color itself communicates status. */
+/* Top status blocks: color + quantity only. */
 .status-chip {
     display: flex !important;
     align-items: center !important;
@@ -43,7 +43,9 @@ textarea::placeholder {
     padding: 0 14px !important;
 }
 
-.status-chip > div:first-child {
+.status-chip > div:first-child,
+.status-chip > div:last-child > span,
+.status-chip i {
     display: none !important;
 }
 
@@ -54,19 +56,14 @@ textarea::placeholder {
     justify-content: center !important;
 }
 
-.status-chip > div:last-child > span,
-.status-chip i {
-    display: none !important;
-}
-
 .status-chip b {
-    color: #ffffff !important;
+    color: #fff !important;
     font-size: 1.35rem !important;
     line-height: 1 !important;
     font-weight: 900 !important;
 }
 
-/* Cities: fill the row, stay centered, selected city is red. */
+/* Cities fill the available row; active city is red. */
 #cities-container {
     justify-content: center !important;
 }
@@ -80,18 +77,16 @@ textarea::placeholder {
     font-size: 13px !important;
 }
 
-#cities-container button.bg-indigo-600 {
+#cities-container button.bg-indigo-600,
+#cities-container button.bg-indigo-600:hover {
     background: #dc2626 !important;
-    color: #ffffff !important;
+    color: #fff !important;
     box-shadow: 0 10px 25px rgba(220, 38, 38, .22) !important;
 }
 
-#cities-container button.bg-indigo-600:hover {
-    background: #dc2626 !important;
-}
-
-/* Clean territory headings and make the territory number the visual anchor. */
-.territory-card .territory-kicker {
+/* Territory number is the main visual anchor. */
+.territory-card .territory-kicker,
+.territory-card .badge.card-free-badge {
     display: none !important;
 }
 
@@ -109,38 +104,49 @@ textarea::placeholder {
     padding: 0 11px !important;
     border-radius: 12px !important;
     background: rgba(3, 7, 18, .34) !important;
-    color: #ffffff !important;
+    color: #fff !important;
     font-size: 16px !important;
     font-weight: 900 !important;
     line-height: 1 !important;
 }
 
-.territory-card .badge.card-free-badge {
-    display: none !important;
+/* Stable card layout. Nothing is moved in DOM. */
+.territory-card > div:nth-child(2) {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 112px;
 }
 
-/* The card's controls form one fixed 2x2 block with equal spacing. */
+/* Map + copy stay in their original row but use the same 42px grid as edit + history. */
+.territory-card > div:nth-child(2) > div:last-child {
+    margin-top: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 42px) !important;
+    gap: 8px !important;
+    align-items: center !important;
+    width: max-content !important;
+}
+
 .territory-actions {
     width: 100% !important;
-    margin-top: auto !important;
-    padding-top: 14px !important;
+    margin-top: 0 !important;
+    padding-top: 12px !important;
     display: flex !important;
     align-items: flex-end !important;
     justify-content: space-between !important;
     gap: 14px !important;
 }
 
-.territory-actions .card-small-actions {
+.territory-actions > div:first-child {
     display: grid !important;
     grid-template-columns: repeat(2, 42px) !important;
-    grid-template-rows: repeat(2, 42px) !important;
     gap: 8px !important;
     width: max-content !important;
-    flex: 0 0 auto !important;
 }
 
-/* All ordinary card actions are identical square icon buttons. */
-.territory-card .card-icon-action {
+.territory-card .card-icon-action,
+.territory-card a.mini-btn.card-map-action,
+.territory-card .copy-map-btn.card-icon-action {
     width: 42px !important;
     min-width: 42px !important;
     height: 42px !important;
@@ -153,7 +159,8 @@ textarea::placeholder {
     font-size: 14px !important;
 }
 
-.territory-card .card-icon-action i {
+.territory-card .card-icon-action i,
+.territory-card a.mini-btn.card-map-action i {
     margin: 0 !important;
     font-size: 14px !important;
 }
@@ -180,7 +187,7 @@ textarea::placeholder {
 
 .territory-card .card-lock-action {
     background: rgba(3, 7, 18, .30) !important;
-    color: #ffffff !important;
+    color: #fff !important;
     opacity: .62 !important;
     pointer-events: none !important;
     box-shadow: none !important;
@@ -193,10 +200,6 @@ textarea::placeholder {
 .territory-card .waiting-return-line {
     font-size: 12px !important;
     color: rgba(255,255,255,.88) !important;
-}
-
-.territory-card .card-map-row-empty {
-    display: none !important;
 }
 
 @media (max-width: 639px) {
@@ -214,30 +217,19 @@ textarea::placeholder {
         font-size: 1.95rem !important;
     }
 
-    .territory-actions {
-        flex-direction: row !important;
-        align-items: flex-end !important;
-        gap: 12px !important;
-    }
-
-    .territory-actions .card-small-actions {
+    .territory-card > div:nth-child(2) > div:last-child,
+    .territory-actions > div:first-child {
         grid-template-columns: repeat(2, 44px) !important;
-        grid-template-rows: repeat(2, 44px) !important;
         gap: 8px !important;
     }
 
-    .territory-actions .card-icon-action {
+    .territory-card .card-icon-action,
+    .territory-card a.mini-btn.card-map-action,
+    .territory-card .copy-map-btn.card-icon-action {
         width: 44px !important;
         min-width: 44px !important;
         height: 44px !important;
         min-height: 44px !important;
-    }
-
-    .territory-actions .card-main-action {
-        width: 58px !important;
-        min-width: 58px !important;
-        height: 58px !important;
-        min-height: 58px !important;
     }
 }
 `;
@@ -256,11 +248,11 @@ function cardStatus(card) {
     return '';
 }
 
-function setInnerHtmlIfChanged(element, html) {
+function setHtmlOnce(element, html) {
     if (element && element.innerHTML !== html) element.innerHTML = html;
 }
 
-function setTextIfChanged(element, text) {
+function setTextOnce(element, text) {
     if (element && element.textContent !== text) element.textContent = text;
 }
 
@@ -269,7 +261,7 @@ function cleanHeading(card, status) {
     if (!headingRow) return;
 
     const kicker = headingRow.querySelector('div > span');
-    if (kicker) kicker.classList.add('territory-kicker');
+    kicker?.classList.add('territory-kicker');
 
     let badge = headingRow.querySelector('.badge');
 
@@ -281,7 +273,7 @@ function cleanHeading(card, status) {
     if (status === 'busy' && badge) {
         const days = numberFromText(badge.textContent);
         if (days) {
-            setTextIfChanged(badge, days);
+            setTextOnce(badge, days);
             badge.classList.add('card-day-counter');
         }
         return;
@@ -300,7 +292,7 @@ function cleanHeading(card, status) {
             headingRow.appendChild(badge);
         }
 
-        if (days) setTextIfChanged(badge, days);
+        if (days) setTextOnce(badge, days);
         badge.classList.add('card-day-counter');
     }
 }
@@ -314,17 +306,13 @@ function cleanWaitingInfo(card) {
 
         if (/Последняя сдача:|Dernier retour\s*:/i.test(text)) {
             const date = text.match(/\d{2}[./]\d{2}[./]\d{4}|\d{4}-\d{2}-\d{2}/)?.[0] || '';
-            setTextIfChanged(p, `${isFr() ? 'Rendu' : 'Сдали'}: ${date}`);
+            setTextOnce(p, `${isFr() ? 'Rendu' : 'Сдали'}: ${date}`);
             p.classList.add('waiting-return-line');
             return;
         }
 
-        if (/Можно выдать снова:|Peut être attribué à nouveau\s*:/i.test(text)) {
-            p.remove();
-            return;
-        }
-
-        if (/До повторной выдачи:|Avant la prochaine attribution\s*:/i.test(text)) {
+        if (/Можно выдать снова:|Peut être attribué à nouveau\s*:/i.test(text) ||
+            /До повторной выдачи:|Avant la prochaine attribution\s*:/i.test(text)) {
             p.remove();
         }
     });
@@ -333,9 +321,7 @@ function cleanWaitingInfo(card) {
 function makeIconOnly(button, iconClass, title, main = false) {
     if (!button) return;
 
-    const html = `<i class="fa-solid ${iconClass}"></i>`;
-    setInnerHtmlIfChanged(button, html);
-
+    setHtmlOnce(button, `<i class="fa-solid ${iconClass}"></i>`);
     if (button.title !== title) button.title = title;
     if (button.getAttribute('aria-label') !== title) button.setAttribute('aria-label', title);
 
@@ -343,102 +329,43 @@ function makeIconOnly(button, iconClass, title, main = false) {
     button.classList.add(main ? 'card-main-action' : 'card-icon-action');
 }
 
-function makeMapIconOnly(link) {
-    if (!link) return;
-
-    setInnerHtmlIfChanged(link, '<i class="fa-solid fa-map"></i>');
-    const title = isFr() ? 'Carte' : 'Карта';
-    if (link.title !== title) link.title = title;
-    if (link.getAttribute('aria-label') !== title) link.setAttribute('aria-label', title);
-
-    link.classList.add('card-icon-action');
-    link.classList.remove('mini-btn');
-}
-
-function normalizeActionLayout(card) {
-    const actions = [...card.children].find((element) =>
-        element.classList.contains('territory-actions') || element.classList.contains('border-t')
-    );
-    if (!actions) return;
-
-    actions.classList.add('territory-actions');
-
-    let smallActions = actions.querySelector('.card-small-actions');
-    if (!smallActions) {
-        smallActions = document.createElement('div');
-        smallActions.className = 'card-small-actions';
-        actions.prepend(smallActions);
+function cleanMapControls(card) {
+    const mapLink = card.querySelector('a.mini-btn[href]');
+    if (mapLink) {
+        setHtmlOnce(mapLink, '<i class="fa-solid fa-map"></i>');
+        const title = isFr() ? 'Carte' : 'Карта';
+        mapLink.title = title;
+        mapLink.setAttribute('aria-label', title);
+        mapLink.classList.add('card-map-action');
     }
 
-    const mapLink = card.querySelector('a[href].mini-btn, a[href].card-icon-action');
-    const mapRow = mapLink?.parentElement;
-    const copyButton = mapRow?.querySelector('.copy-map-btn') || card.querySelector('.copy-map-btn');
-    const editButton = card.querySelector('button[onclick*="editTerritory"]');
-    const historyButton = card.querySelector('button[onclick*="showHistory"]');
-
-    makeMapIconOnly(mapLink);
-
+    const copyButton = card.querySelector('.copy-map-btn');
     if (copyButton) {
-        setInnerHtmlIfChanged(copyButton, '<i class="fa-solid fa-copy"></i>');
+        setHtmlOnce(copyButton, '<i class="fa-solid fa-copy"></i>');
         const title = isFr() ? 'Copier le lien de la carte' : 'Скопировать ссылку на карту';
-        if (copyButton.title !== title) copyButton.title = title;
-        if (copyButton.getAttribute('aria-label') !== title) copyButton.setAttribute('aria-label', title);
+        copyButton.title = title;
+        copyButton.setAttribute('aria-label', title);
         copyButton.classList.add('card-icon-action');
-    }
-
-    [mapLink, copyButton, editButton, historyButton].forEach((control) => {
-        if (control && control.parentElement !== smallActions) smallActions.appendChild(control);
-    });
-
-    if (mapRow && mapRow !== smallActions && mapRow.children.length === 0) {
-        mapRow.classList.add('card-map-row-empty');
     }
 }
 
 function cleanActions(card, status) {
-    makeIconOnly(
-        card.querySelector('button[onclick*="editTerritory"]'),
-        'fa-pen',
-        isFr() ? 'Modifier' : 'Изменить'
-    );
-
-    makeIconOnly(
-        card.querySelector('button[onclick*="showHistory"]'),
-        'fa-clock-rotate-left',
-        isFr() ? 'Historique' : 'История'
-    );
-
-    makeIconOnly(
-        card.querySelector('button[onclick*="issueTerritory"]'),
-        'fa-paper-plane',
-        isFr() ? 'Attribuer' : 'Выдать',
-        true
-    );
-
-    makeIconOnly(
-        card.querySelector('button[onclick*="returnTerritory"]'),
-        'fa-rotate-left',
-        isFr() ? 'Rendre' : 'Сдать',
-        true
-    );
+    makeIconOnly(card.querySelector('button[onclick*="editTerritory"]'), 'fa-pen', isFr() ? 'Modifier' : 'Изменить');
+    makeIconOnly(card.querySelector('button[onclick*="showHistory"]'), 'fa-clock-rotate-left', isFr() ? 'Historique' : 'История');
+    makeIconOnly(card.querySelector('button[onclick*="issueTerritory"]'), 'fa-paper-plane', isFr() ? 'Attribuer' : 'Выдать', true);
+    makeIconOnly(card.querySelector('button[onclick*="returnTerritory"]'), 'fa-rotate-left', isFr() ? 'Rendre' : 'Сдать', true);
 
     const locked = card.querySelector('button:disabled');
     if (status === 'waiting' && locked) {
-        makeIconOnly(
-            locked,
-            'fa-lock',
-            isFr() ? 'Indisponible' : 'Пока нельзя выдать',
-            true
-        );
+        makeIconOnly(locked, 'fa-lock', isFr() ? 'Indisponible' : 'Пока нельзя выдать', true);
         locked.classList.add('card-lock-action');
     }
 
-    normalizeActionLayout(card);
+    cleanMapControls(card);
 }
 
 function cleanCard(card) {
     if (!(card instanceof HTMLElement)) return;
-
     const status = cardStatus(card);
     cleanHeading(card, status);
     if (status === 'waiting') cleanWaitingInfo(card);
@@ -449,27 +376,7 @@ function cleanCards() {
     $('grid')?.querySelectorAll(':scope > article').forEach(cleanCard);
 }
 
-function fixCityMapUi() {
-    const menu = $('city-menu');
-    const mapButton = menu?.querySelector('button[onclick*="editCityMap"]');
-    if (mapButton) {
-        const html = `<i class="fa-solid fa-earth-americas w-5"></i><span>${isFr() ? 'Carte de la ville' : 'Карта города'}</span>`;
-        setInnerHtmlIfChanged(mapButton, html);
-    }
-
-    const title = $('dialog-title');
-    const titleText = title?.textContent || '';
-    const isMapDialog = /Изменить ссылку на карту|Изменить ссылку на основную карту города|Ссылка на карту|Modifier le lien de la carte|Lien de carte/i.test(titleText);
-    if (!isMapDialog) return;
-
-    setTextIfChanged(title, isFr() ? 'Carte de la ville' : 'Карта города');
-
-    $('dialog-fields')?.querySelectorAll('label > span').forEach((label) => {
-        setTextIfChanged(label, isFr() ? 'Lien' : 'Ссылка');
-    });
-}
-
-/* Only observe direct card replacement. Do not observe our own inner card edits. */
+/* React only when app-core replaces cards. Never observe inside card DOM. */
 const grid = $('grid');
 if (grid) {
     new MutationObserver(() => queueMicrotask(cleanCards)).observe(grid, {
@@ -478,24 +385,10 @@ if (grid) {
     });
 }
 
-/* Dialog content is filled before the modal's class changes, so class observation is enough. */
-const dialog = $('dialog-modal');
-if (dialog) {
-    new MutationObserver(() => queueMicrotask(fixCityMapUi)).observe(dialog, {
-        attributes: true,
-        attributeFilter: ['class']
-    });
-}
-
-new MutationObserver(() => {
-    queueMicrotask(() => {
-        cleanCards();
-        fixCityMapUi();
-    });
-}).observe(document.documentElement, {
+/* Language changes only rewrite existing labels/icons once. */
+new MutationObserver(() => queueMicrotask(cleanCards)).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['lang']
 });
 
 cleanCards();
-fixCityMapUi();
