@@ -195,7 +195,6 @@ textarea::placeholder {
     color: rgba(255,255,255,.88) !important;
 }
 
-/* The old inline map row is moved into the fixed action block. */
 .territory-card .card-map-row-empty {
     display: none !important;
 }
@@ -257,6 +256,14 @@ function cardStatus(card) {
     return '';
 }
 
+function setInnerHtmlIfChanged(element, html) {
+    if (element && element.innerHTML !== html) element.innerHTML = html;
+}
+
+function setTextIfChanged(element, text) {
+    if (element && element.textContent !== text) element.textContent = text;
+}
+
 function cleanHeading(card, status) {
     const headingRow = card.firstElementChild;
     if (!headingRow) return;
@@ -274,7 +281,7 @@ function cleanHeading(card, status) {
     if (status === 'busy' && badge) {
         const days = numberFromText(badge.textContent);
         if (days) {
-            badge.textContent = days;
+            setTextIfChanged(badge, days);
             badge.classList.add('card-day-counter');
         }
         return;
@@ -293,7 +300,7 @@ function cleanHeading(card, status) {
             headingRow.appendChild(badge);
         }
 
-        badge.textContent = days || badge.textContent || '0';
+        if (days) setTextIfChanged(badge, days);
         badge.classList.add('card-day-counter');
     }
 }
@@ -307,7 +314,7 @@ function cleanWaitingInfo(card) {
 
         if (/Последняя сдача:|Dernier retour\s*:/i.test(text)) {
             const date = text.match(/\d{2}[./]\d{2}[./]\d{4}|\d{4}-\d{2}-\d{2}/)?.[0] || '';
-            p.textContent = `${isFr() ? 'Rendu' : 'Сдали'}: ${date}`;
+            setTextIfChanged(p, `${isFr() ? 'Rendu' : 'Сдали'}: ${date}`);
             p.classList.add('waiting-return-line');
             return;
         }
@@ -325,18 +332,25 @@ function cleanWaitingInfo(card) {
 
 function makeIconOnly(button, iconClass, title, main = false) {
     if (!button) return;
-    button.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
-    button.title = title;
-    button.setAttribute('aria-label', title);
+
+    const html = `<i class="fa-solid ${iconClass}"></i>`;
+    setInnerHtmlIfChanged(button, html);
+
+    if (button.title !== title) button.title = title;
+    if (button.getAttribute('aria-label') !== title) button.setAttribute('aria-label', title);
+
     button.classList.remove('tile-secondary-btn', 'tile-primary-btn');
     button.classList.add(main ? 'card-main-action' : 'card-icon-action');
 }
 
 function makeMapIconOnly(link) {
     if (!link) return;
-    link.innerHTML = '<i class="fa-solid fa-map"></i>';
-    link.title = isFr() ? 'Carte' : 'Карта';
-    link.setAttribute('aria-label', link.title);
+
+    setInnerHtmlIfChanged(link, '<i class="fa-solid fa-map"></i>');
+    const title = isFr() ? 'Carte' : 'Карта';
+    if (link.title !== title) link.title = title;
+    if (link.getAttribute('aria-label') !== title) link.setAttribute('aria-label', title);
+
     link.classList.add('card-icon-action');
     link.classList.remove('mini-btn');
 }
@@ -363,10 +377,12 @@ function normalizeActionLayout(card) {
     const historyButton = card.querySelector('button[onclick*="showHistory"]');
 
     makeMapIconOnly(mapLink);
+
     if (copyButton) {
-        copyButton.innerHTML = '<i class="fa-solid fa-copy"></i>';
-        copyButton.title = isFr() ? 'Copier le lien de la carte' : 'Скопировать ссылку на карту';
-        copyButton.setAttribute('aria-label', copyButton.title);
+        setInnerHtmlIfChanged(copyButton, '<i class="fa-solid fa-copy"></i>');
+        const title = isFr() ? 'Copier le lien de la carte' : 'Скопировать ссылку на карту';
+        if (copyButton.title !== title) copyButton.title = title;
+        if (copyButton.getAttribute('aria-label') !== title) copyButton.setAttribute('aria-label', title);
         copyButton.classList.add('card-icon-action');
     }
 
@@ -377,10 +393,6 @@ function normalizeActionLayout(card) {
     if (mapRow && mapRow !== smallActions && mapRow.children.length === 0) {
         mapRow.classList.add('card-map-row-empty');
     }
-
-    [...actions.children].forEach((child) => {
-        if (child !== smallActions && child.matches('div') && child.children.length === 0) child.remove();
-    });
 }
 
 function cleanActions(card, status) {
@@ -419,7 +431,6 @@ function cleanActions(card, status) {
             true
         );
         locked.classList.add('card-lock-action');
-        locked.disabled = true;
     }
 
     normalizeActionLayout(card);
@@ -427,6 +438,7 @@ function cleanActions(card, status) {
 
 function cleanCard(card) {
     if (!(card instanceof HTMLElement)) return;
+
     const status = cardStatus(card);
     cleanHeading(card, status);
     if (status === 'waiting') cleanWaitingInfo(card);
@@ -441,7 +453,8 @@ function fixCityMapUi() {
     const menu = $('city-menu');
     const mapButton = menu?.querySelector('button[onclick*="editCityMap"]');
     if (mapButton) {
-        mapButton.innerHTML = `<i class="fa-solid fa-earth-americas w-5"></i><span>${isFr() ? 'Carte de la ville' : 'Карта города'}</span>`;
+        const html = `<i class="fa-solid fa-earth-americas w-5"></i><span>${isFr() ? 'Carte de la ville' : 'Карта города'}</span>`;
+        setInnerHtmlIfChanged(mapButton, html);
     }
 
     const title = $('dialog-title');
@@ -449,26 +462,26 @@ function fixCityMapUi() {
     const isMapDialog = /Изменить ссылку на карту|Изменить ссылку на основную карту города|Ссылка на карту|Modifier le lien de la carte|Lien de carte/i.test(titleText);
     if (!isMapDialog) return;
 
-    title.textContent = isFr() ? 'Carte de la ville' : 'Карта города';
+    setTextIfChanged(title, isFr() ? 'Carte de la ville' : 'Карта города');
 
     $('dialog-fields')?.querySelectorAll('label > span').forEach((label) => {
-        label.textContent = isFr() ? 'Lien' : 'Ссылка';
+        setTextIfChanged(label, isFr() ? 'Lien' : 'Ссылка');
     });
 }
 
+/* Only observe direct card replacement. Do not observe our own inner card edits. */
 const grid = $('grid');
 if (grid) {
     new MutationObserver(() => queueMicrotask(cleanCards)).observe(grid, {
         childList: true,
-        subtree: true
+        subtree: false
     });
 }
 
+/* Dialog content is filled before the modal's class changes, so class observation is enough. */
 const dialog = $('dialog-modal');
 if (dialog) {
     new MutationObserver(() => queueMicrotask(fixCityMapUi)).observe(dialog, {
-        childList: true,
-        subtree: true,
         attributes: true,
         attributeFilter: ['class']
     });
