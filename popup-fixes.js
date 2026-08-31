@@ -51,8 +51,6 @@ function ensureCityEditControls() {
         const currentLabel = byId('btn-edit-city-label')?.textContent ||
             (document.documentElement.lang === 'fr' ? 'Modifier la ville' : 'Изменить город');
 
-        // Визуально остаётся только карандаш, но скрытый span с прежним ID
-        // сохраняется: основной код использует его при смене языка.
         editButton.innerHTML =
             '<i class="fa-solid fa-pen"></i>' +
             `<span id="btn-edit-city-label" class="hidden">${currentLabel}</span>`;
@@ -110,8 +108,15 @@ function setupPopupBehavior() {
             z-index: 9999 !important;
         }
 
+        /* Меню изменения города раскрывается ВВЕРХ от карандаша,
+           чтобы оба пункта всегда были видны. */
         #city-menu {
             z-index: 500 !important;
+            top: auto !important;
+            bottom: calc(100% + .65rem) !important;
+            margin-top: 0 !important;
+            max-height: min(320px, calc(100vh - 2rem));
+            overflow-y: auto !important;
         }
     `;
     document.head.appendChild(style);
