@@ -1,2 +1,2 @@
 import './app-core.js';
-import './ui-polish.js';
+import './popup-fixes.js';
