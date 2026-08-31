@@ -40,6 +40,12 @@ function simplifyStaticLabels() {
     const currentCityLabel = byId('active-city-title')?.previousElementSibling;
     currentCityLabel?.classList.add('hidden');
 
+    // Во вкладке «Возвещатели» оставляем только сам заголовок,
+    // поиск, кнопку добавления и список. Служебные подписи скрыты.
+    const publishersTitle = byId('publishers-title');
+    publishersTitle?.previousElementSibling?.classList.add('hidden');
+    byId('publishers-count')?.parentElement?.classList.add('hidden');
+
     setText(byId('publisher-add-label'), isFr() ? 'Ajouter' : 'Добавить');
     setText(byId('publisher-picker-title'), isFr() ? 'Proclamateur' : 'Возвещатель');
 
