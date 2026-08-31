@@ -48,7 +48,15 @@ function syncScrollLock() {
 function ensureCityEditControls() {
     const editButton = document.querySelector('#city-menu-wrap > button');
     if (editButton) {
-        editButton.innerHTML = '<i class="fa-solid fa-pen"></i>';
+        const currentLabel = byId('btn-edit-city-label')?.textContent ||
+            (document.documentElement.lang === 'fr' ? 'Modifier la ville' : 'Изменить город');
+
+        // Визуально остаётся только карандаш, но скрытый span с прежним ID
+        // сохраняется: основной код использует его при смене языка.
+        editButton.innerHTML =
+            '<i class="fa-solid fa-pen"></i>' +
+            `<span id="btn-edit-city-label" class="hidden">${currentLabel}</span>`;
+
         editButton.title = document.documentElement.lang === 'fr'
             ? 'Modifier la ville'
             : 'Изменить город';
