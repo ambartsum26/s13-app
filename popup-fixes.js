@@ -25,23 +25,20 @@ function getTopOpenPopup() {
 
 function closeAuxiliaryMenus() {
     byId('city-menu')?.classList.add('hidden');
-
-    if (window.innerWidth < 1024) {
-        byId('sidebar')?.classList.remove('mobile-open');
-    }
 }
 
 function syncScrollLock() {
     const anyModalOpen = popupSpecs.some((spec) => isOpen(byId(spec.id)));
-    document.body.style.overflow = anyModalOpen ? 'hidden' : '';
+    const value = anyModalOpen ? 'hidden' : '';
+    if (document.body.style.overflow !== value) {
+        document.body.style.overflow = value;
+    }
 }
 
 function simplifyStaticLabels() {
     const currentCityLabel = byId('active-city-title')?.previousElementSibling;
     currentCityLabel?.classList.add('hidden');
 
-    // Во вкладке «Возвещатели» оставляем только сам заголовок,
-    // поиск, кнопку добавления и список. Служебные подписи скрыты.
     const publishersTitle = byId('publishers-title');
     publishersTitle?.previousElementSibling?.classList.add('hidden');
     byId('publishers-count')?.parentElement?.classList.add('hidden');
@@ -106,10 +103,10 @@ function ensureCityEditControls() {
     if (editButton) {
         const currentLabel = byId('btn-edit-city-label')?.textContent ||
             (isFr() ? 'Modifier la ville' : 'Изменить город');
-
-        editButton.innerHTML =
-            '<i class="fa-solid fa-pen"></i>' +
+        const html = '<i class="fa-solid fa-pen"></i>' +
             `<span id="btn-edit-city-label" class="hidden">${currentLabel}</span>`;
+
+        if (editButton.innerHTML !== html) editButton.innerHTML = html;
 
         editButton.title = isFr() ? 'Ville' : 'Город';
         editButton.setAttribute('aria-label', editButton.title);
@@ -124,9 +121,9 @@ function ensureCityEditControls() {
     const mapButton = menu.querySelector('button[onclick*="editCityMap"]');
 
     if (nameButton) {
-        nameButton.innerHTML =
-            '<i class="fa-solid fa-signature w-5 mr-1"></i>' +
+        const html = '<i class="fa-solid fa-signature w-5 mr-1"></i>' +
             (isFr() ? 'Nom' : 'Название');
+        if (nameButton.innerHTML !== html) nameButton.innerHTML = html;
     }
 
     if (!mapButton) {
@@ -134,14 +131,13 @@ function ensureCityEditControls() {
         button.type = 'button';
         button.className = 'w-full text-left px-4 py-2.5 transition';
         button.setAttribute('onclick', 'editCityMap();editCityMenu()');
-        button.innerHTML =
-            '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
+        button.innerHTML = '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
             (isFr() ? 'Lien de carte' : 'Ссылка на карту');
         menu.appendChild(button);
     } else {
-        mapButton.innerHTML =
-            '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
+        const html = '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' +
             (isFr() ? 'Lien de carte' : 'Ссылка на карту');
+        if (mapButton.innerHTML !== html) mapButton.innerHTML = html;
     }
 }
 
@@ -180,17 +176,12 @@ function setupPopupBehavior() {
 
     applyCompactUi();
 
-    const langObserver = new MutationObserver(() => {
-        queueMicrotask(applyCompactUi);
-    });
-    langObserver.observe(document.documentElement, {
+    new MutationObserver(() => queueMicrotask(applyCompactUi)).observe(document.documentElement, {
         attributes: true,
         attributeFilter: ['lang']
     });
 
-    const dialogContentObserver = new MutationObserver(() => {
-        queueMicrotask(simplifyDialogLabels);
-    });
+    const dialogContentObserver = new MutationObserver(() => queueMicrotask(simplifyDialogLabels));
     const dialogTitle = byId('dialog-title');
     const dialogFields = byId('dialog-fields');
     if (dialogTitle) dialogContentObserver.observe(dialogTitle, { childList: true, characterData: true, subtree: true });
@@ -206,25 +197,19 @@ function setupPopupBehavior() {
         modal.setAttribute('aria-modal', 'true');
 
         modal.addEventListener('pointerdown', (event) => {
-            if (event.target === modal) {
-                spec.close();
-            }
+            if (event.target === modal) spec.close();
         });
 
-        const observer = new MutationObserver(() => {
+        /* Observe class only. Never observe style while writing style ourselves. */
+        new MutationObserver(() => {
             if (isOpen(modal)) {
                 closeAuxiliaryMenus();
                 applyCompactUi();
-                if (spec.id === 'dialog-modal') {
-                    modal.style.zIndex = '9999';
-                }
             }
             syncScrollLock();
-        });
-
-        observer.observe(modal, {
+        }).observe(modal, {
             attributes: true,
-            attributeFilter: ['class', 'style']
+            attributeFilter: ['class']
         });
     });
 
@@ -241,31 +226,6 @@ function setupPopupBehavior() {
         const cityMenu = byId('city-menu');
         if (cityMenu && !cityMenu.classList.contains('hidden')) {
             cityMenu.classList.add('hidden');
-            return;
-        }
-
-        byId('sidebar')?.classList.remove('mobile-open');
-    });
-
-    document.addEventListener('pointerdown', (event) => {
-        if (window.innerWidth >= 1024) return;
-
-        const sidebar = byId('sidebar');
-        if (!sidebar?.classList.contains('mobile-open')) return;
-
-        const toggleButton = document.querySelector(
-            'button[onclick="toggleMobileSidebar()"]'
-        );
-
-        if (sidebar.contains(event.target)) return;
-        if (toggleButton?.contains(event.target)) return;
-
-        sidebar.classList.remove('mobile-open');
-    });
-
-    window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1024) {
-            byId('sidebar')?.classList.remove('mobile-open');
         }
     });
 
