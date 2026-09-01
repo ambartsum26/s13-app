@@ -22,33 +22,26 @@ style.textContent = `
     padding-left: 16px !important;
 }
 
-/* One real grid controls all four small buttons. */
+/* Stable card shell. */
 .territory-card {
     position: relative !important;
-    display: grid !important;
-    grid-template-columns: var(--card-action-size) var(--card-action-size) minmax(0, 1fr) var(--card-main-size) !important;
-    grid-template-rows: auto minmax(52px, 1fr) var(--card-action-size) var(--card-action-size) !important;
-    column-gap: var(--card-action-gap) !important;
-    row-gap: var(--card-action-gap) !important;
+    display: block !important;
     min-height: 270px !important;
     padding: var(--card-pad) !important;
 }
 
 .territory-card > div:first-child {
-    grid-column: 1 / -1 !important;
-    grid-row: 1 !important;
-    align-self: start !important;
-    min-width: 0 !important;
+    position: relative !important;
+    z-index: 2 !important;
     margin: 0 !important;
     padding: 0 !important;
-    z-index: 2 !important;
 }
 
 .territory-card .card-day-counter {
     position: absolute !important;
     top: var(--card-pad) !important;
     right: var(--card-pad) !important;
-    z-index: 4 !important;
+    z-index: 5 !important;
     margin: 0 !important;
     min-width: 44px !important;
     min-height: 34px !important;
@@ -57,27 +50,19 @@ style.textContent = `
     justify-content: center !important;
 }
 
-/* Flatten old wrappers so their controls participate in the same card grid. */
-.territory-card > .card-info-area,
-.territory-card > div:nth-child(2),
-.territory-card .card-map-actions,
-.territory-actions,
-.territory-actions > div:first-child {
-    display: contents !important;
+/* Information at the far-right edge, vertically centered. */
+.territory-card .card-info-area {
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-.territory-card .card-map-actions > span {
-    display: none !important;
-}
-
-/* Written information sits directly against the right edge. */
 .territory-card .card-info-text {
     position: absolute !important;
     top: 47% !important;
     right: 8px !important;
     width: 58% !important;
     max-width: 58% !important;
-    min-width: 0 !important;
     transform: translateY(-50%) !important;
     display: flex !important;
     flex-direction: column !important;
@@ -93,30 +78,47 @@ style.textContent = `
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: rgba(255,255,255,.94) !important;
     text-align: right !important;
+    color: rgba(255,255,255,.94) !important;
     overflow-wrap: anywhere !important;
 }
 
-/* Exact 2x2 matrix. */
-.territory-card a.card-map-action {
+/* The four small buttons physically live in this single 2x2 grid. */
+.territory-card > .card-action-grid {
+    position: absolute !important;
+    left: var(--card-pad) !important;
+    bottom: var(--card-pad) !important;
+    z-index: 4 !important;
+    display: grid !important;
+    grid-template-columns: var(--card-action-size) var(--card-action-size) !important;
+    grid-template-rows: var(--card-action-size) var(--card-action-size) !important;
+    gap: var(--card-action-gap) !important;
+    width: calc(var(--card-action-size) * 2 + var(--card-action-gap)) !important;
+    height: calc(var(--card-action-size) * 2 + var(--card-action-gap)) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+}
+
+.territory-card > .card-action-grid > a.card-map-action {
     grid-column: 1 !important;
-    grid-row: 3 !important;
+    grid-row: 1 !important;
 }
 
-.territory-card .copy-map-btn {
+.territory-card > .card-action-grid > .copy-map-btn {
     grid-column: 2 !important;
-    grid-row: 3 !important;
+    grid-row: 1 !important;
 }
 
-.territory-card button[onclick*="editTerritory"] {
+.territory-card > .card-action-grid > button[onclick*="editTerritory"] {
     grid-column: 1 !important;
-    grid-row: 4 !important;
+    grid-row: 2 !important;
 }
 
-.territory-card button[onclick*="showHistory"] {
+.territory-card > .card-action-grid > button[onclick*="showHistory"] {
     grid-column: 2 !important;
-    grid-row: 4 !important;
+    grid-row: 2 !important;
 }
 
 .territory-card .card-icon-action,
@@ -135,10 +137,12 @@ style.textContent = `
     justify-self: stretch !important;
 }
 
-/* Main action remains separate at bottom-right. */
-.territory-card .card-main-action {
-    grid-column: 4 !important;
-    grid-row: 4 !important;
+/* Main issue/return/lock button is independent at bottom-right. */
+.territory-card > .card-main-action {
+    position: absolute !important;
+    right: var(--card-pad) !important;
+    bottom: var(--card-pad) !important;
+    z-index: 4 !important;
     width: var(--card-main-size) !important;
     min-width: var(--card-main-size) !important;
     max-width: var(--card-main-size) !important;
@@ -147,11 +151,15 @@ style.textContent = `
     max-height: var(--card-main-size) !important;
     margin: 0 !important;
     padding: 0 !important;
-    align-self: end !important;
-    justify-self: end !important;
 }
 
-/* Publisher rows remain symmetric. */
+/* Old wrappers no longer influence geometry. */
+.territory-card .card-map-actions,
+.territory-card .territory-actions {
+    display: none !important;
+}
+
+/* Publisher rows stay symmetric. */
 #publishers-list {
     grid-auto-rows: 60px !important;
     align-items: stretch !important;
@@ -178,7 +186,6 @@ style.textContent = `
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    line-height: 1.2 !important;
 }
 
 #publishers-list > div > div,
@@ -190,7 +197,6 @@ style.textContent = `
     min-width: 92px !important;
     max-width: 92px !important;
     justify-self: end !important;
-    align-items: center !important;
 }
 
 #publishers-list > div button,
@@ -211,8 +217,6 @@ style.textContent = `
         --card-main-size: 60px;
     }
 
-    html { scroll-behavior: auto !important; }
-
     button,
     a,
     input,
@@ -226,43 +230,10 @@ style.textContent = `
         touch-action: manipulation !important;
     }
 
-    button:not([data-language-toggle]),
-    a#map-link,
-    a.mini-btn,
-    .copy-map-btn,
-    .app-section-button,
-    .app-city-controls button,
-    .app-status-toolbar button,
-    .app-status-toolbar a {
-        min-height: 48px !important;
-    }
-
-    [data-language-toggle] {
-        width: 96px !important;
-        height: 48px !important;
-        min-height: 48px !important;
-    }
-
-    #cities-container {
-        gap: 8px !important;
-        scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
-
     #cities-container button {
         min-height: 50px !important;
-        padding: 0 18px !important;
-        font-size: 11px !important;
         border: 0 !important;
         outline: 0 !important;
-        box-shadow: none !important;
-        scroll-snap-align: start !important;
-    }
-
-    #cities-container button:hover {
-        background: #33323f !important;
-        color: #c8c7d1 !important;
-        transform: none !important;
         box-shadow: none !important;
     }
 
@@ -277,18 +248,6 @@ style.textContent = `
         transform: none !important;
     }
 
-    #city-menu button {
-        min-height: 50px !important;
-    }
-
-    #publishers-search,
-    #publisher-picker-search,
-    #dialog-fields input {
-        min-height: 52px !important;
-        height: 52px !important;
-        font-size: 14px !important;
-    }
-
     #publishers-list {
         grid-auto-rows: 68px !important;
     }
@@ -298,18 +257,15 @@ style.textContent = `
         height: 68px !important;
         min-height: 68px !important;
         max-height: 68px !important;
-        padding: 10px 10px 10px 14px !important;
         grid-template-columns: minmax(0, 1fr) 104px !important;
-        gap: 12px !important;
     }
 
     #publishers-list > div > div,
     .publisher-row > div {
+        grid-template-columns: repeat(2, 48px) !important;
         width: 104px !important;
         min-width: 104px !important;
         max-width: 104px !important;
-        grid-template-columns: repeat(2, 48px) !important;
-        gap: 8px !important;
     }
 
     #publishers-list > div button,
@@ -322,15 +278,7 @@ style.textContent = `
         max-height: 48px !important;
     }
 
-    #publisher-picker-list button,
-    #history-modal button,
-    #dialog-modal button,
-    #confirm-modal button {
-        min-height: 50px !important;
-    }
-
     .territory-card {
-        min-height: 270px !important;
         transition: none !important;
     }
 
@@ -340,34 +288,9 @@ style.textContent = `
         box-shadow: 0 12px 30px rgba(0,0,0,.20) !important;
     }
 
-    .territory-card .card-day-counter {
-        min-width: 48px !important;
-        min-height: 38px !important;
-        font-size: 16px !important;
-    }
-
     .territory-card .card-info-text p {
         font-size: 11px !important;
         line-height: 1.45 !important;
-    }
-
-    .territory-card a.mini-btn.card-map-action:hover,
-    .territory-card .card-icon-action:not(:disabled):hover,
-    .territory-card .card-main-action:not(:disabled):hover,
-    #publishers-list > div:hover,
-    .publisher-row:hover {
-        transform: none !important;
-    }
-
-    .territory-card a.mini-btn.card-map-action:active,
-    .territory-card .card-icon-action:not(:disabled):active,
-    .territory-card .card-main-action:not(:disabled):active,
-    button:not([data-language-toggle]):not(:disabled):active,
-    a#map-link:active,
-    a.mini-btn:active {
-        background: var(--dz-green-bright) !important;
-        color: #11141a !important;
-        transform: scale(.97) !important;
     }
 }
 
@@ -411,11 +334,6 @@ function decorateCardShell(card, status) {
     ['free', 'busy', 'overdue', 'waiting'].forEach((name) => {
         card.classList.toggle(`status-${name}`, status === name);
     });
-
-    const actions = [...card.children].find((element) =>
-        element.classList.contains('territory-actions') || element.classList.contains('border-t')
-    );
-    actions?.classList.add('territory-actions');
 }
 
 function cleanHeading(card, status) {
@@ -483,10 +401,7 @@ function cleanBusyInfo(card) {
     if (!info) return;
 
     [...info.querySelectorAll('p')].forEach((p) => {
-        const text = p.textContent || '';
-        if (/Срок\s+сдачи|Échéance|Echeance/i.test(text)) {
-            p.remove();
-        }
+        if (/Срок\s+сдачи|Échéance|Echeance/i.test(p.textContent || '')) p.remove();
     });
 }
 
@@ -507,28 +422,20 @@ function structureInfo(card) {
 
         info.prepend(textGroup);
     }
-
-    [...info.children].forEach((element) => {
-        if (element !== textGroup && element.tagName === 'DIV' &&
-            (element.querySelector('a.mini-btn[href]') || element.querySelector('.copy-map-btn'))) {
-            element.classList.add('card-map-actions');
-        }
-    });
 }
 
 function makeIconOnly(button, iconClass, title, main = false) {
     if (!button) return;
 
     setHtmlOnce(button, `<i class="fa-solid ${iconClass}"></i>`);
-    if (button.title !== title) button.title = title;
-    if (button.getAttribute('aria-label') !== title) button.setAttribute('aria-label', title);
-
+    button.title = title;
+    button.setAttribute('aria-label', title);
     button.classList.remove('tile-secondary-btn', 'tile-primary-btn');
     button.classList.add(main ? 'card-main-action' : 'card-icon-action');
 }
 
 function cleanMapControls(card) {
-    const mapLink = card.querySelector('a.mini-btn[href]');
+    const mapLink = card.querySelector('a.mini-btn[href], a.card-map-action[href]');
     if (mapLink) {
         setHtmlOnce(mapLink, '<i class="fa-solid fa-location-dot"></i>');
         const title = isFr() ? 'Carte' : 'Карта';
@@ -537,14 +444,39 @@ function cleanMapControls(card) {
         mapLink.classList.add('card-map-action');
     }
 
-    const copyButton = card.querySelector('.copy-map-btn');
+    const copyButton = card.querySelector('button.copy-map-btn');
     if (copyButton) {
-        setHtmlOnce(copyButton, '<i class="fa-solid fa-copy"></i>');
         const title = isFr() ? 'Copier le lien de la carte' : 'Скопировать ссылку на карту';
         copyButton.title = title;
         copyButton.setAttribute('aria-label', title);
         copyButton.classList.add('card-icon-action');
     }
+}
+
+function buildActionGrid(card) {
+    let actionGrid = card.querySelector(':scope > .card-action-grid');
+    if (!actionGrid) {
+        actionGrid = document.createElement('div');
+        actionGrid.className = 'card-action-grid';
+        card.appendChild(actionGrid);
+    }
+
+    const mapLink = card.querySelector('a.card-map-action[href]');
+    const copyButton = card.querySelector('button.copy-map-btn');
+    const editButton = card.querySelector('button[onclick*="editTerritory"]');
+    const historyButton = card.querySelector('button[onclick*="showHistory"]');
+
+    [mapLink, copyButton, editButton, historyButton].forEach((button) => {
+        if (button && button.parentElement !== actionGrid) actionGrid.appendChild(button);
+    });
+
+    const oldMapWrapper = card.querySelector('.card-info-area > div:not(.card-info-text)');
+    if (oldMapWrapper && !oldMapWrapper.querySelector('a,button')) oldMapWrapper.style.display = 'none';
+
+    const oldActions = [...card.children].find((element) => element.classList.contains('border-t'));
+    const mainAction = oldActions?.querySelector('.card-main-action, button[onclick*="issueTerritory"], button[onclick*="returnTerritory"], button:disabled');
+    if (mainAction && mainAction.parentElement !== card) card.appendChild(mainAction);
+    if (oldActions && !oldActions.querySelector('button')) oldActions.style.display = 'none';
 }
 
 function cleanActions(card, status) {
@@ -560,6 +492,7 @@ function cleanActions(card, status) {
     }
 
     cleanMapControls(card);
+    buildActionGrid(card);
 }
 
 function cleanCard(card) {
