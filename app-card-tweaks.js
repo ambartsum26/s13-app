@@ -7,10 +7,14 @@ function numberFromText(value) {
 }
 
 function cardStatus(card) {
-    if (card.classList.contains('status-free') || card.classList.contains('bg-emerald-900/40')) return 'free';
-    if (card.classList.contains('status-busy') || card.classList.contains('bg-blue-900/40')) return 'busy';
-    if (card.classList.contains('status-overdue') || card.classList.contains('bg-rose-900/40')) return 'overdue';
-    if (card.classList.contains('status-waiting') || card.classList.contains('bg-amber-900/40')) return 'waiting';
+    if (card.classList.contains('bg-emerald-900/40')) return 'free';
+    if (card.classList.contains('bg-blue-900/40')) return 'busy';
+    if (card.classList.contains('bg-rose-900/40')) return 'overdue';
+    if (card.classList.contains('bg-amber-900/40')) return 'waiting';
+    if (card.classList.contains('status-free')) return 'free';
+    if (card.classList.contains('status-busy')) return 'busy';
+    if (card.classList.contains('status-overdue')) return 'overdue';
+    if (card.classList.contains('status-waiting')) return 'waiting';
     return '';
 }
 
@@ -20,6 +24,16 @@ function setHtmlOnce(element, html) {
 
 function setTextOnce(element, text) {
     if (element && element.textContent !== text) element.textContent = text;
+}
+
+function decorateCardShell(card, status) {
+    card.classList.add('territory-card');
+    ['free', 'busy', 'overdue', 'waiting'].forEach((name) => {
+        card.classList.toggle(`status-${name}`, status === name);
+    });
+
+    const actions = [...card.children].find((element) => element.classList.contains('border-t'));
+    actions?.classList.add('territory-actions');
 }
 
 function cleanHeading(card, status) {
@@ -36,21 +50,10 @@ function cleanHeading(card, status) {
         return;
     }
 
-    if (status === 'busy' && badge) {
+    if ((status === 'busy' || status === 'overdue') && badge) {
         const days = numberFromText(badge.textContent);
-        if (days) {
-            setTextOnce(badge, days);
-            badge.classList.add('card-day-counter');
-        }
-        return;
-    }
-
-    if (status === 'overdue' && badge) {
-        const days = numberFromText(badge.textContent);
-        if (days) {
-            setTextOnce(badge, days);
-            badge.classList.add('card-day-counter');
-        }
+        if (days) setTextOnce(badge, days);
+        badge.classList.add('card-day-counter');
         return;
     }
 
@@ -143,6 +146,7 @@ function cleanCard(card) {
     if (!(card instanceof HTMLElement)) return;
 
     const status = cardStatus(card);
+    decorateCardShell(card, status);
     cleanHeading(card, status);
     if (status === 'waiting') cleanWaitingInfo(card);
     cleanActions(card, status);
