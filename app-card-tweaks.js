@@ -4,6 +4,21 @@ const isFr = () => document.documentElement.lang === 'fr';
 const style = document.createElement('style');
 style.id = 's13-touch-card-layout';
 style.textContent = `
+/* Remove decorative color bars from both main sections. */
+.app-city-controls::before,
+#publishers-page > .glass-panel::before {
+    content: none !important;
+    display: none !important;
+}
+
+.app-city-controls {
+    padding-left: 16px !important;
+}
+
+#publishers-page > .glass-panel {
+    padding-left: 16px !important;
+}
+
 /* Precise territory-card geometry: actions left, information right. */
 .territory-card {
     grid-template-columns: minmax(108px, .78fr) minmax(0, 1.42fr) !important;
@@ -97,7 +112,7 @@ style.textContent = `
     display: none !important;
 }
 
-/* Edit/history/main action row is also anchored to the left. */
+/* Edit/history stay left; main action sits on the same bottom line at far right. */
 .territory-actions {
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
@@ -106,9 +121,9 @@ style.textContent = `
     margin: 0 !important;
     padding: 0 !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
     border: 0 !important;
     border-radius: 0 !important;
     background: transparent !important;
@@ -121,31 +136,68 @@ style.textContent = `
     gap: 8px !important;
     width: max-content !important;
     flex: 0 0 auto !important;
+    align-self: flex-end !important;
 }
 
 .territory-actions > .card-main-action,
 .territory-actions > button.card-main-action {
-    margin-left: 0 !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    align-self: flex-end !important;
 }
 
-/* Publishers stay perfectly symmetric. */
+/* Publishers: exact equal geometry in both columns. */
 #publishers-list {
-    grid-auto-rows: minmax(60px, auto) !important;
+    grid-auto-rows: 60px !important;
+    align-items: stretch !important;
 }
 
 #publishers-list > div,
 .publisher-row {
-    min-height: 60px !important;
-    height: 100% !important;
+    display: grid !important;
     grid-template-columns: minmax(0, 1fr) 92px !important;
     align-items: center !important;
+    gap: 12px !important;
+    box-sizing: border-box !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: 60px !important;
+    margin: 0 !important;
+    padding: 9px 10px 9px 14px !important;
+}
+
+#publishers-list > div > b,
+.publisher-row > b {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
 }
 
 #publishers-list > div > div,
 .publisher-row > div {
+    display: grid !important;
+    grid-template-columns: repeat(2, 42px) !important;
+    gap: 8px !important;
     width: 92px !important;
     min-width: 92px !important;
+    max-width: 92px !important;
     justify-self: end !important;
+    align-items: center !important;
+}
+
+#publishers-list > div button,
+.publisher-row button {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Full touch-screen adaptation, including iPad/tablet widths. */
@@ -200,7 +252,6 @@ style.textContent = `
         scroll-snap-align: start !important;
     }
 
-    /* Prevent Safari from leaving a fake hover state after tapping. */
     #cities-container button:hover {
         background: #33323f !important;
         color: #c8c7d1 !important;
@@ -231,9 +282,15 @@ style.textContent = `
         font-size: 14px !important;
     }
 
+    #publishers-list {
+        grid-auto-rows: 68px !important;
+    }
+
     #publishers-list > div,
     .publisher-row {
+        height: 68px !important;
         min-height: 68px !important;
+        max-height: 68px !important;
         padding: 10px 10px 10px 14px !important;
         grid-template-columns: minmax(0, 1fr) 104px !important;
         gap: 12px !important;
@@ -243,6 +300,7 @@ style.textContent = `
     .publisher-row > div {
         width: 104px !important;
         min-width: 104px !important;
+        max-width: 104px !important;
         grid-template-columns: repeat(2, 48px) !important;
         gap: 8px !important;
     }
@@ -251,8 +309,10 @@ style.textContent = `
     .publisher-row button {
         width: 48px !important;
         min-width: 48px !important;
+        max-width: 48px !important;
         height: 48px !important;
         min-height: 48px !important;
+        max-height: 48px !important;
     }
 
     #publisher-picker-list button,
