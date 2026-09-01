@@ -11,15 +11,9 @@ style.textContent = `
     display: none !important;
 }
 
-.app-city-controls {
-    padding-left: 16px !important;
-}
+.app-city-controls { padding-left: 16px !important; }
+#publishers-page > .glass-panel { padding-left: 16px !important; }
 
-#publishers-page > .glass-panel {
-    padding-left: 16px !important;
-}
-
-/* Precise territory-card geometry: actions left, information right. */
 .territory-card {
     grid-template-columns: minmax(108px, .78fr) minmax(0, 1.42fr) !important;
     grid-template-rows: 1fr auto !important;
@@ -35,7 +29,6 @@ style.textContent = `
     padding-right: 0 !important;
 }
 
-/* Remaining-days counter is always fixed at the top-right corner. */
 .territory-card .card-day-counter {
     position: absolute !important;
     top: 14px !important;
@@ -49,7 +42,6 @@ style.textContent = `
     justify-content: center !important;
 }
 
-/* Information area is split without changing business data. */
 .territory-card > .card-info-area,
 .territory-card > div:nth-child(2) {
     grid-column: 1 / -1 !important;
@@ -90,11 +82,9 @@ style.textContent = `
     overflow-wrap: anywhere !important;
 }
 
-.territory-card .card-info-text p i {
-    margin-left: 0 !important;
-}
+.territory-card .card-info-text p i { margin-left: 0 !important; }
 
-/* Map/copy controls form the first left-aligned button row. */
+/* Two exact vertical columns: map/edit and copy/history. */
 .territory-card .card-map-actions {
     grid-column: 1 !important;
     grid-row: 2 !important;
@@ -103,16 +93,28 @@ style.textContent = `
     margin: 0 !important;
     padding: 0 !important;
     display: grid !important;
-    grid-template-columns: repeat(2, 42px) !important;
+    grid-template-columns: 42px 42px !important;
+    grid-auto-flow: column !important;
     gap: 8px !important;
-    width: max-content !important;
+    width: 92px !important;
+    min-width: 92px !important;
+    max-width: 92px !important;
+    justify-items: stretch !important;
+    align-items: stretch !important;
 }
 
-.territory-card .card-map-actions > span {
-    display: none !important;
+.territory-card .card-map-actions > span { display: none !important; }
+.territory-card .card-map-actions > a.card-map-action {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+}
+.territory-card .card-map-actions > .copy-map-btn {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
 }
 
-/* Edit/history stay left; main action sits on the same bottom line at far right. */
 .territory-actions {
     grid-column: 1 / -1 !important;
     grid-row: 2 !important;
@@ -132,11 +134,21 @@ style.textContent = `
 
 .territory-actions > div:first-child {
     display: grid !important;
-    grid-template-columns: repeat(2, 42px) !important;
+    grid-template-columns: 42px 42px !important;
     gap: 8px !important;
-    width: max-content !important;
-    flex: 0 0 auto !important;
+    width: 92px !important;
+    min-width: 92px !important;
+    max-width: 92px !important;
+    flex: 0 0 92px !important;
     align-self: flex-end !important;
+    justify-items: stretch !important;
+}
+
+.territory-actions > div:first-child > button[onclick*="editTerritory"] {
+    grid-column: 1 !important;
+}
+.territory-actions > div:first-child > button[onclick*="showHistory"] {
+    grid-column: 2 !important;
 }
 
 .territory-actions > .card-main-action,
@@ -200,24 +212,14 @@ style.textContent = `
     padding: 0 !important;
 }
 
-/* Full touch-screen adaptation, including iPad/tablet widths. */
 @media (hover: none), (pointer: coarse) {
-    html {
-        scroll-behavior: auto !important;
-    }
+    html { scroll-behavior: auto !important; }
 
-    button,
-    a,
-    input,
-    select,
-    textarea {
+    button, a, input, select, textarea {
         -webkit-tap-highlight-color: transparent !important;
     }
 
-    button,
-    a {
-        touch-action: manipulation !important;
-    }
+    button, a { touch-action: manipulation !important; }
 
     button:not([data-language-toggle]),
     a#map-link,
@@ -270,9 +272,7 @@ style.textContent = `
         transform: none !important;
     }
 
-    #city-menu button {
-        min-height: 50px !important;
-    }
+    #city-menu button { min-height: 50px !important; }
 
     #publishers-search,
     #publisher-picker-search,
@@ -282,9 +282,7 @@ style.textContent = `
         font-size: 14px !important;
     }
 
-    #publishers-list {
-        grid-auto-rows: 68px !important;
-    }
+    #publishers-list { grid-auto-rows: 68px !important; }
 
     #publishers-list > div,
     .publisher-row {
@@ -318,9 +316,7 @@ style.textContent = `
     #publisher-picker-list button,
     #history-modal button,
     #dialog-modal button,
-    #confirm-modal button {
-        min-height: 50px !important;
-    }
+    #confirm-modal button { min-height: 50px !important; }
 
     .territory-card {
         min-height: 270px !important;
@@ -343,10 +339,21 @@ style.textContent = `
         padding-top: 44px !important;
     }
 
-    .territory-card .card-map-actions,
-    .territory-actions > div:first-child {
-        grid-template-columns: repeat(2, 48px) !important;
+    .territory-card .card-map-actions {
+        grid-template-columns: 48px 48px !important;
         gap: 8px !important;
+        width: 104px !important;
+        min-width: 104px !important;
+        max-width: 104px !important;
+    }
+
+    .territory-actions > div:first-child {
+        grid-template-columns: 48px 48px !important;
+        gap: 8px !important;
+        width: 104px !important;
+        min-width: 104px !important;
+        max-width: 104px !important;
+        flex-basis: 104px !important;
     }
 
     .territory-card .card-icon-action,
