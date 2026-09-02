@@ -393,7 +393,7 @@ button:disabled { opacity:.42 !important; cursor:not-allowed !important; transfo
     #city-switcher-panel, .app-city-controls, .app-status-toolbar, #publishers-page > .glass-panel { border-radius:13px !important; }
     #cities-container { justify-content:flex-start !important; }
     #cities-container button { flex:0 0 auto !important; min-width:142px !important; max-width:none !important; min-height:42px !important; }
-    .app-city-controls { padding:12px !important; align-items:stretch !important; }
+    .app-city-controls { padding:12px 12px 12px 16px !important; align-items:stretch !important; }
     .app-city-controls > div:first-child { width:100%; }
     .app-city-controls > div:last-child { width:100%; display:grid !important; grid-template-columns:1fr 40px; gap:7px !important; }
     .app-city-controls > div:last-child > button:first-child { width:100%; }
