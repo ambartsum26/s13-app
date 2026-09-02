@@ -1,5 +1,6 @@
 const $ = (id) => document.getElementById(id);
 const isFr = () => document.documentElement.lang === 'fr';
+const animatedTerritories = new Set();
 
 const cardStyle = document.createElement('style');
 cardStyle.id = 's13-card-layout';
@@ -9,17 +10,6 @@ cardStyle.textContent = `
     --card-action-size: 42px;
     --card-action-gap: 8px;
     --card-main-size: 56px;
-}
-
-.app-city-controls::before,
-#publishers-page > .glass-panel::before {
-    content: none !important;
-    display: none !important;
-}
-
-.app-city-controls,
-#publishers-page > .glass-panel {
-    padding-left: 16px !important;
 }
 
 .territory-card {
@@ -149,127 +139,10 @@ cardStyle.textContent = `
     padding: 0 !important;
 }
 
-.territory-card .card-map-actions,
-.territory-card .territory-actions {
-    display: none !important;
-}
-
-#publishers-list {
-    grid-auto-rows: 60px !important;
-    align-items: stretch !important;
-}
-
-#publishers-list > div,
-.publisher-row {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 92px !important;
-    align-items: center !important;
-    gap: 12px !important;
-    box-sizing: border-box !important;
-    height: 60px !important;
-    min-height: 60px !important;
-    max-height: 60px !important;
-    margin: 0 !important;
-    padding: 9px 10px 9px 14px !important;
-}
-
-#publishers-list > div > b,
-.publisher-row > b {
-    display: block !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-}
-
-#publishers-list > div > div,
-.publisher-row > div {
-    display: grid !important;
-    grid-template-columns: repeat(2, 42px) !important;
-    gap: 8px !important;
-    width: 92px !important;
-    min-width: 92px !important;
-    max-width: 92px !important;
-    justify-self: end !important;
-}
-
-#publishers-list > div button,
-.publisher-row button {
-    width: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    max-height: 42px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
 @media (hover: none), (pointer: coarse) {
     :root {
         --card-action-size: 48px;
         --card-main-size: 60px;
-    }
-
-    button,
-    a,
-    input,
-    select,
-    textarea {
-        -webkit-tap-highlight-color: transparent !important;
-    }
-
-    button,
-    a {
-        touch-action: manipulation !important;
-    }
-
-    #cities-container button {
-        min-height: 50px !important;
-        border: 0 !important;
-        outline: 0 !important;
-        box-shadow: none !important;
-    }
-
-    #cities-container button.bg-indigo-600,
-    #cities-container button.bg-indigo-600:hover,
-    #cities-container button.bg-indigo-600:active {
-        background: var(--dz-green) !important;
-        color: #fff !important;
-        border: 0 !important;
-        outline: 0 !important;
-        box-shadow: none !important;
-        transform: none !important;
-    }
-
-    #publishers-list {
-        grid-auto-rows: 68px !important;
-    }
-
-    #publishers-list > div,
-    .publisher-row {
-        height: 68px !important;
-        min-height: 68px !important;
-        max-height: 68px !important;
-        grid-template-columns: minmax(0, 1fr) 104px !important;
-    }
-
-    #publishers-list > div > div,
-    .publisher-row > div {
-        grid-template-columns: repeat(2, 48px) !important;
-        width: 104px !important;
-        min-width: 104px !important;
-        max-width: 104px !important;
-    }
-
-    #publishers-list > div button,
-    .publisher-row button {
-        width: 48px !important;
-        min-width: 48px !important;
-        max-width: 48px !important;
-        height: 48px !important;
-        min-height: 48px !important;
-        max-height: 48px !important;
     }
 
     .territory-card {
@@ -351,9 +224,7 @@ function cleanHeading(card, status) {
     const headingRow = card.firstElementChild;
     if (!headingRow) return;
 
-    const kicker = headingRow.querySelector('div > span');
-    kicker?.classList.add('territory-kicker');
-
+    headingRow.querySelector('div > span')?.classList.add('territory-kicker');
     let badge = headingRow.querySelector('.badge');
 
     if (status === 'free') {
@@ -368,22 +239,22 @@ function cleanHeading(card, status) {
         return;
     }
 
-    if (status === 'waiting') {
-        const info = card.children[1];
-        const daysLine = [...(info?.querySelectorAll('p') || [])].find((p) =>
-            /До повторной выдачи|Avant la prochaine attribution/i.test(p.textContent || '')
-        );
-        const days = numberFromText(daysLine?.textContent);
+    if (status !== 'waiting') return;
 
-        if (!badge) {
-            badge = document.createElement('span');
-            badge.className = 'badge';
-            headingRow.appendChild(badge);
-        }
+    const info = card.children[1];
+    const daysLine = [...(info?.querySelectorAll('p') || [])].find((p) =>
+        /До повторной выдачи|Avant la prochaine attribution/i.test(p.textContent || '')
+    );
+    const days = numberFromText(daysLine?.textContent);
 
-        if (days) setTextOnce(badge, days);
-        badge.classList.add('card-day-counter');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge';
+        headingRow.appendChild(badge);
     }
+
+    if (days) setTextOnce(badge, days);
+    badge.classList.add('card-day-counter');
 }
 
 function cleanWaitingInfo(card) {
@@ -423,16 +294,16 @@ function structureInfo(card) {
     info.classList.add('card-info-area');
 
     let textGroup = info.querySelector(':scope > .card-info-text');
-    if (!textGroup) {
-        textGroup = document.createElement('div');
-        textGroup.className = 'card-info-text';
+    if (textGroup) return;
 
-        [...info.children]
-            .filter((element) => element.tagName === 'P')
-            .forEach((paragraph) => textGroup.appendChild(paragraph));
+    textGroup = document.createElement('div');
+    textGroup.className = 'card-info-text';
 
-        info.prepend(textGroup);
-    }
+    [...info.children]
+        .filter((element) => element.tagName === 'P')
+        .forEach((paragraph) => textGroup.appendChild(paragraph));
+
+    info.prepend(textGroup);
 }
 
 function makeIconOnly(button, iconClass, title, main = false) {
@@ -441,7 +312,6 @@ function makeIconOnly(button, iconClass, title, main = false) {
     setHtmlOnce(button, `<i class="fa-solid ${iconClass}"></i>`);
     button.title = title;
     button.setAttribute('aria-label', title);
-    button.classList.remove('tile-secondary-btn', 'tile-primary-btn');
     button.classList.add(main ? 'card-main-action' : 'card-icon-action');
 }
 
@@ -497,13 +367,15 @@ function buildActionGrid(card) {
         card.appendChild(actionGrid);
     }
 
-    const mapLink = card.querySelector('a.card-map-action[href]');
-    const copyButton = card.querySelector('button.copy-map-btn');
-    const editButton = card.querySelector('button[onclick*="editTerritory"]');
-    const historyButton = card.querySelector('button[onclick*="showHistory"]');
+    const controls = [
+        card.querySelector('a.card-map-action[href]'),
+        card.querySelector('button.copy-map-btn'),
+        card.querySelector('button[onclick*="editTerritory"]'),
+        card.querySelector('button[onclick*="showHistory"]')
+    ];
 
-    [mapLink, copyButton, editButton, historyButton].forEach((button) => {
-        if (button && button.parentElement !== actionGrid) actionGrid.appendChild(button);
+    controls.forEach((control) => {
+        if (control && control.parentElement !== actionGrid) actionGrid.appendChild(control);
     });
 
     const oldMapWrapper = card.querySelector('.card-info-area > div:not(.card-info-text)');
@@ -531,13 +403,23 @@ function cleanActions(card, status) {
     buildActionGrid(card);
 }
 
+function syncEntryAnimation(card, index) {
+    const territoryId = card.dataset.territoryId;
+    if (!territoryId || animatedTerritories.has(territoryId)) {
+        card.classList.remove('animate-fade-in');
+        card.style.animationDelay = '';
+        return;
+    }
+
+    animatedTerritories.add(territoryId);
+    card.classList.add('animate-fade-in');
+    card.style.animationDelay = `${Math.min(index * 0.055, 0.65)}s`;
+}
+
 function cleanCard(card, index) {
     if (!(card instanceof HTMLElement)) return;
 
-    if (!card.classList.contains('animate-fade-in')) {
-        card.classList.add('animate-fade-in');
-        card.style.animationDelay = `${Math.min(index * 0.055, 0.65)}s`;
-    }
+    syncEntryAnimation(card, index);
 
     const status = cardStatus(card);
     decorateCardShell(card, status);
