@@ -601,6 +601,7 @@ function renderTerritories() {
                 : `<button onclick="issueTerritory('${t.id}')" class="h-8 px-3.5 bg-white text-slate-950 rounded-xl text-xs font-bold">${tr('issue')}</button>`;
 
         const card = document.createElement('article');
+        card.dataset.territoryId = t.id;
         card.className = `border ${cls} rounded-3xl p-4 space-y-4 shadow-xl`;
         card.innerHTML = `
             <div class="flex justify-between gap-2">
@@ -938,40 +939,6 @@ function closePicker(p) {
     resolve?.(p || null);
 }
 window.closePicker = () => closePicker(null);
-
-window.exportOfficialRegister = () => {
-    const city = cities.find(c => c.id === activeCityId);
-    if (!city) return;
-
-    const max = Math.max(1, ...territories.map(t => (t.history || []).length));
-    let rows = '';
-
-    territories.forEach(t => {
-        let names = '';
-        let dates = '';
-
-        for (let i = 0; i < max; i++) {
-            const h = t.history?.[i];
-            names += `<td colspan="2"><b>${h ? esc(h.publisher) : ''}</b></td>`;
-            dates += h
-                ? `<td>${fmt(h.issuedAt)}</td><td>${h.returnedAt ? fmt(h.returnedAt) : 'En cours'}</td>`
-                : '<td></td><td></td>';
-        }
-
-        rows += `<tr><td rowspan="2"><b>${esc(t.number)}</b></td><td rowspan="2">${fmt(latestCompleted(t)?.returnedAt)}</td>${names}</tr><tr>${dates}</tr>`;
-    });
-
-    const heads = '<th colspan="2">Attribué à</th>'.repeat(max);
-    const subs = '<th>Attribué le</th><th>Entièrement parcouru le</th>'.repeat(max);
-    const html = `<html><head><meta charset="UTF-8"><style>body{font-family:Arial;font-size:9pt}table{border-collapse:collapse}th,td{border:1px solid #000;padding:3px;text-align:center;white-space:nowrap}th{background:#eee}</style></head><body><h2>REGISTRE D’ATTRIBUTION DES TERRITOIRES</h2><p><b>Année de service :</b> ${new Date().getFullYear()} &nbsp; <b>Ville :</b> ${esc(city.name)}</p><table><thead><tr><th rowspan="2">Terr. n°</th><th rowspan="2">Parcouru pour la dernière fois le*</th>${heads}</tr><tr>${subs}</tr></thead><tbody>${rows}</tbody></table><p><i>* Lorsque vous commencez une nouvelle feuille, notez dans cette colonne la date à laquelle chaque territoire a été entièrement parcouru pour la dernière fois.</i></p><p>S-13-F 1/22</p></body></html>`;
-
-    const url = URL.createObjectURL(new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `S-13_${city.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.doc`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-};
 
 function scheduleMidnight() {
     const now = new Date();
