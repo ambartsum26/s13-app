@@ -68,7 +68,12 @@ cardStyle.textContent = `
     padding: 0 !important;
     text-align: right !important;
     color: rgba(255,255,255,.94) !important;
+    font-size: 10px !important;
     overflow-wrap: anywhere !important;
+}
+
+.territory-card .card-info-text p b {
+    color: #fff !important;
 }
 
 .territory-card > .card-action-grid {
