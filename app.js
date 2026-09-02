@@ -17,4 +17,3 @@ function installJwBrand() {
 }
 
 installJwBrand();
-document.addEventListener('DOMContentLoaded', installJwBrand, { once: true });
