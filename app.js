@@ -1,7 +1,7 @@
 import './app-core.js';
 import './app-ui.js';
-import './popup-fixes.js';
-import './app-card-tweaks.js';
+import './app-popups.js';
+import './app-cards.js';
 import './s13-export.js';
 
 function installJwBrand() {
