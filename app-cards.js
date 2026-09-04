@@ -48,7 +48,7 @@ cardStyle.textContent = `
 .territory-card .card-info-text {
     position: absolute !important;
     top: 47% !important;
-    right: 2px !important;
+    right: var(--card-pad) !important;
     width: 58% !important;
     max-width: 58% !important;
     transform: translateY(-50%) !important;
@@ -168,7 +168,7 @@ cardStyle.textContent = `
 
 @media (max-width: 639px) {
     .territory-card .card-info-text {
-        right: 2px !important;
+        right: var(--card-pad) !important;
         width: 61% !important;
         max-width: 61% !important;
     }
