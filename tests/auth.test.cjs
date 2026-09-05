@@ -3,23 +3,24 @@ const strip = s => s.replace(/^import[\s\S]*?from\s+['"][^'"]+['"];\s*/gm,'').re
 function dom() {
  const nodes = new Map();
  const get = id => {
-  if(!nodes.has(id)) {const classes=new Set(['hidden']);nodes.set(id,{value:'',textContent:'',innerHTML:'',dataset:{},style:{},disabled:false,children:[],handlers:{},classList:{contains:x=>classes.has(x),add:(...x)=>x.forEach(v=>classes.add(v)),remove:(...x)=>x.forEach(v=>classes.delete(v)),toggle(x,b){if(b??!classes.has(x))classes.add(x);else classes.delete(x)}},setAttribute(){},removeAttribute(){},replaceChildren(){this.children=[];this.innerHTML='';this.textContent=''},querySelectorAll(){return []},append(){},focus(){},addEventListener(e,f){this.handlers[e]=f}});}
+  if(!nodes.has(id)) {const classes=new Set(['hidden']);nodes.set(id,{value:'',textContent:'',innerHTML:'',dataset:{},style:{},disabled:false,hidden:false,required:false,children:[],handlers:{},classList:{contains:x=>classes.has(x),add:(...x)=>x.forEach(v=>classes.add(v)),remove:(...x)=>x.forEach(v=>classes.delete(v)),toggle(x,b){if(b??!classes.has(x))classes.add(x);else classes.delete(x)}},setAttribute(){},removeAttribute(){},replaceChildren(){this.children=[];this.innerHTML='';this.textContent=''},querySelectorAll(){return []},append(){},focus(){},addEventListener(e,f){this.handlers[e]=f}});}
   return nodes.get(id);
  };
  return {nodes,get,document:{getElementById:get,querySelector:()=>get('add-territory-button'),createElement:()=>get('new-'+nodes.size),addEventListener(){},documentElement:{lang:'ru'},body:{dataset:{}}}};
 }
 const flush = () => new Promise(resolve=>setImmediate(resolve));
 (async()=>{
- const d=dom(), auth={currentUser:null};let callback, loginCalls=0;const access=[];
- const c=vm.createContext({document:d.document,initializeApp:()=>({}),getFirestore:()=>({}),getAuth:()=>auth,onAuthStateChanged:(_,f)=>{callback=f},setPersistence:async()=>{},browserSessionPersistence:{},signInWithEmailAndPassword:async()=>{loginCalls++;throw {code:'auth/invalid-credential'}},signOut:async()=>{auth.currentUser=null;callback(null)},MutationObserver:class{observe(){}},alert:()=>{}});
+ const d=dom(), auth={currentUser:null};let callback, loginCalls=0, loginEmail='';const access=[];
+ const c=vm.createContext({document:d.document,initializeApp:()=>({}),getFirestore:()=>({}),getAuth:()=>auth,onAuthStateChanged:(_,f)=>{callback=f},setPersistence:async()=>{},browserSessionPersistence:{},signInWithEmailAndPassword:async(_,email)=>{loginCalls++;loginEmail=email;throw {code:'auth/invalid-credential'}},signOut:async()=>{auth.currentUser=null;callback(null)},MutationObserver:class{observe(){}},alert:()=>{}});
  vm.runInContext(strip(fs.readFileSync('./app-auth.js','utf8')),c);
  c.access=access;vm.runInContext('observeOwner(value=>access.push(value))',c);await flush();
+ assert.equal(d.get('auth-email').hidden,true);assert.equal(d.get('auth-email').value,'admin@s13.com');
  callback(null);assert.deepEqual(access,[false]);assert.equal(d.document.body.dataset.authState,'locked');
  auth.currentUser={uid:'other'};callback(auth.currentUser);assert.equal(d.document.body.dataset.authState,'locked');assert.deepEqual(access,[false]);assert.match(d.get('auth-message').textContent,/нет доступа/);
  auth.currentUser={uid:'8JAUBlCS2CXO0xTJzY1cnOafzuE2'};callback(auth.currentUser);assert.equal(d.document.body.dataset.authState,'owner');assert.deepEqual(access,[false,true]);
  await d.get('auth-logout').handlers.click();assert.equal(d.document.body.dataset.authState,'locked');assert.deepEqual(access,[false,true,false]);
- d.get('auth-password').value='synthetic-test';await d.get('auth-form').handlers.submit({preventDefault(){}});assert.equal(loginCalls,1);assert.equal(d.get('auth-password').value,'');assert.equal(d.get('auth-submit').disabled,false);assert.match(d.get('auth-message').textContent,/Проверьте почту/);
- console.log('PASS: signed-out and other UID blocked, owner allowed, logout locked, invalid login cleared and reported.');
+ d.get('auth-password').value='synthetic-test';await d.get('auth-form').handlers.submit({preventDefault(){}});assert.equal(loginCalls,1);assert.equal(loginEmail,'admin@s13.com');assert.equal(d.get('auth-password').value,'');assert.equal(d.get('auth-submit').disabled,false);assert.match(d.get('auth-message').textContent,/Проверьте пароль/);
+ console.log('PASS: password-only login uses technical owner email, signed-out and other UID blocked, owner allowed, logout locked.');
 
  const d2=dom();let owner=false, accessCallback, reads=0, pendingRead, unsubscribed=0;
  const subs=[];
@@ -41,4 +42,3 @@ const flush = () => new Promise(resolve=>setImmediate(resolve));
  const rules=fs.readFileSync('./firestore.rules','utf8');assert.match(rules,/request.auth != null/);assert.match(rules,/8JAUBlCS2CXO0xTJzY1cnOafzuE2/);assert.doesNotMatch(rules,/if true/);
  console.log('PASS: locked initial HTML, unique IDs, owner UID matches rule source. Rules still need server simulator validation.');
 })().catch(e=>{console.error(e);process.exitCode=1});
-
