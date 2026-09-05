@@ -1045,7 +1045,7 @@ for (const name of [
         try {
             return await action(...args);
         } catch (error) {
-            setDbError(error);
+            console.error('Save failed:', error);
             alert(tr('saveError'));
         }
     };
