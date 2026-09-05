@@ -15,9 +15,10 @@ const app = initializeApp({
 export const db = getFirestore(app);
 const auth = getAuth(app);
 
-// This UI check is mirrored by firestore.rules; the server rules enforce access.
+// The technical email is not a secret. Firebase Auth still validates the password,
+// and firestore.rules enforce the owner UID on the server.
+const OWNER_EMAIL = 'admin@s13.com';
 const OWNER_UID = '8JAUBlCS2CXO0xTJzY1cnOafzuE2';
-const OWNER_EMAIL_KEY = 's13-owner-email';
 
 export const isOwner = () => auth.currentUser?.uid === OWNER_UID;
 export function requireOwner() {
@@ -28,17 +29,13 @@ const $ = id => document.getElementById(id);
 const messages = {
     ru: {
         title: 'Вход в приложение',
-        email: 'Электронная почта',
         password: 'Пароль',
         login: 'Войти',
         logout: 'Выйти',
         working: 'Вход…',
         checking: 'Проверка входа…',
-        hintPassword: 'Введите пароль владельца.',
-        hintSetup: 'При первом входе укажите почту владельца. После успешного входа на этом устройстве останется только поле пароля.',
-        switchAccount: 'Сменить аккаунт',
+        hint: 'Введите пароль владельца.',
         invalid: 'Не удалось войти. Проверьте пароль.',
-        invalidSetup: 'Не удалось войти. Проверьте почту и пароль.',
         network: 'Нет связи. Проверьте интернет и повторите вход.',
         limited: 'Слишком много попыток. Попробуйте позже.',
         disabled: 'Этот пользователь отключён в Firebase Authentication.',
@@ -53,17 +50,13 @@ const messages = {
     },
     fr: {
         title: 'Connexion',
-        email: 'Adresse e-mail',
         password: 'Mot de passe',
         login: 'Se connecter',
         logout: 'Se déconnecter',
         working: 'Connexion…',
         checking: 'Vérification…',
-        hintPassword: 'Saisissez le mot de passe du propriétaire.',
-        hintSetup: 'Lors de la première connexion, saisissez l’adresse e-mail du propriétaire. Ensuite, seul le mot de passe sera demandé sur cet appareil.',
-        switchAccount: 'Changer de compte',
+        hint: 'Saisissez le mot de passe du propriétaire.',
         invalid: 'Connexion impossible. Vérifiez le mot de passe.',
-        invalidSetup: 'Connexion impossible. Vérifiez l’adresse e-mail et le mot de passe.',
         network: 'Vérifiez votre connexion Internet et réessayez.',
         limited: 'Trop de tentatives. Réessayez plus tard.',
         disabled: 'Cet utilisateur est désactivé dans Firebase Authentication.',
@@ -79,72 +72,27 @@ const messages = {
 };
 
 let busy = false;
-let rememberedEmail = readRememberedEmail();
 let authMessageKey = '';
 let authMessageCode = '';
 
 const text = key => messages[document.documentElement.lang === 'fr' ? 'fr' : 'ru'][key];
 
-function readRememberedEmail() {
-    try {
-        return localStorage.getItem(OWNER_EMAIL_KEY)?.trim() || '';
-    } catch {
-        return '';
-    }
-}
-
-function rememberEmail(email) {
-    rememberedEmail = email.trim();
-    try {
-        if (rememberedEmail) localStorage.setItem(OWNER_EMAIL_KEY, rememberedEmail);
-        else localStorage.removeItem(OWNER_EMAIL_KEY);
-    } catch {
-        // Password-only mode is a convenience. Authentication still works if storage is unavailable.
-    }
-}
-
-function ensureSwitchAccountButton() {
-    let button = $('auth-switch-account');
-    if (button) return button;
-
-    button = document.createElement('button');
-    button.id = 'auth-switch-account';
-    button.type = 'button';
-    button.style.width = '100%';
-    button.style.marginTop = '8px';
-    button.style.background = 'transparent';
-    button.style.color = '#c8c7d1';
-    button.style.fontSize = '12px';
-    button.style.textDecoration = 'underline';
-    button.style.textUnderlineOffset = '3px';
-
-    button.addEventListener('click', () => {
-        rememberEmail('');
-        $('auth-email').value = '';
-        message();
-        syncEmailMode();
-        $('auth-email').focus();
-    });
-
-    $('auth-form').append(button);
-    return button;
-}
-
-function syncEmailMode() {
-    const hasRememberedEmail = !!rememberedEmail;
+function configurePasswordOnlyForm() {
     const email = $('auth-email');
     const emailLabel = $('auth-email-label');
-    const switchButton = ensureSwitchAccountButton();
 
-    email.hidden = hasRememberedEmail;
-    emailLabel.hidden = hasRememberedEmail;
-    email.required = !hasRememberedEmail;
+    if (email) {
+        email.value = OWNER_EMAIL;
+        email.required = false;
+        email.hidden = true;
+        email.setAttribute('aria-hidden', 'true');
+        email.setAttribute('tabindex', '-1');
+    }
 
-    if (hasRememberedEmail) email.value = rememberedEmail;
-
-    switchButton.hidden = !hasRememberedEmail;
-    switchButton.textContent = text('switchAccount');
-    $('auth-hint').textContent = text(hasRememberedEmail ? 'hintPassword' : 'hintSetup');
+    if (emailLabel) {
+        emailLabel.hidden = true;
+        emailLabel.setAttribute('aria-hidden', 'true');
+    }
 }
 
 function renderMessage() {
@@ -153,19 +101,14 @@ function renderMessage() {
 }
 
 function updateLabels() {
-    for (const [id, key] of Object.entries({
-        'auth-title': 'title',
-        'auth-email-label': 'email',
-        'auth-password-label': 'password',
-        'auth-logout-label': 'logout'
-    })) {
-        $(id).textContent = text(key);
-    }
-
+    $('auth-title').textContent = text('title');
+    $('auth-password-label').textContent = text('password');
+    $('auth-hint').textContent = text('hint');
+    $('auth-logout-label').textContent = text('logout');
     $('auth-logout').title = text('logout');
     $('auth-logout').setAttribute('aria-label', text('logout'));
     $('auth-submit').textContent = text(busy ? 'working' : 'login');
-    syncEmailMode();
+    configurePasswordOnlyForm();
     renderMessage();
 }
 
@@ -197,7 +140,7 @@ function errorMessageKey(code) {
     if (code === 'auth/unauthorized-domain') return 'unauthorizedDomain';
     if (code === 'auth/app-not-authorized') return 'appNotAuthorized';
     if (code === 'auth/invalid-api-key' || code.includes('api-key') || code.includes('referer')) return 'apiKey';
-    if (invalid.includes(code)) return rememberedEmail ? 'invalid' : 'invalidSetup';
+    if (invalid.includes(code)) return 'invalid';
     return 'unknown';
 }
 
@@ -208,6 +151,7 @@ function showAccess(allowed) {
 }
 
 export function observeOwner(onChange) {
+    configurePasswordOnlyForm();
     updateLabels();
     message('checking');
 
@@ -229,12 +173,6 @@ export function observeOwner(onChange) {
     persistence.then(() => {
         onAuthStateChanged(auth, user => {
             const allowed = user?.uid === OWNER_UID;
-
-            if (allowed && user?.email) {
-                rememberEmail(user.email);
-                syncEmailMode();
-            }
-
             showAccess(allowed);
             message(user && !allowed ? 'denied' : '');
             deliver(allowed);
@@ -257,13 +195,6 @@ export function observeOwner(onChange) {
         event.preventDefault();
         if (busy) return;
 
-        const email = (rememberedEmail || $('auth-email').value).trim();
-        if (!email) {
-            syncEmailMode();
-            $('auth-email').focus();
-            return;
-        }
-
         busy = true;
         $('auth-submit').disabled = true;
         message();
@@ -271,16 +202,13 @@ export function observeOwner(onChange) {
 
         try {
             await persistence;
-            const credential = await signInWithEmailAndPassword(auth, email, $('auth-password').value);
+            const credential = await signInWithEmailAndPassword(auth, OWNER_EMAIL, $('auth-password').value);
 
             if (credential.user?.uid !== OWNER_UID) {
                 await signOut(auth);
                 message('denied');
                 return;
             }
-
-            rememberEmail(credential.user.email || email);
-            syncEmailMode();
         } catch (error) {
             // Never log credentials or the complete Firebase error object.
             const code = safeAuthCode(error);
