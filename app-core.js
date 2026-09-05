@@ -71,7 +71,8 @@ const I = {
         invalidDate: "Проверьте дату. Используйте формат ДД.ММ.ГГГГ.",
         returnBeforeIssue: "Дата сдачи не может быть раньше даты выдачи.",
         duplicateTerritory: "Участок с таким номером уже есть в этом городе.",
-        appError: "Ошибка приложения"
+        appError: "Ошибка приложения",
+        saveError: "Не удалось сохранить изменения. Проверьте подключение к интернету и повторите действие. Если ошибка повторяется, проверьте доступ к базе."
     },
     fr: {
         app: "ASSISTANT DE TERRITOIRES",
@@ -119,7 +120,8 @@ const I = {
         invalidDate: "Vérifiez la date. Utilisez le format JJ/MM/AAAA.",
         returnBeforeIssue: "La date de retour ne peut pas être antérieure à la date d’attribution.",
         duplicateTerritory: "Un territoire portant ce numéro existe déjà dans cette ville.",
-        appError: "Erreur de l’application"
+        appError: "Erreur de l’application",
+        saveError: "Impossible d’enregistrer les modifications. Vérifiez votre connexion et réessayez. Si l’erreur persiste, vérifiez l’accès à la base."
     }
 };
 
@@ -130,6 +132,8 @@ let territories = [];
 let publishers = [];
 let activeCityId = null;
 let unsubTerritories = null;
+let territorySubscriptionVersion = 0;
+let territoriesReady = false;
 let territorySig = '';
 let publisherSig = '';
 let historyTerritoryId = null;
@@ -266,6 +270,12 @@ function territoryNumberExists(number, excludeId = null) {
     return territories.some(t => t.id !== excludeId && norm(t.number) === key);
 }
 
+function setTerritoriesReady(ready) {
+    territoriesReady = ready;
+    const button = document.querySelector('button[onclick="addTerritory()"]');
+    if (button) button.disabled = !ready;
+}
+
 function applyText() {
     document.documentElement.lang = lang;
     setText('app-title', tr('app'));
@@ -308,6 +318,8 @@ function setView(nextView) {
     });
 
     if (nextView !== 'territories' && unsubTerritories) {
+        territorySubscriptionVersion++;
+        setTerritoriesReady(false);
         unsubTerritories();
         unsubTerritories = null;
     }
@@ -470,21 +482,22 @@ window.editCityMap = async () => {
 };
 
 window.addTerritory = async () => {
-    if (!activeCityId) return;
+    if (!activeCityId || !territoriesReady) return;
+    const cityId = activeCityId;
     const values = await dialog(tr('territory'), [
         { label: lang === 'fr' ? 'Numéro' : 'Номер участка' },
         { label: tr('map'), placeholder: 'https://...' }
     ]);
 
     const number = values?.[0]?.trim();
-    if (!number) return;
+    if (!number || cityId !== activeCityId || !territoriesReady) return;
     if (territoryNumberExists(number)) {
         alert(tr('duplicateTerritory'));
         return;
     }
 
     await addDoc(collection(db, 'territories'), {
-        cityId: activeCityId,
+        cityId,
         number,
         mapUrl: values[1]?.trim() || '',
         russianSpeakers: 0,
@@ -493,18 +506,27 @@ window.addTerritory = async () => {
 };
 
 function subscribeTerritories() {
+    const version = ++territorySubscriptionVersion;
     if (unsubTerritories) unsubTerritories();
+    unsubTerritories = null;
+    setTerritoriesReady(false);
+    territories = [];
+    territorySig = '';
+    window.closeHistory();
+    renderTerritories();
     if (!activeCityId) return;
 
     const q = query(collection(db, 'territories'), where('cityId', '==', activeCityId));
     unsubTerritories = onSnapshot(
         q,
         snapshot => {
+            if (version !== territorySubscriptionVersion) return;
             const next = snapshot.docs
                 .map(d => ({ id: d.id, ...d.data() }))
                 .sort((a, b) => parseInt(a.number) - parseInt(b.number) || (a.number || '').localeCompare(b.number || ''));
 
             const signature = JSON.stringify(next);
+            setTerritoriesReady(true);
             if (signature === territorySig) return;
             territorySig = signature;
             territories = next;
@@ -512,7 +534,15 @@ function subscribeTerritories() {
             if (view === 'territories') renderTerritories();
             if (historyTerritoryId) showHistory(historyTerritoryId);
         },
-        setDbError
+        error => {
+            if (version !== territorySubscriptionVersion) return;
+            setTerritoriesReady(false);
+            territories = [];
+            territorySig = '';
+            window.closeHistory();
+            renderTerritories();
+            setDbError(error);
+        }
     );
 }
 
@@ -970,7 +1000,13 @@ async function init() {
 
                 if (activeCityId && !cities.some(c => c.id === activeCityId)) {
                     activeCityId = cities[0]?.id || null;
-                    if (!activeCityId) showHomePage();
+                    if (view === 'territories') {
+                        if (activeCityId) window.showTerritoryCity(activeCityId);
+                        else {
+                            subscribeTerritories();
+                            showHomePage();
+                        }
+                    }
                 }
 
                 if (view === 'territories') {
@@ -998,4 +1034,22 @@ async function init() {
     }
 }
 
+// Inline event handlers must not leave rejected writes invisible to the user.
+for (const name of [
+    'addCity', 'renameCity', 'editCityMap', 'addTerritory', 'editTerritory',
+    'issueTerritory', 'returnTerritory', 'editHistory', 'deleteHistory',
+    'addPublisher', 'editPublisher', 'deletePublisher'
+]) {
+    const action = window[name];
+    window[name] = async (...args) => {
+        try {
+            return await action(...args);
+        } catch (error) {
+            setDbError(error);
+            alert(tr('saveError'));
+        }
+    };
+}
+
 init();
+
