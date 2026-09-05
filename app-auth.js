@@ -95,6 +95,51 @@ function configurePasswordOnlyForm() {
     }
 }
 
+function configureLanguageToggle() {
+    const button = $('auth-language');
+    if (!button) return;
+
+    button.setAttribute('data-language-toggle', '');
+    button.setAttribute('title', 'Сменить язык / Changer de langue');
+    button.setAttribute('aria-label', 'Сменить язык / Changer de langue');
+    button.className = 'relative w-24 h-10 shrink-0 bg-slate-950/80 rounded-xl border border-slate-800 p-1 flex items-center justify-between overflow-hidden shadow-inner';
+
+    // Inline geometry overrides the older auth-panel button rules so this is
+    // visually identical to the language switcher in the main application bar.
+    button.style.cssText = [
+        'float:none',
+        'margin:-8px -8px 8px auto',
+        'display:flex',
+        'position:relative',
+        'width:96px',
+        'height:40px',
+        'min-height:40px',
+        'padding:4px',
+        'border:1px solid #1e293b',
+        'border-radius:12px',
+        'background:rgba(2,6,23,.8)',
+        'color:#fff',
+        'box-shadow:inset 0 2px 4px rgba(0,0,0,.06)',
+        'overflow:hidden',
+        'align-items:center',
+        'justify-content:space-between'
+    ].join(';');
+
+    if (button.dataset.languageToggleReady !== '1') {
+        button.innerHTML = `
+            <div id="auth-lang-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-emerald-500 rounded-lg transition-all duration-300"></div>
+            <span class="relative z-10 w-1/2 text-center text-xs font-bold">RU</span>
+            <span class="relative z-10 w-1/2 text-center text-xs font-bold text-slate-300">FR</span>`;
+        button.dataset.languageToggleReady = '1';
+    }
+
+    const isFr = document.documentElement.lang === 'fr';
+    const slider = $('auth-lang-slider');
+    slider?.classList.toggle('translate-x-[calc(100%+4px)]', isFr);
+    slider?.classList.toggle('bg-rose-500', isFr);
+    slider?.classList.toggle('bg-emerald-500', !isFr);
+}
+
 function renderMessage() {
     const base = authMessageKey ? text(authMessageKey) : '';
     $('auth-message').textContent = authMessageCode ? `${base} (${authMessageCode})` : base;
@@ -109,6 +154,7 @@ function updateLabels() {
     $('auth-logout').setAttribute('aria-label', text('logout'));
     $('auth-submit').textContent = text(busy ? 'working' : 'login');
     configurePasswordOnlyForm();
+    configureLanguageToggle();
     renderMessage();
 }
 
