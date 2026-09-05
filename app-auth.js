@@ -37,14 +37,19 @@ const messages = {
         hintPassword: 'Введите пароль владельца.',
         hintSetup: 'При первом входе укажите почту владельца. После успешного входа на этом устройстве останется только поле пароля.',
         switchAccount: 'Сменить аккаунт',
-        unavailable: 'Вход сейчас недоступен из-за настройки приложения. Обратитесь к администратору.',
         invalid: 'Не удалось войти. Проверьте пароль.',
         invalidSetup: 'Не удалось войти. Проверьте почту и пароль.',
         network: 'Нет связи. Проверьте интернет и повторите вход.',
         limited: 'Слишком много попыток. Попробуйте позже.',
+        disabled: 'Этот пользователь отключён в Firebase Authentication.',
+        providerDisabled: 'В Firebase Authentication не включён вход Email/Password.',
+        unauthorizedDomain: 'Домен приложения не разрешён в Firebase Authentication.',
+        appNotAuthorized: 'Это приложение или домен не разрешены для данного Firebase API key.',
+        apiKey: 'Firebase API key не разрешает запрос авторизации. Проверьте ограничения ключа и Identity Toolkit API.',
         denied: 'У этого аккаунта нет доступа к приложению.',
         failed: 'Не удалось проверить вход. Обновите страницу.',
-        logoutFailed: 'Не удалось выйти. Проверьте подключение и повторите.'
+        logoutFailed: 'Не удалось выйти. Проверьте подключение и повторите.',
+        unknown: 'Firebase отклонил вход.'
     },
     fr: {
         title: 'Connexion',
@@ -57,19 +62,26 @@ const messages = {
         hintPassword: 'Saisissez le mot de passe du propriétaire.',
         hintSetup: 'Lors de la première connexion, saisissez l’adresse e-mail du propriétaire. Ensuite, seul le mot de passe sera demandé sur cet appareil.',
         switchAccount: 'Changer de compte',
-        unavailable: 'Connexion indisponible à cause de la configuration de l’application. Contactez l’administrateur.',
         invalid: 'Connexion impossible. Vérifiez le mot de passe.',
         invalidSetup: 'Connexion impossible. Vérifiez l’adresse e-mail et le mot de passe.',
         network: 'Vérifiez votre connexion Internet et réessayez.',
         limited: 'Trop de tentatives. Réessayez plus tard.',
+        disabled: 'Cet utilisateur est désactivé dans Firebase Authentication.',
+        providerDisabled: 'La connexion Email/Password n’est pas activée dans Firebase Authentication.',
+        unauthorizedDomain: 'Le domaine de l’application n’est pas autorisé dans Firebase Authentication.',
+        appNotAuthorized: 'Cette application ou ce domaine n’est pas autorisé pour cette clé Firebase API.',
+        apiKey: 'La clé Firebase API ne permet pas la requête d’authentification. Vérifiez les restrictions de la clé et Identity Toolkit API.',
         denied: 'Ce compte ne peut pas accéder à cette application.',
         failed: 'Vérification impossible. Actualisez la page.',
-        logoutFailed: 'Déconnexion impossible. Vérifiez votre connexion et réessayez.'
+        logoutFailed: 'Déconnexion impossible. Vérifiez votre connexion et réessayez.',
+        unknown: 'Firebase a refusé la connexion.'
     }
 };
 
 let busy = false;
 let rememberedEmail = readRememberedEmail();
+let authMessageKey = '';
+let authMessageCode = '';
 
 const text = key => messages[document.documentElement.lang === 'fr' ? 'fr' : 'ru'][key];
 
@@ -135,6 +147,11 @@ function syncEmailMode() {
     $('auth-hint').textContent = text(hasRememberedEmail ? 'hintPassword' : 'hintSetup');
 }
 
+function renderMessage() {
+    const base = authMessageKey ? text(authMessageKey) : '';
+    $('auth-message').textContent = authMessageCode ? `${base} (${authMessageCode})` : base;
+}
+
 function updateLabels() {
     for (const [id, key] of Object.entries({
         'auth-title': 'title',
@@ -149,15 +166,39 @@ function updateLabels() {
     $('auth-logout').setAttribute('aria-label', text('logout'));
     $('auth-submit').textContent = text(busy ? 'working' : 'login');
     syncEmailMode();
-
-    if ($('auth-message').dataset.key) {
-        $('auth-message').textContent = text($('auth-message').dataset.key);
-    }
+    renderMessage();
 }
 
-function message(key = '') {
-    $('auth-message').dataset.key = key;
-    $('auth-message').textContent = key ? text(key) : '';
+function message(key = '', code = '') {
+    authMessageKey = key;
+    authMessageCode = code;
+    renderMessage();
+}
+
+function safeAuthCode(error) {
+    const raw = typeof error?.code === 'string' ? error.code.trim() : '';
+    if (!raw.startsWith('auth/') || raw.length > 220) return 'auth/unknown';
+    return raw.replace(/[^a-zA-Z0-9_./:\-]/g, '?');
+}
+
+function errorMessageKey(code) {
+    const invalid = [
+        'auth/invalid-credential',
+        'auth/invalid-login-credentials',
+        'auth/wrong-password',
+        'auth/user-not-found',
+        'auth/invalid-email'
+    ];
+
+    if (code === 'auth/network-request-failed') return 'network';
+    if (code === 'auth/too-many-requests') return 'limited';
+    if (code === 'auth/user-disabled') return 'disabled';
+    if (code === 'auth/operation-not-allowed' || code === 'auth/configuration-not-found') return 'providerDisabled';
+    if (code === 'auth/unauthorized-domain') return 'unauthorizedDomain';
+    if (code === 'auth/app-not-authorized') return 'appNotAuthorized';
+    if (code === 'auth/invalid-api-key' || code.includes('api-key') || code.includes('referer')) return 'apiKey';
+    if (invalid.includes(code)) return rememberedEmail ? 'invalid' : 'invalidSetup';
+    return 'unknown';
 }
 
 function showAccess(allowed) {
@@ -197,14 +238,18 @@ export function observeOwner(onChange) {
             showAccess(allowed);
             message(user && !allowed ? 'denied' : '');
             deliver(allowed);
-        }, () => {
+        }, error => {
+            const code = safeAuthCode(error);
+            console.warn('S13 auth state:', code);
             showAccess(false);
-            message('failed');
+            message('failed', code);
             deliver(false);
         });
-    }).catch(() => {
+    }).catch(error => {
+        const code = safeAuthCode(error);
+        console.warn('S13 auth persistence:', code);
         showAccess(false);
-        message('failed');
+        message('failed', code);
         deliver(false);
     });
 
@@ -237,27 +282,10 @@ export function observeOwner(onChange) {
             rememberEmail(credential.user.email || email);
             syncEmailMode();
         } catch (error) {
-            // Log only a known-format code, never credentials or the error object.
-            const code = /^auth\/[a-z-]+$/.test(error?.code || '') ? error.code : 'auth/unknown';
+            // Never log credentials or the complete Firebase error object.
+            const code = safeAuthCode(error);
             console.warn('S13 sign-in:', code);
-
-            const invalid = [
-                'auth/invalid-credential',
-                'auth/invalid-login-credentials',
-                'auth/wrong-password',
-                'auth/user-not-found',
-                'auth/invalid-email'
-            ];
-
-            const key = code === 'auth/network-request-failed'
-                ? 'network'
-                : code === 'auth/too-many-requests'
-                    ? 'limited'
-                    : invalid.includes(code)
-                        ? (rememberedEmail ? 'invalid' : 'invalidSetup')
-                        : 'unavailable';
-
-            message(key);
+            message(errorMessageKey(code), code);
         } finally {
             $('auth-password').value = '';
             busy = false;
