@@ -3,7 +3,7 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 const app = initializeApp({
-    apiKey: 'AIzaSyAGWi3iNv1bROpOoulUwh20XSsLokFYrz8x',
+    apiKey: 'AIzaSyAGWi3iNv1bROpOULUwh20XSsLokFYrzx8',
     authDomain: 'fir-13-app.firebaseapp.com',
     projectId: 'fir-13-app',
     storageBucket: 'fir-13-app.firebasestorage.app',
