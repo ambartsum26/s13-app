@@ -2,13 +2,14 @@ const byId = (id) => document.getElementById(id);
 const isFr = () => document.documentElement.lang === 'fr';
 
 const popupSpecs = [
-    { id: 'history-modal', zIndex: 80, close: () => window.closeHistory?.() },
-    { id: 'publisher-picker-modal', zIndex: 100, close: () => window.closePicker?.() },
-    { id: 'confirm-modal', zIndex: 110, close: () => window.closeConfirm?.(false) },
-    { id: 'dialog-modal', zIndex: 9999, close: () => window.closeDialog?.(false) }
+    { id: 'history-modal', zIndex: 80, labelId: 'history-title', close: () => window.closeHistory?.() },
+    { id: 'publisher-picker-modal', zIndex: 100, labelId: 'publisher-picker-title', close: () => window.closePicker?.() },
+    { id: 'confirm-modal', zIndex: 110, labelId: 'confirm-text', close: () => window.closeConfirm?.(false) },
+    { id: 'dialog-modal', zIndex: 9999, labelId: 'dialog-title', close: () => window.closeDialog?.(false) }
 ];
 
 const isOpen = (element) => !!element && !element.classList.contains('hidden');
+const previousFocus = new Map();
 
 function setText(element, value) {
     if (element && element.textContent !== value) element.textContent = value;
@@ -27,6 +28,57 @@ function closeAuxiliaryMenus() {
 function syncScrollLock() {
     const value = popupSpecs.some((spec) => isOpen(byId(spec.id))) ? 'hidden' : '';
     if (document.body.style.overflow !== value) document.body.style.overflow = value;
+}
+
+function focusableElements(modal) {
+    return [...modal.querySelectorAll(
+        'button:not(:disabled), a[href], input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])'
+    )].filter((element) => {
+        const style = getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden' && !element.hidden;
+    });
+}
+
+function focusPopup(spec, modal) {
+    const current = document.activeElement;
+    if (current instanceof HTMLElement && current !== document.body && !modal.contains(current)) {
+        previousFocus.set(spec.id, current);
+    }
+
+    requestAnimationFrame(() => {
+        if (!isOpen(modal)) return;
+        const target = modal.querySelector('input:not(:disabled), textarea:not(:disabled), select:not(:disabled)') || focusableElements(modal)[0];
+        target?.focus({ preventScroll: true });
+    });
+}
+
+function restorePopupFocus(spec) {
+    const target = previousFocus.get(spec.id);
+    previousFocus.delete(spec.id);
+    if (target instanceof HTMLElement && target.isConnected) {
+        requestAnimationFrame(() => target.focus({ preventScroll: true }));
+    }
+}
+
+function trapFocus(event, modal) {
+    if (event.key !== 'Tab') return;
+    const focusables = focusableElements(modal);
+    if (!focusables.length) {
+        event.preventDefault();
+        return;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey && (active === first || !modal.contains(active))) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && (active === last || !modal.contains(active))) {
+        event.preventDefault();
+        first.focus();
+    }
 }
 
 function simplifyStaticLabels() {
@@ -89,9 +141,9 @@ function ensureCityEditControls() {
     const editButton = document.querySelector('#city-menu-wrap > button');
     if (editButton) {
         const currentLabel = byId('btn-edit-city-label')?.textContent || (isFr() ? 'Modifier la ville' : 'Изменить город');
-        const html = '<i class="fa-solid fa-pen"></i>' + `<span id="btn-edit-city-label" class="hidden">${currentLabel}</span>`;
+        const html = '<i class="fa-solid fa-pen" aria-hidden="true"></i>' + `<span id="btn-edit-city-label" class="hidden">${currentLabel}</span>`;
         if (editButton.innerHTML !== html) editButton.innerHTML = html;
-        editButton.title = isFr() ? 'Ville' : 'Город';
+        editButton.title = isFr() ? 'Modifier la ville' : 'Изменить город';
         editButton.setAttribute('aria-label', editButton.title);
         editButton.classList.remove('px-3.5');
         editButton.classList.add('w-10', 'px-0');
@@ -104,12 +156,12 @@ function ensureCityEditControls() {
     const mapButton = menu.querySelector('button[onclick*="editCityMap"]');
 
     if (nameButton) {
-        const html = '<i class="fa-solid fa-signature w-5 mr-1"></i>' + (isFr() ? 'Nom' : 'Название');
+        const html = '<i class="fa-solid fa-signature w-5 mr-1" aria-hidden="true"></i>' + (isFr() ? 'Nom' : 'Название');
         if (nameButton.innerHTML !== html) nameButton.innerHTML = html;
     }
 
     if (mapButton) {
-        const html = '<i class="fa-solid fa-earth-americas w-5 mr-1"></i>' + (isFr() ? 'Lien de carte' : 'Ссылка на карту');
+        const html = '<i class="fa-solid fa-earth-americas w-5 mr-1" aria-hidden="true"></i>' + (isFr() ? 'Lien de carte' : 'Ссылка на карту');
         if (mapButton.innerHTML !== html) mapButton.innerHTML = html;
     }
 }
@@ -125,10 +177,10 @@ function setupPopupBehavior() {
     style.id = 's13-popup-behavior';
     style.textContent = `
         @keyframes popupSurfaceIn {
-            from { opacity: 0; transform: translateY(8px) scale(.985); }
+            from { opacity: 0; transform: translateY(10px) scale(.988); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .s13-popup-overlay > .glass-panel { animation: popupSurfaceIn .18s ease-out; }
+        .s13-popup-overlay > .glass-panel { animation: popupSurfaceIn .18s cubic-bezier(.2,.8,.2,1); }
         #dialog-modal { z-index: 9999 !important; }
         #city-menu {
             z-index: 500 !important;
@@ -137,6 +189,9 @@ function setupPopupBehavior() {
             margin-top: 0 !important;
             max-height: min(320px, calc(100vh - 2rem));
             overflow-y: auto !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .s13-popup-overlay > .glass-panel { animation: none !important; }
         }
     `;
     document.head.appendChild(style);
@@ -162,31 +217,43 @@ function setupPopupBehavior() {
         modal.classList.add('s13-popup-overlay');
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-modal', 'true');
+        if (spec.labelId) modal.setAttribute('aria-labelledby', spec.labelId);
 
         modal.addEventListener('pointerdown', (event) => {
             if (event.target === modal) spec.close();
         });
 
+        let wasOpen = isOpen(modal);
         new MutationObserver(() => {
-            if (isOpen(modal)) {
+            const open = isOpen(modal);
+            if (open && !wasOpen) {
                 closeAuxiliaryMenus();
                 applyCompactUi();
+                focusPopup(spec, modal);
+            } else if (!open && wasOpen) {
+                restorePopupFocus(spec);
             }
+            wasOpen = open;
             syncScrollLock();
         }).observe(modal, { attributes: true, attributeFilter: ['class'] });
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape') return;
-
         const topPopup = getTopOpenPopup();
         if (topPopup) {
-            event.preventDefault();
-            topPopup.close();
+            const modal = byId(topPopup.id);
+            if (modal && event.key === 'Tab') {
+                trapFocus(event, modal);
+                return;
+            }
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                topPopup.close();
+            }
             return;
         }
 
-        byId('city-menu')?.classList.add('hidden');
+        if (event.key === 'Escape') byId('city-menu')?.classList.add('hidden');
     });
 
     syncScrollLock();
