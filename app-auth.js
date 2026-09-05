@@ -22,8 +22,8 @@ export function requireOwner() {
 
 const $ = id => document.getElementById(id);
 const messages = {
-    ru: { title: 'Вход в приложение', email: 'Электронная почта', password: 'Пароль', login: 'Войти', logout: 'Выйти', working: 'Вход…', checking: 'Проверка входа…', hint: 'Вход доступен только владельцу. Сеанс действует до закрытия вкладки.', invalid: 'Не удалось войти. Проверьте почту и пароль.', network: 'Нет связи. Проверьте интернет и повторите вход.', limited: 'Слишком много попыток. Попробуйте позже.', denied: 'У этого аккаунта нет доступа к приложению.', failed: 'Не удалось проверить вход. Обновите страницу.', logoutFailed: 'Не удалось выйти. Проверьте подключение и повторите.' },
-    fr: { title: 'Connexion', email: 'Adresse e-mail', password: 'Mot de passe', login: 'Se connecter', logout: 'Se déconnecter', working: 'Connexion…', checking: 'Vérification…', hint: 'Accès réservé au propriétaire. La session se termine à la fermeture de cet onglet.', invalid: 'Connexion impossible. Vérifiez votre adresse e-mail et votre mot de passe.', network: 'Vérifiez votre connexion Internet et réessayez.', limited: 'Trop de tentatives. Réessayez plus tard.', denied: 'Ce compte ne peut pas accéder à cette application.', failed: 'Vérification impossible. Actualisez la page.', logoutFailed: 'Déconnexion impossible. Vérifiez votre connexion et réessayez.' }
+    ru: { title: 'Вход в приложение', email: 'Электронная почта', password: 'Пароль', login: 'Войти', logout: 'Выйти', working: 'Вход…', checking: 'Проверка входа…', hint: 'Вход доступен только владельцу. Сеанс действует до закрытия вкладки.', unavailable: 'Вход сейчас недоступен из-за настройки приложения. Обратитесь к администратору.', invalid: 'Не удалось войти. Проверьте почту и пароль.', network: 'Нет связи. Проверьте интернет и повторите вход.', limited: 'Слишком много попыток. Попробуйте позже.', denied: 'У этого аккаунта нет доступа к приложению.', failed: 'Не удалось проверить вход. Обновите страницу.', logoutFailed: 'Не удалось выйти. Проверьте подключение и повторите.' },
+    fr: { title: 'Connexion', email: 'Adresse e-mail', password: 'Mot de passe', login: 'Se connecter', logout: 'Se déconnecter', working: 'Connexion…', checking: 'Vérification…', hint: 'Accès réservé au propriétaire. La session se termine à la fermeture de cet onglet.', unavailable: 'Connexion indisponible à cause de la configuration de l’application. Contactez l’administrateur.', invalid: 'Connexion impossible. Vérifiez votre adresse e-mail et votre mot de passe.', network: 'Vérifiez votre connexion Internet et réessayez.', limited: 'Trop de tentatives. Réessayez plus tard.', denied: 'Ce compte ne peut pas accéder à cette application.', failed: 'Vérification impossible. Actualisez la page.', logoutFailed: 'Déconnexion impossible. Vérifiez votre connexion et réessayez.' }
 };
 let busy = false;
 const text = key => messages[document.documentElement.lang === 'fr' ? 'fr' : 'ru'][key];
@@ -80,7 +80,11 @@ export function observeOwner(onChange) {
             await persistence;
             await signInWithEmailAndPassword(auth, $('auth-email').value.trim(), $('auth-password').value);
         } catch (error) {
-            message(error.code === 'auth/network-request-failed' ? 'network' : error.code === 'auth/too-many-requests' ? 'limited' : 'invalid');
+            // Log only a known-format code, never credentials or the error object.
+            const code = /^auth\/[a-z-]+$/.test(error?.code || '') ? error.code : 'auth/unknown';
+            console.warn('S13 sign-in:', code);
+            const invalid = ['auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email'];
+            message(code === 'auth/network-request-failed' ? 'network' : code === 'auth/too-many-requests' ? 'limited' : invalid.includes(code) ? 'invalid' : 'unavailable');
         } finally {
             $('auth-password').value = '';
             busy = false;
