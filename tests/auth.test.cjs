@@ -10,8 +10,8 @@ function dom() {
 }
 const flush = () => new Promise(resolve=>setImmediate(resolve));
 (async()=>{
- const d=dom(), auth={currentUser:null};let callback, loginCalls=0, loginEmail='';const access=[];
- const c=vm.createContext({document:d.document,initializeApp:()=>({}),getFirestore:()=>({}),getAuth:()=>auth,onAuthStateChanged:(_,f)=>{callback=f},setPersistence:async()=>{},browserSessionPersistence:{},signInWithEmailAndPassword:async(_,email)=>{loginCalls++;loginEmail=email;throw {code:'auth/invalid-credential'}},signOut:async()=>{auth.currentUser=null;callback(null)},MutationObserver:class{observe(){}},alert:()=>{}});
+ const d=dom(), auth={currentUser:null};let callback, loginCalls=0, loginEmail='', loginPassword='';const access=[];
+ const c=vm.createContext({document:d.document,initializeApp:()=>({}),getFirestore:()=>({}),getAuth:()=>auth,onAuthStateChanged:(_,f)=>{callback=f},setPersistence:async()=>{},browserSessionPersistence:{},signInWithEmailAndPassword:async(_,email,password)=>{loginCalls++;loginEmail=email;loginPassword=password;throw {code:'auth/invalid-credential'}},signOut:async()=>{auth.currentUser=null;callback(null)},MutationObserver:class{observe(){}},alert:()=>{}});
  vm.runInContext(strip(fs.readFileSync('./app-auth.js','utf8')),c);
  c.access=access;vm.runInContext('observeOwner(value=>access.push(value))',c);await flush();
  assert.equal(d.get('auth-email').hidden,true);assert.equal(d.get('auth-email').value,'admin@s13.com');
@@ -19,8 +19,10 @@ const flush = () => new Promise(resolve=>setImmediate(resolve));
  auth.currentUser={uid:'other'};callback(auth.currentUser);assert.equal(d.document.body.dataset.authState,'locked');assert.deepEqual(access,[false]);assert.match(d.get('auth-message').textContent,/нет доступа/);
  auth.currentUser={uid:'8JAUBlCS2CXO0xTJzY1cnOafzuE2'};callback(auth.currentUser);assert.equal(d.document.body.dataset.authState,'owner');assert.deepEqual(access,[false,true]);
  await d.get('auth-logout').handlers.click();assert.equal(d.document.body.dataset.authState,'locked');assert.deepEqual(access,[false,true,false]);
- d.get('auth-password').value='synthetic-test';await d.get('auth-form').handlers.submit({preventDefault(){}});assert.equal(loginCalls,1);assert.equal(loginEmail,'admin@s13.com');assert.equal(d.get('auth-password').value,'');assert.equal(d.get('auth-submit').disabled,false);assert.match(d.get('auth-message').textContent,/Проверьте пароль/);
- console.log('PASS: password-only login uses technical owner email, signed-out and other UID blocked, owner allowed, logout locked.');
+ d.get('auth-password').value='synthetic-test';await d.get('auth-form').handlers.submit({preventDefault(){}});assert.equal(loginCalls,1);assert.equal(loginEmail,'admin@s13.com');assert.equal(loginPassword,'synthetic-test');assert.equal(d.get('auth-password').value,'');assert.equal(d.get('auth-submit').disabled,false);assert.match(d.get('auth-message').textContent,/Проверьте пароль/);
+ assert.equal(vm.runInContext("errorMessageKey('auth/api-key-not-valid.-please-pass-a-valid-api-key.')",c),'apiKey');
+ assert.equal(vm.runInContext("safeAuthCode({code:'auth/api-key-not-valid.-please-pass-a-valid-api-key.'})",c),'auth/api-key-not-valid.-please-pass-a-valid-api-key.');
+ console.log('PASS: password-only login uses the technical owner email and entered password; auth diagnostics preserve API-key errors.');
 
  const d2=dom();let owner=false, accessCallback, reads=0, pendingRead, unsubscribed=0;
  const subs=[];
