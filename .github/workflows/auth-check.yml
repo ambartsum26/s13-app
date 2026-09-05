@@ -1,4 +1,4 @@
-name: Auth regression checks
+name: Regression checks
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  auth-tests:
+  checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -20,6 +20,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check app-auth.js
+          node --check app-core.js
+          node --check app-ui.js
+          node --check app-popups.js
+          node --check app-cards.js
+          node --check s13-export.js
+          node --check app.js
 
       - name: Run auth tests
         run: node tests/auth.test.cjs
