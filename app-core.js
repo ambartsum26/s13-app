@@ -1,6 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { db, isOwner, requireOwner, observeOwner } from './app-auth.js';
 import {
-    getFirestore,
     collection,
     addDoc,
     updateDoc,
@@ -11,18 +10,6 @@ import {
     where,
     getDocs
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAGWi3iNv1bROpOoulUwh20XSsLokFYrz8x",
-    authDomain: "fir-13-app.firebaseapp.com",
-    projectId: "fir-13-app",
-    storageBucket: "fir-13-app.firebasestorage.app",
-    messagingSenderId: "1080215970738",
-    appId: "1:1080215970738:web:2d66b3b8a9ea26f1e6baab",
-    measurementId: "G-70HBSY6MC6"
-};
-
-const db = getFirestore(initializeApp(firebaseConfig));
 
 const I = {
     ru: {
@@ -132,6 +119,10 @@ let territories = [];
 let publishers = [];
 let activeCityId = null;
 let unsubTerritories = null;
+let unsubCities = null;
+let unsubPublishers = null;
+let sessionVersion = 0;
+let midnightTimer = null;
 let territorySubscriptionVersion = 0;
 let territoriesReady = false;
 let territorySig = '';
@@ -339,6 +330,7 @@ window.toggleTerritoriesMenu = () => {
 };
 
 window.showTerritoryCity = id => {
+    if (!isOwner()) return;
     if (!cities.some(c => c.id === id)) return;
     activeCityId = id;
     setView('territories');
@@ -520,7 +512,7 @@ function subscribeTerritories() {
     unsubTerritories = onSnapshot(
         q,
         snapshot => {
-            if (version !== territorySubscriptionVersion) return;
+            if (version !== territorySubscriptionVersion || !isOwner()) return;
             const next = snapshot.docs
                 .map(d => ({ id: d.id, ...d.data() }))
                 .sort((a, b) => parseInt(a.number) - parseInt(b.number) || (a.number || '').localeCompare(b.number || ''));
@@ -841,9 +833,11 @@ window.deleteHistory = async i => {
 };
 
 function subscribePublishers() {
-    onSnapshot(
+    const version = sessionVersion;
+    unsubPublishers = onSnapshot(
         collection(db, 'publishers'),
         snapshot => {
+            if (version !== sessionVersion || !isOwner()) return;
             const next = snapshot.docs
                 .map(d => ({ id: d.id, ...d.data() }))
                 .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
@@ -856,7 +850,7 @@ function subscribePublishers() {
             if (view === 'publishers') renderPublishers();
             if (!$('publisher-picker-modal').classList.contains('hidden')) renderPicker();
         },
-        setDbError
+        error => { if (version === sessionVersion && isOwner()) setDbError(error); }
     );
 }
 
@@ -976,22 +970,25 @@ function scheduleMidnight() {
     nextDay.setDate(nextDay.getDate() + 1);
     nextDay.setHours(0, 0, 1, 0);
 
-    setTimeout(() => {
+    midnightTimer = setTimeout(() => {
         if (view === 'territories') renderTerritories();
         scheduleMidnight();
     }, Math.max(1000, nextDay.getTime() - now.getTime()));
 }
 
 async function init() {
+    const version = sessionVersion;
     try {
         const snapshot = await getDocs(collection(db, 'cities'));
+        if (version !== sessionVersion || !isOwner()) return;
         cities = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         activeCityId = cities[0]?.id || null;
         renderCities();
 
-        onSnapshot(
+        unsubCities = onSnapshot(
             collection(db, 'cities'),
             snap => {
+                if (version !== sessionVersion || !isOwner()) return;
                 const next = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (JSON.stringify(next) === JSON.stringify(cities)) return;
 
@@ -1014,7 +1011,7 @@ async function init() {
                     updateMap();
                 }
             },
-            setDbError
+            error => { if (version === sessionVersion && isOwner()) setDbError(error); }
         );
 
         // Автоматический импорт имён из истории больше не запускается.
@@ -1030,7 +1027,7 @@ async function init() {
         showHomePage();
         scheduleMidnight();
     } catch (error) {
-        setDbError(error);
+        if (version === sessionVersion && isOwner()) setDbError(error);
     }
 }
 
@@ -1043,6 +1040,7 @@ for (const name of [
     const action = window[name];
     window[name] = async (...args) => {
         try {
+            requireOwner();
             return await action(...args);
         } catch (error) {
             console.error('Save failed:', error);
@@ -1051,5 +1049,37 @@ for (const name of [
     };
 }
 
-init();
+function clearSession() {
+    sessionVersion++;
+    territorySubscriptionVersion++;
+    unsubTerritories?.();
+    unsubCities?.();
+    unsubPublishers?.();
+    unsubTerritories = unsubCities = unsubPublishers = null;
+    clearTimeout(midnightTimer);
+    midnightTimer = null;
+    window.closeDialog(false);
+    window.closeConfirm(false);
+    window.closePicker();
+    window.closeHistory();
+    cities = [];
+    territories = [];
+    publishers = [];
+    activeCityId = null;
+    territorySig = publisherSig = '';
+    setTerritoriesReady(false);
+    for (const id of ['grid', 'cities-container', 'publishers-list', 'publisher-picker-list', 'history-list', 'dialog-fields']) $(id).replaceChildren();
+    for (const id of ['active-city-title', 'history-title', 'dialog-title', 'confirm-text', 'db-status']) setText(id, '');
+    for (const id of ['st-free', 'st-busy', 'st-overdue', 'st-waiting', 'publishers-count']) setText(id, '0');
+    $('publishers-search').value = '';
+    $('publisher-picker-search').value = '';
+    $('map-link').removeAttribute('href');
+    $('city-menu').classList.add('hidden');
+}
 
+export function startApplication() {
+    observeOwner(allowed => {
+        clearSession();
+        if (allowed) init();
+    });
+}

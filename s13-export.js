@@ -1,4 +1,5 @@
 import { getApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { requireOwner } from './app-auth.js';
 import {
     getFirestore,
     collection,
@@ -373,6 +374,7 @@ function safeFileName(value) {
 
 window.exportOfficialRegister = async () => {
     try {
+        requireOwner();
         const city = await resolveActiveCity();
         if (!city) {
             alert('Sélectionnez d’abord une ville.');
@@ -380,6 +382,7 @@ window.exportOfficialRegister = async () => {
         }
 
         const territories = await loadTerritories(city.id);
+        requireOwner();
         const html = makeDocument(city, territories);
         const blob = new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' });
         const url = URL.createObjectURL(blob);

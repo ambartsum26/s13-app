@@ -1,4 +1,4 @@
-import './app-core.js';
+import { startApplication } from './app-core.js';
 import './app-ui.js';
 import './app-popups.js';
 import './app-cards.js';
@@ -17,3 +17,4 @@ function installJwBrand() {
 }
 
 installJwBrand();
+startApplication();

@@ -492,6 +492,8 @@ function decorateHeader() {
 
     const languageToggle = header.querySelector('[data-language-toggle]');
     if (languageToggle && languageToggle.parentElement !== actions) actions.appendChild(languageToggle);
+    const logout = byId('auth-logout');
+    if (logout && logout.parentElement !== actions) actions.appendChild(logout);
 }
 
 function moveCitiesToApplicationBar() {

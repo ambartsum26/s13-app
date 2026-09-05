@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ассистент по участкам</title>
+    <style>
+        body:not([data-auth-state="owner"]) > :not(#auth-panel):not(script):not(style) { display:none !important; }
+        body[data-auth-state="owner"] > #auth-panel { display:none !important; }
+        #auth-panel { max-width:420px; margin:12vh auto 0; padding:28px; border-radius:20px; background:#262631; color:#fff; font-family:system-ui,sans-serif; }
+        #auth-panel h1 { margin:0 0 22px; font-size:22px; }
+        #auth-panel label { display:block; margin:16px 0 7px; font-size:12px; }
+        #auth-panel input { box-sizing:border-box; display:block; width:100%; height:46px; padding:0 12px; border:1px solid #666; border-radius:10px; background:#17171f; color:#fff; font-size:16px; text-transform:none !important; }
+        #auth-panel button { min-height:44px; padding:10px 15px; border-radius:10px; border:0; color:#fff; background:#18784f; cursor:pointer; }
+        #auth-panel #auth-submit { width:100%; margin-top:18px; background:#18784f !important; }
+        #auth-panel #auth-language { float:right; margin:-8px -8px 8px 10px; }
+        #auth-panel input:focus-visible, #auth-panel button:focus-visible { outline:2px solid #31d17f !important; outline-offset:3px; }
+        #auth-panel #auth-hint { font-size:12px; color:#c8c7d1; line-height:1.5; margin-top:18px; text-transform:none !important; }
+        #auth-message { min-height:2.8em; margin:14px 0 0; color:#ffc4c4; font-size:13px; line-height:1.4; text-transform:none !important; }
+    </style>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -204,9 +218,24 @@
     </style>
 </head>
 
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white p-3 sm:p-5 md:p-7">
+<body data-auth-state="locked" class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white p-3 sm:p-5 md:p-7">
+    <section id="auth-panel" aria-labelledby="auth-title">
+        <button id="auth-language" type="button" onclick="toggleLanguage()" aria-label="Русский / Français">RU / FR</button>
+        <h1 id="auth-title">Вход в приложение</h1>
+        <form id="auth-form">
+            <label id="auth-email-label" for="auth-email">Электронная почта</label>
+            <input id="auth-email" type="email" autocomplete="username" required>
+            <label id="auth-password-label" for="auth-password">Пароль</label>
+            <input id="auth-password" type="password" autocomplete="current-password" required>
+            <button id="auth-submit" type="submit">Войти</button>
+        </form>
+        <p id="auth-message" role="status" aria-live="polite"></p>
+        <p id="auth-hint">Вход доступен только владельцу. Сеанс действует до закрытия вкладки.</p>
+        <noscript>Для входа необходимо включить JavaScript.</noscript>
+    </section>
 
     <header class="max-w-[1600px] mx-auto glass-panel rounded-3xl p-4 md:p-5 mb-5 md:mb-6 flex items-center justify-between gap-4">
+        <button id="auth-logout" type="button" class="app-section-button"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span id="auth-logout-label">Выйти</span></button>
         <div class="flex items-center gap-3 min-w-0">
             <button onclick="toggleMobileSidebar()"
                     class="lg:hidden w-10 h-10 shrink-0 rounded-xl border text-slate-200">
