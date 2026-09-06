@@ -65,12 +65,12 @@ const expected = [
     'Svitlana BROZHYK',
     'Zina BROZHYK',
     'Elmira BSHOIAN',
-    'Nataliia DRANCHUK',
     'Roman DRANCHUK',
-    'Aleksandra HODAR',
+    'Nataliia DRANCHUK',
     'Ivan HODAR',
-    'Nadia HRYTSYK',
+    'Aleksandra HODAR',
     'Petro HRYTSYK',
+    'Nadia HRYTSYK',
     'Valerii KOVALCHUK',
     'Vladyslav KOVALCHUK',
     'Tatiana LOKTIONOVA',
@@ -85,8 +85,8 @@ const expected = [
     'Olya OTINOVA',
     'Yaroslav ROMANOV',
     'Anna SEDRAKYAN',
-    'Irina TKACHENKO',
     'Serhii TKACHENKO',
+    'Irina TKACHENKO',
     'Alla TURII',
     'Viktoriia TURII',
     'Evgueniy VELCHEV',
@@ -96,8 +96,9 @@ const expected = [
 ];
 
 assert.deepEqual(actual, expected);
-assert.ok(actual.indexOf('Aleksandra HODAR') < actual.indexOf('Ivan HODAR'));
-assert.ok(actual.indexOf('Alla TURII') < actual.indexOf('Viktoriia TURII'));
-assert.ok(actual.indexOf('Karlen AMBARTSUMOV') < actual.indexOf('Stella ARUSTAMIAN'));
+assert.ok(actual.indexOf('Ivan HODAR') < actual.indexOf('Aleksandra HODAR'));
+assert.ok(actual.indexOf('Petro HRYTSYK') < actual.indexOf('Nadia HRYTSYK'));
+assert.ok(actual.indexOf('Roman DRANCHUK') < actual.indexOf('Nataliia DRANCHUK'));
+assert.ok(actual.indexOf('Serhii TKACHENKO') < actual.indexOf('Irina TKACHENKO'));
 
-console.log('PASS: publishers are displayed as First name SURNAME but sorted by surname, then by first name.');
+console.log('PASS: publishers are sorted by surname, with men first when surnames match.');
