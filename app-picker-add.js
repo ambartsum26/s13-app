@@ -91,7 +91,7 @@ function selectWhenAvailable(fullName) {
     const list = $('publisher-picker-list');
     if (!list) return;
 
-    const expected = fullName.toLocaleLowerCase();
+    const expected = normalize(fullName).toLocaleLowerCase();
     const trySelect = () => {
         const button = [...list.querySelectorAll('button')].find(item =>
             normalize(item.textContent).toLocaleLowerCase() === expected
@@ -170,7 +170,7 @@ function installButton() {
 }
 #publisher-picker-add:hover { background:rgba(16,185,129,.24) !important; }
 #publisher-picker-add:active { transform:scale(.985); }
-#dialog-modal { z-index:90 !important; }
+#dialog-modal { z-index:9999 !important; }
 .s13-publisher-search-hidden { display:none !important; }
 .s13-publisher-suggestions {
     position:absolute;
@@ -215,13 +215,83 @@ function installButton() {
     updateButtonText();
 }
 
+const coreRenderPublishers = window.renderPublishers;
+const coreRenderPicker = window.renderPicker;
+const searchRepairing = new Set();
+
+function preserveInput(input, callback) {
+    if (!input) return callback();
+    const value = input.value;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    input.value = '';
+    callback();
+    input.value = value;
+    try { input.setSelectionRange(start, end); } catch {}
+    return value;
+}
+
+function renderPublishersSearch() {
+    const input = $('publishers-search');
+    const list = $('publishers-list');
+    if (!input || !list || typeof coreRenderPublishers !== 'function') return;
+
+    searchRepairing.add('publishers-search');
+    const queryText = preserveInput(input, coreRenderPublishers) || '';
+
+    [...list.children].forEach(row => {
+        const name = row.querySelector(':scope > b')?.textContent || '';
+        row.classList.toggle('s13-publisher-search-hidden', !publisherMatches(name, queryText));
+    });
+
+    queueMicrotask(() => searchRepairing.delete('publishers-search'));
+}
+
+function renderPickerSearch() {
+    const input = $('publisher-picker-search');
+    const list = $('publisher-picker-list');
+    if (!input || !list || typeof coreRenderPicker !== 'function') return;
+
+    searchRepairing.add('publisher-picker-search');
+    const queryText = preserveInput(input, coreRenderPicker) || '';
+
+    [...list.querySelectorAll(':scope > button')].forEach(button => {
+        button.classList.toggle('s13-publisher-search-hidden', !publisherMatches(button.textContent || '', queryText));
+    });
+
+    queueMicrotask(() => searchRepairing.delete('publisher-picker-search'));
+}
+
+window.renderPublishers = renderPublishersSearch;
+window.renderPicker = renderPickerSearch;
+
+function repairSearchAfterCoreRender(inputId, listId, renderer) {
+    const input = $(inputId);
+    const list = $(listId);
+    if (!input || !list) return;
+
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('inputmode', 'text');
+
+    new MutationObserver(() => {
+        if (searchRepairing.has(inputId) || !input.value.trim()) return;
+        queueMicrotask(() => {
+            if (!searchRepairing.has(inputId) && input.value.trim()) renderer();
+        });
+    }).observe(list, { childList: true });
+}
+
+repairSearchAfterCoreRender('publishers-search', 'publishers-list', renderPublishersSearch);
+repairSearchAfterCoreRender('publisher-picker-search', 'publisher-picker-list', renderPickerSearch);
+
 let publisherCache = [];
 let stopPublisherCache = null;
 
-function refreshActivePublisherSearches() {
-    scheduleSequenceSearch('publishers-search');
-    scheduleSequenceSearch('publisher-picker-search');
-    installDialogAutocomplete();
+function publisherComparator(a, b) {
+    const compare = window.comparePublisherNames;
+    return typeof compare === 'function'
+        ? compare(a.fullName, b.fullName)
+        : a.fullName.localeCompare(b.fullName, 'fr', { sensitivity: 'base' });
 }
 
 function syncPublisherCache() {
@@ -240,106 +310,36 @@ function syncPublisherCache() {
         publisherCache = snapshot.docs
             .map(item => ({ id: item.id, fullName: normalize(item.data()?.fullName) }))
             .filter(item => item.fullName)
-            .sort((a, b) => a.fullName.localeCompare(b.fullName, 'en', { sensitivity: 'base' }));
-        refreshActivePublisherSearches();
+            .sort(publisherComparator);
+
+        if ($('publishers-search')?.value.trim()) renderPublishersSearch();
+        if ($('publisher-picker-search')?.value.trim()) renderPickerSearch();
+        installDialogAutocomplete();
     }, error => {
         console.warn('Publisher autocomplete cache unavailable:', error?.code || 'unknown');
     });
 }
 
-const sequenceSearchConfig = {
-    'publishers-search': {
-        listId: 'publishers-list',
-        renderer: 'renderPublishers',
-        items: list => [...list.children],
-        name: row => row.querySelector(':scope > b')?.textContent || ''
-    },
-    'publisher-picker-search': {
-        listId: 'publisher-picker-list',
-        renderer: 'renderPicker',
-        items: list => [...list.querySelectorAll(':scope > button')],
-        name: button => normalize(button.textContent)
-    }
-};
-
-const sequenceBusy = new Set();
-const sequenceScheduled = new Set();
-
-function applySequenceSearch(inputId) {
-    const config = sequenceSearchConfig[inputId];
-    const input = $(inputId);
-    const list = config && $(config.listId);
-    if (!config || !input || !list || sequenceBusy.has(inputId)) return;
-
-    const queryText = input.value;
-    if (!queryText.trim()) {
-        config.items(list).forEach(item => item.classList.remove('s13-publisher-search-hidden'));
-        return;
-    }
-
-    const renderer = window[config.renderer];
-    if (typeof renderer !== 'function') return;
-
-    sequenceBusy.add(inputId);
-    const start = input.selectionStart;
-    const end = input.selectionEnd;
-
-    try {
-        input.value = '';
-        renderer();
-        input.value = queryText;
-        try { input.setSelectionRange(start, end); } catch {}
-
-        config.items(list).forEach(item => {
-            const name = config.name(item);
-            item.classList.toggle('s13-publisher-search-hidden', !publisherMatches(name, queryText));
-        });
-    } finally {
-        setTimeout(() => sequenceBusy.delete(inputId), 0);
-    }
-}
-
-function scheduleSequenceSearch(inputId) {
-    if (!sequenceSearchConfig[inputId] || sequenceScheduled.has(inputId)) return;
-    sequenceScheduled.add(inputId);
-    queueMicrotask(() => {
-        sequenceScheduled.delete(inputId);
-        applySequenceSearch(inputId);
-    });
-}
-
-function installSequenceSearch(inputId) {
-    const config = sequenceSearchConfig[inputId];
-    const input = $(inputId);
-    const list = config && $(config.listId);
-    if (!config || !input || !list || input.dataset.s13SequenceSearch === '1') return;
-
-    input.dataset.s13SequenceSearch = '1';
-    input.setAttribute('autocomplete', 'off');
-    input.setAttribute('inputmode', 'text');
-    input.addEventListener('input', () => scheduleSequenceSearch(inputId));
-
-    new MutationObserver(() => {
-        if (sequenceBusy.has(inputId) || !input.value.trim()) return;
-        scheduleSequenceSearch(inputId);
-    }).observe(list, { childList: true });
-}
-
 function isPublisherDialog() {
     const modal = $('dialog-modal');
     if (!modal || modal.classList.contains('hidden')) return false;
+
     const title = $('dialog-title')?.textContent || '';
     const labels = [...($('dialog-fields')?.querySelectorAll('label > span') || [])]
         .map(label => label.textContent || '')
         .join(' ');
-    return /возвещател|proclamateur/i.test(`${title} ${labels}`);
+    const combined = `${title} ${labels}`;
+
+    if (/возвещател|proclamateur/i.test(combined)) return true;
+    if (/истори|historique/i.test(title) && ($('dialog-fields')?.querySelectorAll('input').length || 0) >= 3) return true;
+    return false;
 }
 
 function dialogMatches(queryText) {
     return publisherCache
         .map(item => ({ ...item, score: publisherMatchScore(item.fullName, queryText) }))
         .filter(item => Number.isFinite(item.score))
-        .sort((a, b) => a.score - b.score || a.fullName.localeCompare(b.fullName, 'en', { sensitivity: 'base' }))
+        .sort((a, b) => a.score - b.score || publisherComparator(a, b))
         .slice(0, 10);
 }
 
@@ -404,20 +404,11 @@ function installDialogAutocomplete() {
     render();
 }
 
-function installPublisherAutocomplete() {
-    installSequenceSearch('publishers-search');
-    installSequenceSearch('publisher-picker-search');
-    syncPublisherCache();
-    installDialogAutocomplete();
-
-    const publishersList = $('publishers-list');
-    const pickerList = $('publisher-picker-list');
-    if (publishersList) new MutationObserver(() => installSequenceSearch('publishers-search')).observe(publishersList, { childList: true });
-    if (pickerList) new MutationObserver(() => installSequenceSearch('publisher-picker-search')).observe(pickerList, { childList: true });
-
+function installDialogObservers() {
     const dialogModal = $('dialog-modal');
     const dialogFields = $('dialog-fields');
     const dialogTitle = $('dialog-title');
+
     if (dialogModal) new MutationObserver(() => queueMicrotask(installDialogAutocomplete)).observe(dialogModal, { attributes: true, attributeFilter: ['class'] });
     if (dialogFields) new MutationObserver(() => queueMicrotask(installDialogAutocomplete)).observe(dialogFields, { childList: true, subtree: true });
     if (dialogTitle) new MutationObserver(() => queueMicrotask(installDialogAutocomplete)).observe(dialogTitle, { childList: true, characterData: true, subtree: true });
@@ -425,7 +416,6 @@ function installPublisherAutocomplete() {
 
 new MutationObserver(() => {
     updateButtonText();
-    syncPublisherCache();
     queueMicrotask(installDialogAutocomplete);
 }).observe(document.documentElement, {
     attributes: true,
@@ -438,4 +428,5 @@ new MutationObserver(syncPublisherCache).observe(document.body, {
 });
 
 installButton();
-installPublisherAutocomplete();
+installDialogObservers();
+syncPublisherCache();
