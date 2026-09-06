@@ -27,17 +27,18 @@ function installJwBrand() {
     style.id = 's13-firebase-logo-status';
     style.textContent = `
         .app-logo {
-            background:#dc2626 !important;
+            background:#f43f5e !important;
             background-image:none !important;
-            transition:background-color .2s ease, box-shadow .2s ease !important;
+            box-shadow:none !important;
+            transition:background-color .2s ease !important;
         }
         body[data-firebase-state="connected"] .app-logo {
-            background:#16a34a !important;
-            box-shadow:0 0 0 1px rgba(34,197,94,.32), 0 8px 22px rgba(22,163,74,.22) !important;
+            background:var(--dz-green, #20bf72) !important;
+            box-shadow:none !important;
         }
         body[data-firebase-state="disconnected"] .app-logo {
-            background:#dc2626 !important;
-            box-shadow:0 0 0 1px rgba(239,68,68,.32), 0 8px 22px rgba(220,38,38,.20) !important;
+            background:#f43f5e !important;
+            box-shadow:none !important;
         }
     `;
     document.head.appendChild(style);
