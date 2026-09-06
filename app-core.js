@@ -1,9 +1,9 @@
+import { changeHistory, historyRecordIndex, saveUniqueRecord, dataError } from './app-data.js';
 import { db, isOwner, requireOwner, observeOwner } from './app-auth.js';
 import {
     collection,
     addDoc,
     updateDoc,
-    deleteDoc,
     doc,
     onSnapshot,
     query,
@@ -59,6 +59,7 @@ const I = {
         returnBeforeIssue: "Дата сдачи не может быть раньше даты выдачи.",
         duplicateTerritory: "Участок с таким номером уже есть в этом городе.",
         appError: "Ошибка приложения",
+        conflict: "Эту запись уже изменили в другой вкладке. Откройте её заново и повторите действие.",
         saveError: "Не удалось сохранить изменения. Проверьте подключение к интернету и повторите действие. Если ошибка повторяется, проверьте доступ к базе."
     },
     fr: {
@@ -108,6 +109,7 @@ const I = {
         returnBeforeIssue: "La date de retour ne peut pas être antérieure à la date d’attribution.",
         duplicateTerritory: "Un territoire portant ce numéro existe déjà dans cette ville.",
         appError: "Erreur de l’application",
+        conflict: "Cette entrée a changé dans une autre fenêtre. Rouvrez-la et réessayez.",
         saveError: "Impossible d’enregistrer les modifications. Vérifiez votre connexion et réessayez. Si l’erreur persiste, vérifiez l’accès à la base."
     }
 };
@@ -376,6 +378,8 @@ function dialog(title, fields) {
     });
 }
 
+window.requestAppFields = dialog;
+
 window.closeDialog = ok => {
     const resolve = dialogResolve;
     dialogResolve = null;
@@ -488,7 +492,7 @@ window.addTerritory = async () => {
         return;
     }
 
-    await addDoc(collection(db, 'territories'), {
+    await saveUniqueRecord('territories', {
         cityId,
         number,
         mapUrl: values[1]?.trim() || '',
@@ -520,11 +524,16 @@ function subscribeTerritories() {
             const signature = JSON.stringify(next);
             setTerritoriesReady(true);
             if (signature === territorySig) return;
+            const oldHistory = territories.find(t => t.id === historyTerritoryId);
+            const newHistory = next.find(t => t.id === historyTerritoryId);
             territorySig = signature;
             territories = next;
 
             if (view === 'territories') renderTerritories();
-            if (historyTerritoryId) showHistory(historyTerritoryId);
+            if (historyTerritoryId && JSON.stringify(oldHistory) !== JSON.stringify(newHistory)) {
+                if (newHistory) showHistory(historyTerritoryId);
+                else window.closeHistory();
+            }
         },
         error => {
             if (version !== territorySubscriptionVersion) return;
@@ -548,6 +557,8 @@ function attr(value) {
     return esc(value).replace(/"/g, '&quot;');
 }
 
+const cardSignatures = new WeakMap();
+
 function renderTerritories() {
     let free = 0;
     let busy = 0;
@@ -556,9 +567,9 @@ function renderTerritories() {
 
     const grid = $('grid');
     if (!grid) return;
-    grid.innerHTML = '';
+    const existing = new Map([...grid.children].map(card => [card.dataset.territoryId, card]));
 
-    territories.forEach(t => {
+    territories.forEach((t, index) => {
         const active = activeHistory(t);
         const current = active?.record || null;
         const isBusy = !!active;
@@ -585,6 +596,14 @@ function renderTerritories() {
             waiting++;
         } else {
             free++;
+        }
+
+        const signature = JSON.stringify([lang, dateStr(), t]);
+        const previous = existing.get(t.id);
+        existing.delete(t.id);
+        if (previous && cardSignatures.get(previous) === signature) {
+            if (grid.children[index] !== previous) grid.insertBefore(previous, grid.children[index] || null);
+            return;
         }
 
         let cls = 'bg-emerald-900/40 border-emerald-500/60';
@@ -650,8 +669,11 @@ function renderTerritories() {
                 ${action}
             </div>`;
 
-        grid.append(card);
+        cardSignatures.set(card, signature);
+        if (previous) previous.replaceWith(card);
+        if (grid.children[index] !== card) grid.insertBefore(card, grid.children[index] || null);
     });
+    existing.forEach(card => card.remove());
 
     setText('st-free', free);
     setText('st-busy', busy);
@@ -676,11 +698,12 @@ window.editTerritory = async id => {
         return;
     }
 
-    await updateDoc(doc(db, 'territories', id), {
+    await saveUniqueRecord('territories', {
+        cityId: t.cityId,
         number,
         mapUrl: values[1].trim(),
         russianSpeakers: Math.max(0, parseInt(values[2]) || 0)
-    });
+    }, t);
 };
 
 window.issueTerritory = async id => {
@@ -707,17 +730,18 @@ window.issueTerritory = async id => {
     const publisher = await pickPublisher();
     if (!publisher) return;
 
-    const history = [
-        ...(t.history || []),
-        {
+    await changeHistory(id, async (history, current, transaction) => {
+        if (activeHistory({ history })) throw dataError('alreadyIssued');
+        if (!canIssue({ history })) throw dataError('cantIssue');
+        const latestPublisher = await transaction.get(doc(db, 'publishers', publisher.id));
+        if (!latestPublisher.exists()) throw dataError('conflict');
+        history.push({
             publisherId: publisher.id,
-            publisher: publisher.fullName,
+            publisher: latestPublisher.data().fullName,
             issuedAt: dateStr(),
             returnedAt: null
-        }
-    ];
-
-    await updateDoc(doc(db, 'territories', id), { history });
+        });
+    });
 };
 
 window.returnTerritory = async id => {
@@ -732,9 +756,10 @@ window.returnTerritory = async id => {
         return;
     }
 
-    const history = [...(t.history || [])];
-    history[active.index] = { ...history[active.index], returnedAt: dateStr() };
-    await updateDoc(doc(db, 'territories', id), { history });
+    await changeHistory(id, history => {
+        const index = historyRecordIndex(history, active.record);
+        history[index] = { ...history[index], returnedAt: dateStr() };
+    });
 };
 
 window.showHistory = id => {
@@ -801,24 +826,19 @@ window.editHistory = async i => {
         return;
     }
 
-    if (!returnedAt) {
-        const anotherOpen = (t.history || []).some((record, index) => index !== i && record && !record.returnedAt);
-        if (anotherOpen) {
-            alert(tr('anotherOpen'));
-            return;
+    await changeHistory(t.id, history => {
+        const index = historyRecordIndex(history, h);
+        if (!returnedAt && history.some((record, other) => other !== index && !record.returnedAt)) {
+            throw dataError('anotherOpen');
         }
-    }
-
-    const history = [...t.history];
-    history[i] = {
-        ...h,
-        publisherId: norm(publisherName) === norm(h.publisher) ? (h.publisherId || null) : null,
-        publisher: publisherName,
-        issuedAt,
-        returnedAt
-    };
-
-    await updateDoc(doc(db, 'territories', t.id), { history });
+        history[index] = {
+            ...history[index],
+            publisherId: norm(publisherName) === norm(h.publisher) ? (h.publisherId || null) : null,
+            publisher: publisherName,
+            issuedAt,
+            returnedAt
+        };
+    });
 };
 
 window.deleteHistory = async i => {
@@ -827,9 +847,9 @@ window.deleteHistory = async i => {
 
     if (!await confirmBox(`${lang === 'fr' ? 'Supprimer' : 'Удалить'} #${i + 1} (${t.history[i].publisher})?`)) return;
 
-    const history = [...t.history];
-    history.splice(i, 1);
-    await updateDoc(doc(db, 'territories', t.id), { history });
+    await changeHistory(t.id, history => {
+        history.splice(historyRecordIndex(history, t.history[i]), 1);
+    });
 };
 
 function subscribePublishers() {
@@ -888,7 +908,7 @@ window.addPublisher = async () => {
         return;
     }
 
-    await addDoc(collection(db, 'publishers'), {
+    await saveUniqueRecord('publishers', {
         fullName,
         nameKey: norm(fullName),
         createdAt: dateStr()
@@ -911,10 +931,10 @@ window.editPublisher = async id => {
         return;
     }
 
-    await updateDoc(doc(db, 'publishers', id), {
+    await saveUniqueRecord('publishers', {
         fullName,
         nameKey: norm(fullName)
-    });
+    }, p);
 };
 
 window.deletePublisher = async id => {
@@ -922,7 +942,7 @@ window.deletePublisher = async id => {
     if (!p) return;
 
     if (await confirmBox(`${lang === 'fr' ? 'Supprimer' : 'Удалить'} ${p.fullName}?`)) {
-        await deleteDoc(doc(db, 'publishers', id));
+        await saveUniqueRecord('publishers', { fullName: p.fullName }, p, true);
     }
 };
 
@@ -1044,7 +1064,7 @@ for (const name of [
             return await action(...args);
         } catch (error) {
             console.error('Save failed:', error);
-            alert(tr('saveError'));
+            alert(tr(error.code?.startsWith('s13/') ? error.code.slice(4) : 'saveError'));
         }
     };
 }

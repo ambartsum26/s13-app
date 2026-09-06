@@ -115,6 +115,28 @@ async function loadTerritories(cityId) {
         .sort(compareTerritoryNumbers);
 }
 
+function currentServiceYear(now = new Date()) {
+    return now.getFullYear() + (now.getMonth() >= 8 ? 1 : 0);
+}
+
+function forServiceYear(territories, year) {
+    const start = `${year - 1}-09-01`;
+    const end = `${year}-09-01`;
+    return territories.map(territory => {
+        const all = Array.isArray(territory.history) ? territory.history : [];
+        const previous = all.filter(record => parseIsoDate(record?.returnedAt) && record.returnedAt < start)
+            .map(record => record.returnedAt).sort().at(-1) || '';
+        const history = all.filter(record => {
+            // Do not silently hide malformed legacy dates in an annual report.
+            if (!parseIsoDate(record?.issuedAt) || (record.returnedAt && !parseIsoDate(record.returnedAt))) {
+                throw new Error('invalid-history-date');
+            }
+            return record.issuedAt < end && (!record.returnedAt || record.returnedAt >= start);
+        }).sort((a, b) => a.issuedAt.localeCompare(b.issuedAt));
+        return { ...territory, history, previousCompletion: previous };
+    });
+}
+
 function buildHeaderGroups() {
     return Array.from({ length: HISTORY_GROUPS_PER_SHEET }, () =>
         '<th colspan="2" class="assigned-to">Attribué à</th>'
@@ -144,7 +166,7 @@ function buildTerritoryRows(territories, startIndex) {
             );
         }
 
-        const previousCompletion = latestCompletedBefore(history, startIndex);
+        const previousCompletion = latestCompletedBefore(history, startIndex) || territory.previousCompletion || '';
 
         return `
             <tbody class="territory-pair">
@@ -158,9 +180,8 @@ function buildTerritoryRows(territories, startIndex) {
     }).join('');
 }
 
-function buildSheet(city, territories, sheetIndex, sheetCount) {
+function buildSheet(city, territories, sheetIndex, sheetCount, serviceYear) {
     const startIndex = sheetIndex * HISTORY_GROUPS_PER_SHEET;
-    const serviceYear = new Date().getFullYear();
     const finalClass = sheetIndex === sheetCount - 1 ? 'sheet final-sheet' : 'sheet';
 
     return `
@@ -197,14 +218,14 @@ function buildSheet(city, territories, sheetIndex, sheetCount) {
         </div>`;
 }
 
-function makeDocument(city, territories) {
+function makeDocument(city, territories, serviceYear) {
     const maxHistory = Math.max(
         0,
         ...territories.map(territory => Array.isArray(territory.history) ? territory.history.length : 0)
     );
     const sheetCount = Math.max(1, Math.ceil(maxHistory / HISTORY_GROUPS_PER_SHEET));
     const sheets = Array.from({ length: sheetCount }, (_, index) =>
-        buildSheet(city, territories, index, sheetCount)
+        buildSheet(city, territories, index, sheetCount, serviceYear)
     ).join('');
 
     return `<!DOCTYPE html>
@@ -372,8 +393,24 @@ function safeFileName(value) {
     return normalized || 'ville';
 }
 
+let exporting = false;
 window.exportOfficialRegister = async () => {
+    if (exporting) return;
+    exporting = true;
+    const isFr = document.documentElement.lang === 'fr';
     try {
+        requireOwner();
+        const values = await window.requestAppFields('S-13', [{
+            label: isFr ? 'Année de service (septembre–août)' : 'Служебный год (сентябрь–август)',
+            value: String(currentServiceYear())
+        }]);
+        if (!values) return;
+        const rawYear = values[0].trim();
+        const year = Number(rawYear);
+        if (!/^\d{4}$/.test(rawYear) || year < 1900 || year > 9998) {
+            alert(isFr ? 'Saisissez une année à quatre chiffres.' : 'Введите год четырьмя цифрами.');
+            return;
+        }
         requireOwner();
         const city = await resolveActiveCity();
         if (!city) {
@@ -383,18 +420,22 @@ window.exportOfficialRegister = async () => {
 
         const territories = await loadTerritories(city.id);
         requireOwner();
-        const html = makeDocument(city, territories);
+        const html = makeDocument(city, forServiceYear(territories, year), year);
         const blob = new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `S-13_${safeFileName(city.name)}.doc`;
+        anchor.download = `S-13_${safeFileName(city.name)}_${year}.doc`;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
         setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (error) {
         console.error('S-13 export error:', error);
-        alert('Impossible de créer le formulaire S-13.');
+        alert(error.message === 'invalid-history-date'
+            ? (isFr ? 'Corrigez les dates dans l’historique avant l’export.' : 'Исправьте некорректные даты в истории перед экспортом.')
+            : (isFr ? 'Impossible de créer le formulaire S-13.' : 'Не удалось создать бланк S-13.'));
+    } finally {
+        exporting = false;
     }
 };
