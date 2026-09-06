@@ -1,7 +1,7 @@
 const touchStyle = document.createElement('style');
 touchStyle.id = 's13-touch-optimizations';
 touchStyle.textContent = `
-/* Final interaction layer for phones, tablets and other coarse pointers. */
+/* Final interaction layer for phones, tablets and hybrid touch devices. */
 html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -24,6 +24,7 @@ html {
     }
 }
 
+/* Primary-touch devices: phones, tablets and iPad without a fine primary pointer. */
 @media (hover: none), (pointer: coarse) {
     html,
     body {
@@ -149,7 +150,7 @@ html {
         padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
     }
 
-    /* Neutralize sticky hover states that mobile Safari/Chrome can retain after a tap. */
+    /* Neutralize sticky hover only when touch is the primary interaction. */
     button:not([data-language-toggle]):not(:disabled):hover,
     a#map-link:hover,
     a.mini-btn:hover,
@@ -248,6 +249,138 @@ html {
     .territory-card .card-icon-action:not(:disabled):active i,
     .territory-card .card-main-action:not(:disabled):active i {
         color: #11141a !important;
+    }
+}
+
+/* Hybrid iPad/tablet mode: keep desktop-like hover/trackpad behavior while retaining finger-sized targets. */
+@media (any-pointer: coarse) and (hover: hover) {
+    button,
+    a[href],
+    [role="button"] {
+        min-height: 48px;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    input,
+    select,
+    textarea,
+    #publishers-search,
+    #publisher-picker-search,
+    #dialog-fields input,
+    #dialog-fields select,
+    #dialog-fields textarea {
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+
+    .app-section-button,
+    [data-language-toggle],
+    .app-city-controls button,
+    .app-status-toolbar button,
+    .app-status-toolbar a,
+    #city-menu button,
+    #publisher-picker-list button,
+    #publisher-picker-add,
+    .s13-popup-overlay button {
+        min-height: 48px !important;
+    }
+
+    .app-section-button,
+    [data-language-toggle] {
+        height: 48px !important;
+    }
+
+    #cities-container {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        touch-action: pan-x !important;
+        scroll-padding-inline: 8px;
+    }
+
+    #cities-container button {
+        min-height: 50px !important;
+    }
+
+    #publishers-list {
+        grid-auto-rows: 68px !important;
+    }
+
+    #publishers-list > div,
+    .publisher-row {
+        height: 68px !important;
+        min-height: 68px !important;
+        max-height: 68px !important;
+        grid-template-columns: minmax(0,1fr) 104px !important;
+    }
+
+    #publishers-list > div > div,
+    .publisher-row > div {
+        grid-template-columns: repeat(2,48px) !important;
+        width: 104px !important;
+        min-width: 104px !important;
+        max-width: 104px !important;
+    }
+
+    #publishers-list > div button,
+    .publisher-row button,
+    .territory-card .card-icon-action,
+    .territory-card a.card-map-action,
+    .territory-card .copy-map-btn.card-icon-action,
+    .territory-card a.mini-btn.card-map-action {
+        width: 48px !important;
+        min-width: 48px !important;
+        max-width: 48px !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        max-height: 48px !important;
+    }
+
+    .territory-card .card-main-action {
+        width: 60px !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+        height: 60px !important;
+        min-height: 60px !important;
+        max-height: 60px !important;
+    }
+
+    .status-chip.s13-filter-control,
+    .status-chip[role="button"] {
+        min-height: 58px !important;
+    }
+
+    .s13-popup-overlay,
+    .s13-popup-overlay > .glass-panel {
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Desktop-like iPad sizing: preserve 2-column portrait / 3-column landscape layout with touch comfort. */
+@media (min-width: 640px) and (max-width: 1366px) and (any-pointer: coarse) {
+    body {
+        padding-top: max(11px, env(safe-area-inset-top)) !important;
+        padding-right: max(11px, env(safe-area-inset-right)) !important;
+        padding-bottom: max(11px, env(safe-area-inset-bottom)) !important;
+        padding-left: max(11px, env(safe-area-inset-left)) !important;
+    }
+
+    .app-header {
+        top: max(8px, env(safe-area-inset-top)) !important;
+    }
+
+    .app-city-controls,
+    .app-status-toolbar,
+    #city-switcher-panel,
+    #publishers-page > .glass-panel {
+        scroll-margin-top: 86px;
+    }
+
+    .s13-popup-overlay {
+        padding-left: max(12px, env(safe-area-inset-left)) !important;
+        padding-right: max(12px, env(safe-area-inset-right)) !important;
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
     }
 }
 
