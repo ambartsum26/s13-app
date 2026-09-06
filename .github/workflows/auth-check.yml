@@ -30,3 +30,4 @@ jobs:
           node tests/auth.test.cjs
           node tests/data.test.cjs
           node tests/export.test.cjs
+          node tests/publisher-sort.test.cjs
