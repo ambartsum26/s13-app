@@ -7,6 +7,7 @@ import './app-publisher-roster.js';
 import './app-publisher-sort.js';
 import './app-picker-add.js';
 import './s13-export.js';
+import './app-touch.js';
 
 function installJwBrand() {
     const header = document.querySelector('header');
