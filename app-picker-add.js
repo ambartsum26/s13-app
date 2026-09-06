@@ -20,7 +20,7 @@ const text = {
         field: 'Prénom et nom',
         placeholder: 'Prénom NOM',
         exists: 'Ce proclamateur existe déjà dans la base.',
-        failed: 'Impossible d’ajouter le proclamateur. Vérifiez la connexion и réessayez.'
+        failed: 'Impossible d’ajouter le proclamateur. Vérifiez la connexion et réessayez.'
     }
 };
 
