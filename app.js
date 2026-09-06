@@ -1,6 +1,6 @@
 import { startApplication } from './app-core.js';
 import { db } from './app-auth.js';
-import { doc, getDocFromServer } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import './app-ui.js';
 import './app-popups.js';
 import './app-cards.js';
@@ -49,7 +49,7 @@ function installFirebaseIndicator(logo) {
     const status = $('db-status');
     const title = $('app-title');
 
-    // The header no longer shows an app title or a separate Firebase text/dot.
+    // The header no longer shows the app title or a separate Firebase text/dot.
     title?.remove();
     if (status) {
         status.hidden = true;
@@ -58,7 +58,7 @@ function installFirebaseIndicator(logo) {
         if (status.parentElement) status.parentElement.style.display = 'none';
     }
 
-    let verificationVersion = 0;
+    let stopProbe = null;
 
     const setState = connected => {
         const isConnected = !!connected && navigator.onLine && document.body.dataset.authState === 'owner';
@@ -81,7 +81,28 @@ function installFirebaseIndicator(logo) {
         return /firebase\s+подключен/i.test(text) || /firebase\s+connecté/i.test(text);
     };
 
-    const syncFromCoreStatus = () => setState(coreStatusIsConnected());
+    const syncFromCoreStatus = () => {
+        if (!coreStatusIsConnected()) setState(false);
+    };
+
+    const stopFirebaseProbe = () => {
+        stopProbe?.();
+        stopProbe = null;
+    };
+
+    const startFirebaseProbe = () => {
+        if (stopProbe || document.body.dataset.authState !== 'owner') return;
+
+        // This listener is intentionally pointed at one tiny probe document.
+        // includeMetadataChanges lets us distinguish a server-confirmed snapshot
+        // from cached data when Firestore temporarily loses its backend connection.
+        stopProbe = onSnapshot(
+            doc(db, 'appMigrations', 'firebase-connection-probe'),
+            { includeMetadataChanges: true },
+            snapshot => setState(!snapshot.metadata.fromCache),
+            () => setState(false)
+        );
+    };
 
     if (status) {
         new MutationObserver(syncFromCoreStatus).observe(status, {
@@ -93,44 +114,33 @@ function installFirebaseIndicator(logo) {
 
     new MutationObserver(() => {
         if (document.body.dataset.authState !== 'owner') {
+            stopFirebaseProbe();
             setState(false);
             return;
         }
-        // Wait for app-core to confirm Firebase after authentication.
+
         setState(false);
+        startFirebaseProbe();
     }).observe(document.body, {
         attributes: true,
         attributeFilter: ['data-auth-state']
     });
 
-    window.addEventListener('offline', () => {
-        verificationVersion++;
+    window.addEventListener('offline', () => setState(false));
+    window.addEventListener('online', () => {
         setState(false);
-    });
-
-    window.addEventListener('online', async () => {
-        const version = ++verificationVersion;
-        setState(false);
-        if (document.body.dataset.authState !== 'owner') return;
-
-        try {
-            // A server-only read verifies Firebase itself, not merely Internet access.
-            await getDocFromServer(doc(db, 'appMigrations', 'firebase-connection-probe'));
-            if (version === verificationVersion) setState(true);
-        } catch {
-            if (version === verificationVersion) setState(false);
-        }
+        if (document.body.dataset.authState === 'owner') startFirebaseProbe();
     });
 
     new MutationObserver(() => {
-        if (document.body.dataset.firebaseState === 'connected') setState(true);
-        else setState(false);
+        setState(document.body.dataset.firebaseState === 'connected');
     }).observe(document.documentElement, {
         attributes: true,
         attributeFilter: ['lang']
     });
 
     setState(false);
+    if (document.body.dataset.authState === 'owner') startFirebaseProbe();
 }
 
 const jwLogo = installJwBrand();
