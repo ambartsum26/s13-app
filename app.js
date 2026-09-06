@@ -11,6 +11,7 @@ import './app-picker-add.js';
 import './s13-export.js';
 import './app-touch.js';
 import './app-apple-glass.js';
+import './app-samsung-oneui.js';
 
 const $ = id => document.getElementById(id);
 
