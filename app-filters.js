@@ -31,24 +31,85 @@ const style = document.createElement('style');
 style.id = 's13-status-filters';
 style.textContent = `
 #grid > article.s13-filter-hidden { display:none !important; }
+
 .status-chip.s13-filter-control {
     cursor:pointer !important;
     user-select:none;
+    -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    min-width:0 !important;
+    position:relative;
     transition:transform .16s ease, box-shadow .16s ease, filter .16s ease !important;
 }
-.status-chip.s13-filter-control:hover { filter:brightness(1.08); }
+
+@media (hover:hover) and (pointer:fine) {
+    .status-chip.s13-filter-control:hover { filter:brightness(1.08); }
+}
+
 .status-chip.s13-filter-control:focus-visible {
     outline:none !important;
     box-shadow:0 0 0 3px rgba(255,255,255,.62) !important;
 }
+
+.status-chip.s13-filter-control:active {
+    transform:scale(.975) !important;
+    filter:brightness(1.12);
+}
+
 .status-chip.s13-filter-active {
     box-shadow:0 0 0 3px rgba(255,255,255,.92) !important;
     transform:translateY(-1px) !important;
     filter:brightness(1.08);
 }
+
+@media (max-width:639px) {
+    .app-status-grid {
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:7px !important;
+        width:100% !important;
+        min-width:0 !important;
+    }
+
+    .status-chip.s13-filter-control {
+        width:100% !important;
+        min-width:0 !important;
+        min-height:56px !important;
+        height:56px !important;
+        padding:0 10px !important;
+    }
+
+    .status-chip.s13-filter-control b {
+        font-size:1.3rem !important;
+    }
+}
+
+@media (max-width:359px) {
+    .app-status-grid { gap:6px !important; }
+    .status-chip.s13-filter-control {
+        min-height:54px !important;
+        height:54px !important;
+        padding:0 7px !important;
+    }
+    .status-chip.s13-filter-control b { font-size:1.2rem !important; }
+}
+
 @media (hover:none), (pointer:coarse) {
-    .status-chip.s13-filter-control:hover { filter:none; }
-    .status-chip.s13-filter-active { transform:none !important; filter:brightness(1.08); }
+    .status-chip.s13-filter-control {
+        min-height:58px !important;
+    }
+
+    .status-chip.s13-filter-control:active {
+        transform:scale(.97) !important;
+        filter:brightness(1.14);
+    }
+
+    .status-chip.s13-filter-active {
+        transform:none !important;
+        filter:brightness(1.10);
+        box-shadow:0 0 0 3px rgba(255,255,255,.92) !important;
+    }
 }
 `;
 document.head.appendChild(style);
