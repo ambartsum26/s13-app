@@ -18,7 +18,7 @@ const auth = getAuth(app);
 // Firebase Auth validates the password; owner access is checked by the stable UID.
 // Keep this sign-in email in sync with the existing Firebase Authentication user.
 const OWNER_EMAIL = 'ambartsum.tigran@gmail.com';
-const OWNER_UID = '8JAUBlCS2CXO0xTJzY1cnOafzuE2';
+const OWNER_UID = 'fJT9srxZezNyAVC1NO2Rm6jdK4G3';
 
 export const isOwner = () => auth.currentUser?.uid === OWNER_UID;
 export function requireOwner() {
