@@ -14,6 +14,74 @@ import './app-apple-glass.js';
 
 const $ = id => document.getElementById(id);
 
+function installAppleAuthGlass() {
+    const style = document.createElement('style');
+    style.id = 's13-apple-auth-glass';
+    style.textContent = `
+        html.s13-apple-liquid-glass #auth-panel {
+            position:relative;
+            overflow:hidden;
+            background:rgba(39,39,49,.62) !important;
+            border:1px solid rgba(255,255,255,.16) !important;
+            box-shadow:0 24px 70px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.09) !important;
+            -webkit-backdrop-filter:saturate(1.28) blur(26px) !important;
+            backdrop-filter:saturate(1.28) blur(26px) !important;
+        }
+        html.s13-apple-liquid-glass #auth-panel::before {
+            content:'';
+            position:absolute;
+            inset:1px 1px auto 1px;
+            height:42%;
+            border-radius:inherit;
+            pointer-events:none;
+            background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0));
+        }
+        html.s13-apple-liquid-glass #auth-panel input {
+            background:rgba(17,17,24,.50) !important;
+            border:1px solid rgba(255,255,255,.10) !important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.05) !important;
+            -webkit-backdrop-filter:blur(16px) !important;
+            backdrop-filter:blur(16px) !important;
+        }
+        html.s13-apple-liquid-glass #auth-panel input:focus-visible {
+            outline:none !important;
+            border-color:rgba(49,209,127,.34) !important;
+            box-shadow:0 0 0 3px rgba(49,209,127,.10), inset 0 1px 0 rgba(255,255,255,.05) !important;
+        }
+        html.s13-apple-liquid-glass #auth-panel button:not([data-language-toggle]),
+        html.s13-apple-liquid-glass #auth-panel #auth-submit {
+            background:rgba(67,66,82,.56) !important;
+            border:1px solid rgba(255,255,255,.10) !important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important;
+            -webkit-backdrop-filter:blur(16px) !important;
+            backdrop-filter:blur(16px) !important;
+        }
+        html.s13-apple-liquid-glass #auth-panel #auth-submit {
+            background:rgba(32,191,114,.78) !important;
+            border-color:rgba(255,255,255,.12) !important;
+        }
+        html.s13-apple-liquid-glass #auth-panel [data-language-toggle],
+        html.s13-apple-liquid-glass #auth-panel #auth-language {
+            background:rgba(18,18,25,.48) !important;
+            border:1px solid rgba(255,255,255,.10) !important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.06) !important;
+            -webkit-backdrop-filter:blur(18px) !important;
+            backdrop-filter:blur(18px) !important;
+        }
+        html.s13-apple-liquid-glass #auth-panel button:active {
+            transform:scale(.97) !important;
+        }
+        @media (prefers-reduced-transparency: reduce) {
+            html.s13-apple-liquid-glass #auth-panel {
+                background:rgba(38,38,49,.95) !important;
+                -webkit-backdrop-filter:none !important;
+                backdrop-filter:none !important;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 function installJwBrand() {
     const header = document.querySelector('header');
     if (!header) return null;
@@ -145,6 +213,7 @@ function installFirebaseIndicator(logo) {
     if (document.body.dataset.authState === 'owner') startFirebaseProbe();
 }
 
+installAppleAuthGlass();
 const jwLogo = installJwBrand();
 installFirebaseIndicator(jwLogo);
 startApplication();
