@@ -193,3 +193,116 @@ function setupPopupBehavior() {
 }
 
 setupPopupBehavior();
+
+ 
+// Internal navigation: closing a child returns to its existing parent surface.
+function setupInternalBack() {
+    let cityEdit = null;
+    const closeDialog = window.closeDialog;
+    window.closeDialog = ok => {
+        if (cityEdit) cityEdit.returnToMenu = !!ok || cityEdit.back;
+        closeDialog(ok);
+    };
+    for (const name of ['renameCity', 'editCityMap']) {
+        const action = window[name];
+        window[name] = async (...args) => {
+            const context = { back: false, returnToMenu: false };
+            cityEdit = context;
+            try {
+                await action(...args);
+            } finally {
+                if (cityEdit === context) cityEdit = null;
+                if (context.returnToMenu && document.body.dataset.authState === 'owner') {
+                    byId('city-menu')?.classList.remove('hidden');
+                }
+            }
+        };
+    }
+
+    const buttons = [];
+    function backButton(parent, action) {
+        if (!parent) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 's13-back-button';
+        button.onclick = action;
+        parent.prepend(button);
+        buttons.push(button);
+        return button;
+    }
+    const updateLabels = () => buttons.forEach(button => {
+        button.textContent = isFr() ? '← Retour' : '← Назад';
+        button.setAttribute('aria-label', isFr() ? 'Revenir au niveau précédent' : 'На предыдущий уровень');
+    });
+
+    popupSpecs.forEach(spec => {
+        const modal = byId(spec.id);
+        backButton(modal?.firstElementChild, () => {
+            if (spec.id === 'dialog-modal' && cityEdit) cityEdit.back = true;
+            spec.close();
+        });
+    });
+    backButton(byId('city-menu'), () => closeAuxiliaryMenus());
+
+    // Keep a page stack in memory; never use the browser's history or replay writes.
+    const pages = [];
+    let current = null;
+    let replaying = false;
+    function remember(next) {
+        if (document.body.dataset.authState !== 'owner') return;
+        if (current && (current.page !== next.page || current.city !== next.city)) {
+            if (!replaying) pages.push({ ...current, scroll: window.scrollY });
+        }
+        current = next;
+        refresh();
+    }
+    const showCity = window.showTerritoryCity;
+    window.showTerritoryCity = id => {
+        showCity(id);
+        remember({ page: 'territories', city: id });
+    };
+    const showPublishers = window.showPublishersPage;
+    window.showPublishersPage = (...args) => {
+        showPublishers(...args);
+        remember({ page: 'publishers' });
+    };
+    const pageBack = backButton(document.querySelector('main'), () => {
+        const previous = pages.pop();
+        if (!previous) return;
+        replaying = true;
+        try {
+            if (previous.page === 'publishers') window.showPublishersPage();
+            else window.showTerritoryCity(previous.city);
+        } finally {
+            replaying = false;
+            refresh();
+        }
+        requestAnimationFrame(() => window.scrollTo(0, previous.scroll || 0));
+    });
+    function refresh() {
+        if (pageBack) pageBack.hidden = pages.length === 0;
+    }
+    new MutationObserver(() => {
+        if (document.body.dataset.authState !== 'owner') {
+            pages.length = 0;
+            current = null;
+            cityEdit = null;
+            refresh();
+        }
+    }).observe(document.body, { attributes: true, attributeFilter: ['data-auth-state'] });
+
+    const style = document.createElement('style');
+    style.textContent = `
+        .s13-back-button { min-height:44px; padding:8px 12px; margin-bottom:10px;
+            border-radius:10px; font-size:13px; cursor:pointer; }
+        .s13-back-button[hidden] { display:none !important; }
+    `;
+    document.head.appendChild(style);
+    new MutationObserver(updateLabels).observe(document.documentElement, {
+        attributes: true, attributeFilter: ['lang']
+    });
+    updateLabels();
+    refresh();
+}
+
+setupInternalBack();
