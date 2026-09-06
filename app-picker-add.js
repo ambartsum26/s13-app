@@ -244,7 +244,7 @@ function renderPublishersSearch() {
         row.classList.toggle('s13-publisher-search-hidden', !publisherMatches(name, queryText));
     });
 
-    queueMicrotask(() => searchRepairing.delete('publishers-search'));
+    setTimeout(() => searchRepairing.delete('publishers-search'), 0);
 }
 
 function renderPickerSearch() {
@@ -259,7 +259,7 @@ function renderPickerSearch() {
         button.classList.toggle('s13-publisher-search-hidden', !publisherMatches(button.textContent || '', queryText));
     });
 
-    queueMicrotask(() => searchRepairing.delete('publisher-picker-search'));
+    setTimeout(() => searchRepairing.delete('publisher-picker-search'), 0);
 }
 
 window.renderPublishers = renderPublishersSearch;
