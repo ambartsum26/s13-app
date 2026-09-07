@@ -1,4 +1,4 @@
-name: Build Tailwind artifact
+name: Build production assets
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,40 +23,50 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Install pinned build dependencies
+        run: npm install --no-save --package-lock=false esbuild@0.28.2 firebase@10.8.0
+
       - name: Build static Tailwind CSS
         run: npx --yes tailwindcss@3.4.17 -c tailwind.config.cjs -i tailwind.input.css -o tailwind.generated.css --minify
 
-      - name: Replace production Play CDN with local CSS
+      - name: Build local production JavaScript
+        run: node scripts/build-production.mjs
+
+      - name: Switch production HTML to local assets
         run: |
           python - <<'PY'
           from pathlib import Path
           path = Path('index.html')
           source = path.read_text()
-          old = '''    <script src="https://cdn.tailwindcss.com"></script>\n    <script>\n        tailwind.config = { darkMode: 'class' };\n    </script>'''
-          new = '    <link rel="stylesheet" href="./tailwind.generated.css">'
-          if old in source:
-              source = source.replace(old, new, 1)
-              path.write_text(source)
-          elif 'tailwind.generated.css' not in source:
-              raise SystemExit('Expected Tailwind CDN block not found')
+          old_tailwind = '''    <script src="https://cdn.tailwindcss.com"></script>\n    <script>\n        tailwind.config = { darkMode: 'class' };\n    </script>'''
+          if old_tailwind in source:
+              source = source.replace(old_tailwind, '    <link rel="stylesheet" href="./tailwind.generated.css">', 1)
+          if 'tailwind.generated.css' not in source:
+              raise SystemExit('Static Tailwind stylesheet is not linked')
+          source = source.replace('<script type="module" src="./app.js"></script>', '<script type="module" src="./app.bundle.js"></script>')
+          if 'app.bundle.js' not in source:
+              raise SystemExit('Production bundle is not linked')
+          path.write_text(source)
           PY
 
       - name: Verify production assets
         run: |
           test -s tailwind.generated.css
+          test -s app.bundle.js
           grep -q 'tailwind.generated.css' index.html
+          grep -q 'app.bundle.js' index.html
           ! grep -q 'cdn.tailwindcss.com' index.html
-          ! grep -q 'cdn.tailwindcss.com' tailwind.generated.css
+          ! grep -q 'gstatic.com/firebasejs' app.bundle.js
 
       - name: Commit generated production assets
         shell: bash
         run: |
-          if git diff --quiet -- index.html tailwind.generated.css && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1; then
+          if git diff --quiet -- index.html tailwind.generated.css app.bundle.js && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1; then
             echo "Production assets are already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html tailwind.generated.css
-          git commit -m "Use static Tailwind stylesheet in production"
+          git add index.html tailwind.generated.css app.bundle.js
+          git commit -m "Build self-contained production assets"
           git push origin HEAD:hardening/repo-10-of-10
