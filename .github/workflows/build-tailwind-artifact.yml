@@ -32,6 +32,14 @@ jobs:
       - name: Build local production JavaScript
         run: node scripts/build-production.mjs
 
+      - name: Vendor Font Awesome solid assets
+        run: |
+          mkdir -p vendor/fontawesome/css vendor/fontawesome/webfonts
+          curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css -o vendor/fontawesome/css/fontawesome.min.css
+          curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css -o vendor/fontawesome/css/solid.min.css
+          curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2 -o vendor/fontawesome/webfonts/fa-solid-900.woff2
+          sha256sum vendor/fontawesome/css/fontawesome.min.css vendor/fontawesome/css/solid.min.css vendor/fontawesome/webfonts/fa-solid-900.woff2
+
       - name: Switch production HTML to local assets
         run: |
           python - <<'PY'
@@ -43,6 +51,12 @@ jobs:
               source = source.replace(old_tailwind, '    <link rel="stylesheet" href="./tailwind.generated.css">', 1)
           if 'tailwind.generated.css' not in source:
               raise SystemExit('Static Tailwind stylesheet is not linked')
+          source = source.replace(
+              '    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">',
+              '    <link rel="stylesheet" href="./vendor/fontawesome/css/fontawesome.min.css">\n    <link rel="stylesheet" href="./vendor/fontawesome/css/solid.min.css">'
+          )
+          if 'vendor/fontawesome/css/solid.min.css' not in source:
+              raise SystemExit('Local Font Awesome stylesheet is not linked')
           source = source.replace('<script type="module" src="./app.js"></script>', '<script type="module" src="./app.bundle.js"></script>')
           if 'app.bundle.js' not in source:
               raise SystemExit('Production bundle is not linked')
@@ -53,20 +67,25 @@ jobs:
         run: |
           test -s tailwind.generated.css
           test -s app.bundle.js
+          test -s vendor/fontawesome/css/fontawesome.min.css
+          test -s vendor/fontawesome/css/solid.min.css
+          test -s vendor/fontawesome/webfonts/fa-solid-900.woff2
           grep -q 'tailwind.generated.css' index.html
           grep -q 'app.bundle.js' index.html
+          grep -q 'vendor/fontawesome/css/solid.min.css' index.html
           ! grep -q 'cdn.tailwindcss.com' index.html
+          ! grep -q 'cdnjs.cloudflare.com' index.html
           ! grep -q 'gstatic.com/firebasejs' app.bundle.js
 
       - name: Commit generated production assets
         shell: bash
         run: |
-          if git diff --quiet -- index.html tailwind.generated.css app.bundle.js && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1; then
+          if git diff --quiet -- index.html tailwind.generated.css app.bundle.js vendor/fontawesome && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1 && git ls-files --error-unmatch vendor/fontawesome/webfonts/fa-solid-900.woff2 >/dev/null 2>&1; then
             echo "Production assets are already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html tailwind.generated.css app.bundle.js
+          git add index.html tailwind.generated.css app.bundle.js vendor/fontawesome
           git commit -m "Build self-contained production assets"
           git push origin HEAD:hardening/repo-10-of-10
