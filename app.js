@@ -5,6 +5,7 @@ import './app-hardening.js';
 import './app-ui.js';
 import './app-popups.js';
 import './app-cards.js';
+import './app-city-cascade.js';
 import './app-filters.js';
 import './app-publisher-sort.js';
 import './app-picker-add.js';
