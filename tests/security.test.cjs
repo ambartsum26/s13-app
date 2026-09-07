@@ -70,3 +70,33 @@ assert.match(rules, /match \/publishers\/\{publisherId\}/);
 assert.match(rules, /match \/\{document=\*\*\}[\s\S]*allow read, write: if false;/);
 assert.doesNotMatch(rules, /match \/\{document=\*\*\}[\s\S]*request\.auth\.uid/);
 console.log('PASS: repository rules validate known collections and default-deny unknown paths.');
+
+const indexSource = fs.readFileSync('./index.html', 'utf8');
+assert.match(indexSource, /tailwind\.generated\.css/);
+assert.match(indexSource, /vendor\/fontawesome\/css\/fontawesome\.min\.css/);
+assert.match(indexSource, /vendor\/fontawesome\/css\/solid\.min\.css/);
+assert.match(indexSource, /app\.bundle\.js/);
+assert.doesNotMatch(indexSource, /cdn\.tailwindcss\.com/);
+assert.doesNotMatch(indexSource, /cdnjs\.cloudflare\.com/);
+assert.doesNotMatch(indexSource, /gstatic\.com\/firebasejs/);
+assert.ok(fs.statSync('./tailwind.generated.css').size > 1000);
+assert.ok(fs.statSync('./app.bundle.js').size > 10000);
+assert.ok(fs.existsSync('./vendor/fontawesome/SHA256SUMS'));
+assert.ok(fs.existsSync('./vendor/fontawesome/LICENSE.txt'));
+console.log('PASS: production HTML uses committed local CSS, icons and bundled Firebase application code.');
+
+const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+assert.equal(packageJson.dependencies.firebase, '10.8.0');
+assert.equal(packageJson.devDependencies.esbuild, '0.28.2');
+assert.equal(packageJson.devDependencies.tailwindcss, '3.4.17');
+assert.equal(packageJson.devDependencies['firebase-tools'], '15.29.0');
+assert.ok(fs.existsSync('./package-lock.json'));
+
+const workflow = fs.readFileSync('./.github/workflows/auth-check.yml', 'utf8');
+assert.match(workflow, /npm ci --ignore-scripts/);
+assert.match(workflow, /npm run build/);
+assert.match(workflow, /npm run check:rules/);
+assert.match(workflow, /sha256sum -c SHA256SUMS/);
+assert.doesNotMatch(workflow, /firebase-tools@latest/);
+assert.doesNotMatch(workflow, /uses:\s+[^\n]+@v\d/);
+console.log('PASS: tool versions are lockfile-pinned and CI verifies immutable, reproducible production assets.');

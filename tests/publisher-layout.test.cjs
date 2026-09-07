@@ -17,44 +17,44 @@ const split = context.__split;
 const surname = context.__surname;
 
 const names = [
-    'Karlen AMBARTSUMOV',
-    'Tigran AMBARTSUMOV',
-    'Irina AMBARTSUMOVA',
-    'Zarina AMBARTSUMOVA',
-    'Stella ARUSTAMIAN',
-    'Svitlana BROZHYK',
-    'Zina BROZHYK',
-    'Elmira BSHOIAN',
-    'Roman DRANCHUK',
-    'Nataliia DRANCHUK',
-    'Ivan HODAR',
-    'Aleksandra HODAR',
-    'Petro HRYTSYK',
-    'Nadia HRYTSYK',
-    'Valerii KOVALCHUK',
-    'Vladyslav KOVALCHUK',
-    'Tatiana LOKTIONOVA',
-    'Vitalii LYTVYNCHUK',
-    'Khachatur MADUNTSEV',
-    'Lilia MADUNTSEVA',
-    'Valerii MAGDALIANOV',
-    'Kateryna MYKYTIUK',
-    'Valériia MYKYTIUK',
-    'Lev OTINOV',
-    'Timotii OTINOV',
-    'Olya OTINOVA',
-    'Yaroslav ROMANOV',
-    'Anna SEDRAKYAN',
-    'Serhii TKACHENKO',
-    'Irina TKACHENKO'
+    'Karlen ALPHA',
+    'Tigran ALPHA',
+    'Irina ALPHA',
+    'Zarina ALPHA',
+    'Stella BRAVO',
+    'Roman CHARLIE',
+    'Nataliia CHARLIE',
+    'Ivan DELTA',
+    'Aleksandra DELTA',
+    'Petro ECHO',
+    'Nadia ECHO',
+    'Svitlana FOXTROT',
+    'Valerii HOTEL',
+    'Vladyslav HOTEL',
+    'Khachatur INDIA',
+    'Lilia INDIA',
+    'Kateryna KILO',
+    'Valériia KILO',
+    'Lev LIMA',
+    'Timotii LIMA',
+    'Olya LIMA',
+    'Yaroslav MIKE',
+    'Anna NOVEMBER',
+    'Serhii OSCAR',
+    'Irina OSCAR',
+    'Alla PAPA',
+    'Viktoriia PAPA',
+    'Larysa QUEBEC',
+    'Dmitro ROMEO',
+    'Valentyna ROMEO'
 ];
 
 const cut = split(names, 2);
-assert.equal(cut, 16, 'KOVALCHUK must not be split between desktop columns');
-assert.equal(surname(names[cut - 1]), 'KOVALCHUK');
+assert.equal(cut, 16, 'INDIA must not be split between desktop columns');
+assert.equal(surname(names[cut - 1]), 'INDIA');
 assert.notEqual(surname(names[cut - 1]), surname(names[cut]));
 
-assert.deepEqual(names.slice(12, 14), ['Petro HRYTSYK', 'Nadia HRYTSYK']);
-assert.deepEqual(names.slice(28, 30), ['Serhii TKACHENKO', 'Irina TKACHENKO']);
+assert.deepEqual(names.slice(9, 11), ['Petro ECHO', 'Nadia ECHO']);
+assert.deepEqual(names.slice(23, 25), ['Serhii OSCAR', 'Irina OSCAR']);
 
 console.log('PASS: desktop publisher columns read alphabetically top-to-bottom and keep identical surnames together.');

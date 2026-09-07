@@ -210,11 +210,11 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
 
     const linked = { id: 'LINK', ...record('Old name', '2025-01-01', '2025-02-01') };
     store.put('territories/T', { history: [linked] });
-    store.put('publishers/P2', { fullName: 'Petro HRYTSYK', gender: 'male' });
+    store.put('publishers/P2', { fullName: 'Demo ECHO', gender: 'male' });
     a.seed([linked]);
-    a.c.evaluateCore("publishers=[{id:'P2',fullName:'Petro HRYTSYK',gender:'male'}]");
+    a.c.evaluateCore("publishers=[{id:'P2',fullName:'Demo ECHO',gender:'male'}]");
     const linkEdit = a.c.editHistory(0);
-    a.c.evaluateCore("dialogResolve(['Petro HRYTSYK','01.01.2025','01.02.2025'])");
+    a.c.evaluateCore("dialogResolve(['Demo ECHO','01.01.2025','01.02.2025'])");
     await linkEdit;
     assert.equal(history(store)[0].publisherId, 'P2');
     console.log('PASS: choosing an existing publisher while editing history preserves its database ID.');
