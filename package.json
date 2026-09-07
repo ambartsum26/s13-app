@@ -14,7 +14,7 @@
     "check:rules": "firebase emulators:exec --only firestore --project demo-s13-app \"echo Firestore rules compiled\""
   },
   "dependencies": {
-    "firebase": "10.8.0"
+    "firebase": "12.18.0"
   },
   "devDependencies": {
     "esbuild": "0.28.2",
