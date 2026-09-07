@@ -1,4 +1,4 @@
-name: Build production assets
+name: Generate production lockfile
 
 on:
   push:
@@ -9,13 +9,13 @@ permissions:
   contents: write
 
 concurrency:
-  group: hardening-production-assets
+  group: hardening-production-lockfile
   cancel-in-progress: true
 
 jobs:
-  build:
+  lock:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,73 +27,19 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install locked toolchain
-        run: npm install --ignore-scripts
+      - name: Generate lockfile without lifecycle scripts
+        run: npm install --package-lock-only --ignore-scripts
 
-      - name: Build production CSS and JavaScript
-        run: npm run build
-
-      - name: Vendor Font Awesome solid assets
-        run: |
-          mkdir -p vendor/fontawesome/css vendor/fontawesome/webfonts
-          curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css -o vendor/fontawesome/css/fontawesome.min.css
-          curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css -o vendor/fontawesome/css/solid.min.css
-          curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2 -o vendor/fontawesome/webfonts/fa-solid-900.woff2
-          curl --fail --location --retry 3 --silent --show-error https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.4.0/LICENSE.txt -o vendor/fontawesome/LICENSE.txt
-          (
-            cd vendor/fontawesome
-            sha256sum css/fontawesome.min.css css/solid.min.css webfonts/fa-solid-900.woff2 LICENSE.txt > SHA256SUMS
-          )
-
-      - name: Switch production HTML to local assets
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('index.html')
-          source = path.read_text()
-          old_tailwind = '''    <script src="https://cdn.tailwindcss.com"></script>\n    <script>\n        tailwind.config = { darkMode: 'class' };\n    </script>'''
-          if old_tailwind in source:
-              source = source.replace(old_tailwind, '    <link rel="stylesheet" href="./tailwind.generated.css">', 1)
-          if 'tailwind.generated.css' not in source:
-              raise SystemExit('Static Tailwind stylesheet is not linked')
-          source = source.replace(
-              '    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">',
-              '    <link rel="stylesheet" href="./vendor/fontawesome/css/fontawesome.min.css">\n    <link rel="stylesheet" href="./vendor/fontawesome/css/solid.min.css">'
-          )
-          if 'vendor/fontawesome/css/solid.min.css' not in source:
-              raise SystemExit('Local Font Awesome stylesheet is not linked')
-          source = source.replace('<script type="module" src="./app.js"></script>', '<script type="module" src="./app.bundle.js"></script>')
-          if 'app.bundle.js' not in source:
-              raise SystemExit('Production bundle is not linked')
-          path.write_text(source)
-          PY
-
-      - name: Verify production assets
-        run: |
-          test -s package-lock.json
-          test -s tailwind.generated.css
-          test -s app.bundle.js
-          test -s vendor/fontawesome/css/fontawesome.min.css
-          test -s vendor/fontawesome/css/solid.min.css
-          test -s vendor/fontawesome/webfonts/fa-solid-900.woff2
-          test -s vendor/fontawesome/LICENSE.txt
-          (cd vendor/fontawesome && sha256sum -c SHA256SUMS)
-          grep -q 'tailwind.generated.css' index.html
-          grep -q 'app.bundle.js' index.html
-          grep -q 'vendor/fontawesome/css/solid.min.css' index.html
-          ! grep -q 'cdn.tailwindcss.com' index.html
-          ! grep -q 'cdnjs.cloudflare.com' index.html
-          ! grep -q 'gstatic.com/firebasejs' app.bundle.js
-
-      - name: Commit locked production assets
+      - name: Commit lockfile
         shell: bash
         run: |
-          if git diff --quiet -- package-lock.json index.html tailwind.generated.css app.bundle.js vendor/fontawesome && git ls-files --error-unmatch package-lock.json >/dev/null 2>&1 && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1 && git ls-files --error-unmatch vendor/fontawesome/SHA256SUMS >/dev/null 2>&1; then
-            echo "Production assets and lockfile are already current."
+          test -s package-lock.json
+          if git diff --quiet -- package-lock.json && git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            echo "Lockfile is already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json index.html tailwind.generated.css app.bundle.js vendor/fontawesome
-          git commit -m "Lock reproducible production assets"
+          git add package-lock.json
+          git commit -m "Lock npm dependency graph"
           git push origin HEAD:hardening/repo-10-of-10
