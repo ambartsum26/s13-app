@@ -15,7 +15,7 @@ concurrency:
 jobs:
   quality-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,14 +34,27 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           for file in *.js; do node --input-type=module --check < "$file" || exit 1; done
+          node --check scripts/build-production.mjs
           for test in tests/*.test.cjs; do node --check "$test" || exit 1; done
 
-      - name: Verify static Tailwind build
+      - name: Install pinned build dependencies
+        run: npm install --no-save --package-lock=false esbuild@0.28.2 firebase@10.8.0
+
+      - name: Verify reproducible production assets
         run: |
-          npx --yes tailwindcss@3.4.17 -c tailwind.config.cjs -i tailwind.input.css -o /tmp/tailwind.generated.css --minify
-          cmp --silent tailwind.generated.css /tmp/tailwind.generated.css
+          cp tailwind.generated.css /tmp/tailwind.generated.css.expected
+          cp app.bundle.js /tmp/app.bundle.js.expected
+          npx --yes tailwindcss@3.4.17 -c tailwind.config.cjs -i tailwind.input.css -o tailwind.generated.css --minify
+          node scripts/build-production.mjs
+          cmp --silent /tmp/tailwind.generated.css.expected tailwind.generated.css
+          cmp --silent /tmp/app.bundle.js.expected app.bundle.js
+          (cd vendor/fontawesome && sha256sum -c SHA256SUMS)
           grep -q 'tailwind.generated.css' index.html
+          grep -q 'app.bundle.js' index.html
+          grep -q 'vendor/fontawesome/css/solid.min.css' index.html
           ! grep -q 'cdn.tailwindcss.com' index.html
+          ! grep -q 'cdnjs.cloudflare.com' index.html
+          ! grep -q 'gstatic.com/firebasejs' app.bundle.js
 
       - name: Compile Firestore rules in emulator
         run: npx --yes firebase-tools@15.29.0 emulators:exec --only firestore --project demo-s13-app "echo Firestore rules compiled"
