@@ -17,95 +17,86 @@ vm.runInContext(`${source}\nglobalThis.__compareNames = compareNames; globalThis
 const compareNames = context.__compareNames;
 const comparePublishers = context.__comparePublishers;
 
+// Synthetic fixtures only: production publisher names must never be copied into
+// this public repository. The cases still cover surname ordering, accents and
+// male-first ordering when a surname is shared.
 const names = [
-    'Khachatur MADUNTSEV',
-    'Lilia MADUNTSEVA',
-    'Valerii MAGDALIANOV',
-    'Lev OTINOV',
-    'Olya OTINOVA',
-    'Tatiana LOKTIONOVA',
-    'Kateryna MYKYTIUK',
-    'Valériia MYKYTIUK',
-    'Valentyna YERMOLAIEVA',
-    'Valerii KOVALCHUK',
-    'Nadia HRYTSYK',
-    'Petro HRYTSYK',
-    'Vitalii LYTVYNCHUK',
-    'Timotii OTINOV',
-    'Stella ARUSTAMIAN',
-    'Vladyslav KOVALCHUK',
-    'Svitlana BROZHYK',
-    'Zina BROZHYK',
-    'Evgueniy VELCHEV',
-    'Anna SEDRAKYAN',
-    'Larysa VELCHEVA',
-    'Viktoriia TURII',
-    'Alla TURII',
-    'Yaroslav ROMANOV',
-    'Karlen AMBARTSUMOV',
-    'Zarina AMBARTSUMOVA',
-    'Irina AMBARTSUMOVA',
-    'Tigran AMBARTSUMOV',
-    'Serhii TKACHENKO',
-    'Irina TKACHENKO',
-    'Dmitro YERMOLAIEV',
-    'Elmira BSHOIAN',
-    'Ivan HODAR',
-    'Aleksandra HODAR',
-    'Roman DRANCHUK',
-    'Nataliia DRANCHUK'
+    'Valentyna ROMEO',
+    'Petro ECHO',
+    'Zarina ALPHA',
+    'Irina OSCAR',
+    'Lev LIMA',
+    'Larysa QUEBEC',
+    'Ivan DELTA',
+    'Kateryna KILO',
+    'Roman CHARLIE',
+    'Karlen ALPHA',
+    'Valerii HOTEL',
+    'Stella BRAVO',
+    'Nadia ECHO',
+    'Yaroslav MIKE',
+    'Dmitro ROMEO',
+    'Aleksandra DELTA',
+    'Viktoriia PAPA',
+    'Tigran ALPHA',
+    'Khachatur INDIA',
+    'Timotii LIMA',
+    'Svitlana FOXTROT',
+    'Anna NOVEMBER',
+    'Olya LIMA',
+    'Lilia INDIA',
+    'Irina ALPHA',
+    'Serhii OSCAR',
+    'Valériia KILO',
+    'Vladyslav HOTEL',
+    'Nataliia CHARLIE',
+    'Alla PAPA'
 ];
 
 const actual = [...names].sort(compareNames);
 const expected = [
-    'Karlen AMBARTSUMOV',
-    'Tigran AMBARTSUMOV',
-    'Irina AMBARTSUMOVA',
-    'Zarina AMBARTSUMOVA',
-    'Stella ARUSTAMIAN',
-    'Svitlana BROZHYK',
-    'Zina BROZHYK',
-    'Elmira BSHOIAN',
-    'Roman DRANCHUK',
-    'Nataliia DRANCHUK',
-    'Ivan HODAR',
-    'Aleksandra HODAR',
-    'Petro HRYTSYK',
-    'Nadia HRYTSYK',
-    'Valerii KOVALCHUK',
-    'Vladyslav KOVALCHUK',
-    'Tatiana LOKTIONOVA',
-    'Vitalii LYTVYNCHUK',
-    'Khachatur MADUNTSEV',
-    'Lilia MADUNTSEVA',
-    'Valerii MAGDALIANOV',
-    'Kateryna MYKYTIUK',
-    'Valériia MYKYTIUK',
-    'Lev OTINOV',
-    'Timotii OTINOV',
-    'Olya OTINOVA',
-    'Yaroslav ROMANOV',
-    'Anna SEDRAKYAN',
-    'Serhii TKACHENKO',
-    'Irina TKACHENKO',
-    'Alla TURII',
-    'Viktoriia TURII',
-    'Evgueniy VELCHEV',
-    'Larysa VELCHEVA',
-    'Dmitro YERMOLAIEV',
-    'Valentyna YERMOLAIEVA'
+    'Karlen ALPHA',
+    'Tigran ALPHA',
+    'Irina ALPHA',
+    'Zarina ALPHA',
+    'Stella BRAVO',
+    'Roman CHARLIE',
+    'Nataliia CHARLIE',
+    'Ivan DELTA',
+    'Aleksandra DELTA',
+    'Petro ECHO',
+    'Nadia ECHO',
+    'Svitlana FOXTROT',
+    'Valerii HOTEL',
+    'Vladyslav HOTEL',
+    'Khachatur INDIA',
+    'Lilia INDIA',
+    'Kateryna KILO',
+    'Valériia KILO',
+    'Lev LIMA',
+    'Timotii LIMA',
+    'Olya LIMA',
+    'Yaroslav MIKE',
+    'Anna NOVEMBER',
+    'Serhii OSCAR',
+    'Irina OSCAR',
+    'Alla PAPA',
+    'Viktoriia PAPA',
+    'Larysa QUEBEC',
+    'Dmitro ROMEO',
+    'Valentyna ROMEO'
 ];
 
 assert.deepEqual(actual, expected);
-assert.ok(actual.indexOf('Ivan HODAR') < actual.indexOf('Aleksandra HODAR'));
-assert.ok(actual.indexOf('Petro HRYTSYK') < actual.indexOf('Nadia HRYTSYK'));
-assert.ok(actual.indexOf('Roman DRANCHUK') < actual.indexOf('Nataliia DRANCHUK'));
-assert.ok(actual.indexOf('Serhii TKACHENKO') < actual.indexOf('Irina TKACHENKO'));
+assert.ok(actual.indexOf('Ivan DELTA') < actual.indexOf('Aleksandra DELTA'));
+assert.ok(actual.indexOf('Petro ECHO') < actual.indexOf('Nadia ECHO'));
+assert.ok(actual.indexOf('Roman CHARLIE') < actual.indexOf('Nataliia CHARLIE'));
+assert.ok(actual.indexOf('Serhii OSCAR') < actual.indexOf('Irina OSCAR'));
 
 const newPublishers = [
-    { fullName: 'Anna IVANOV', gender: 'female' },
-    { fullName: 'Sergei IVANOV', gender: 'male' }
+    { fullName: 'Anna SIERRA', gender: 'female' },
+    { fullName: 'Sergei SIERRA', gender: 'male' }
 ].sort(comparePublishers);
-assert.deepEqual(newPublishers.map(item => item.fullName), ['Sergei IVANOV', 'Anna IVANOV']);
+assert.deepEqual(newPublishers.map(item => item.fullName), ['Sergei SIERRA', 'Anna SIERRA']);
 
 console.log('PASS: publishers are sorted by surname, with stored gender supporting new names.');
