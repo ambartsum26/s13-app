@@ -70,3 +70,26 @@ assert.match(rules, /match \/publishers\/\{publisherId\}/);
 assert.match(rules, /match \/\{document=\*\*\}[\s\S]*allow read, write: if false;/);
 assert.doesNotMatch(rules, /match \/\{document=\*\*\}[\s\S]*request\.auth\.uid/);
 console.log('PASS: repository rules validate known collections and default-deny unknown paths.');
+
+const indexSource = fs.readFileSync('./index.html', 'utf8');
+assert.match(indexSource, /tailwind\.generated\.css/);
+assert.match(indexSource, /vendor\/fontawesome\/css\/fontawesome\.min\.css/);
+assert.match(indexSource, /vendor\/fontawesome\/css\/solid\.min\.css/);
+assert.match(indexSource, /app\.bundle\.js/);
+assert.doesNotMatch(indexSource, /cdn\.tailwindcss\.com/);
+assert.doesNotMatch(indexSource, /cdnjs\.cloudflare\.com/);
+assert.doesNotMatch(indexSource, /gstatic\.com\/firebasejs/);
+assert.ok(fs.statSync('./tailwind.generated.css').size > 1000);
+assert.ok(fs.statSync('./app.bundle.js').size > 10000);
+assert.ok(fs.existsSync('./vendor/fontawesome/SHA256SUMS'));
+assert.ok(fs.existsSync('./vendor/fontawesome/LICENSE.txt'));
+console.log('PASS: production HTML uses committed local CSS, icons and bundled Firebase application code.');
+
+const workflow = fs.readFileSync('./.github/workflows/auth-check.yml', 'utf8');
+assert.match(workflow, /firebase-tools@15\.29\.0/);
+assert.doesNotMatch(workflow, /firebase-tools@latest/);
+assert.match(workflow, /tailwindcss@3\.4\.17/);
+assert.match(workflow, /esbuild@0\.28\.2/);
+assert.match(workflow, /firebase@10\.8\.0/);
+assert.match(workflow, /sha256sum -c SHA256SUMS/);
+console.log('PASS: CI pins build tools and verifies reproducible local production assets.');
