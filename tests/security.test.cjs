@@ -49,7 +49,8 @@ assert.ok(hardeningImport < appSource.indexOf("import './s13-export.js';"));
 console.log('PASS: browser hardening loads before UI and export modules.');
 
 const hardeningSource = fs.readFileSync('./app-hardening.js', 'utf8');
-assert.match(hardeningSource, /javascript:/i.negate ? /$a/ : /isAllowedAppUrl/);
+assert.match(hardeningSource, /isAllowedAppUrl/);
+assert.match(hardeningSource, /trustedInlineHandler/);
 assert.match(hardeningSource, /data-s13-blocked-href/);
 assert.match(hardeningSource, /installPopupAccessibility/);
 assert.match(hardeningSource, /installListboxKeyboardNavigation/);
