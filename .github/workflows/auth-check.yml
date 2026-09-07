@@ -25,6 +25,12 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Set up Java for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Check module syntax
         run: |
           for file in *.js; do node --input-type=module --check < "$file" || exit 1; done
