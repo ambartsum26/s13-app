@@ -31,12 +31,20 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Check module syntax
+      - name: Check JavaScript syntax
         run: |
           for file in *.js; do node --input-type=module --check < "$file" || exit 1; done
+          for test in tests/*.test.cjs; do node --check "$test" || exit 1; done
+
+      - name: Verify static Tailwind build
+        run: |
+          npx --yes tailwindcss@3.4.17 -c tailwind.config.cjs -i tailwind.input.css -o /tmp/tailwind.generated.css --minify
+          cmp --silent tailwind.generated.css /tmp/tailwind.generated.css
+          grep -q 'tailwind.generated.css' index.html
+          ! grep -q 'cdn.tailwindcss.com' index.html
 
       - name: Compile Firestore rules in emulator
-        run: npx --yes firebase-tools@latest emulators:exec --only firestore --project demo-s13-app "echo Firestore rules compiled"
+        run: npx --yes firebase-tools@15.29.0 emulators:exec --only firestore --project demo-s13-app "echo Firestore rules compiled"
 
       - name: Run all regression tests
         run: |
