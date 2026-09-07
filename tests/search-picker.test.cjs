@@ -10,12 +10,12 @@ const searchEnd = source.indexOf('window.publisherNameMatches');
 vm.runInContext(`${source.slice(searchStart, searchEnd)}\nglobalThis.score = publisherMatchScore;`, searchContext);
 const matches = (name, query) => Number.isFinite(searchContext.score(name, query));
 
-assert.equal(matches('Иван Иванов', 'Иван'), true);
-assert.equal(matches('Ivan IVANOV', 'Иван'), true);
-assert.equal(matches('Petro HRYTSYK', 'HRYTSYK Petro'), true);
-assert.equal(matches('Valériia MYKYTIUK', 'Valeriia'), true);
-assert.equal(matches('Petro HRYTSYK', 'Anna'), false);
-console.log('PASS: publisher search supports Cyrillic, transliteration, accents and reversed name order.');
+assert.equal(matches('Тест АЛЬФА', 'Тест'), true);
+assert.equal(matches('Test ALFA', 'Тест'), true);
+assert.equal(matches('Demo ECHO', 'ECHO Demo'), true);
+assert.equal(matches('Valéria KILO', 'Valeria'), true);
+assert.equal(matches('Demo ECHO', 'Omega'), false);
+console.log('PASS: publisher search supports Cyrillic, transliteration, accents and reversed word order.');
 
 let removed = 0;
 const inside = {};
@@ -44,7 +44,7 @@ const save = new Promise(resolve => { finishSave = resolve; });
 const pickerContext = vm.createContext({
     window: {
         currentPublisherPickerSession: () => currentSession,
-        requestAppFields: async () => ['New Person', 'male'],
+        requestAppFields: async () => ['Synthetic Person', 'male'],
         selectPublisherForPickerSession: (session, publisher) => { selection = { session, publisher }; }
     },
     requireOwner() {},
@@ -63,10 +63,10 @@ vm.runInContext(source.slice(addStart, addEnd), pickerContext);
 (async () => {
     const adding = pickerContext.addPublisherFromPicker();
     currentSession = 8;
-    finishSave('NEW');
+    finishSave('SYNTHETIC-ID');
     await adding;
     assert.equal(selection.session, 7);
-    assert.equal(selection.publisher.id, 'NEW');
+    assert.equal(selection.publisher.id, 'SYNTHETIC-ID');
     console.log('PASS: delayed publisher creation retains its original picker session.');
 })().catch(error => {
     console.error(error);
