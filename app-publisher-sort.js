@@ -83,6 +83,58 @@ function publisherNameFromRow(row) {
     return row.querySelector('b')?.textContent?.trim() || row.textContent?.trim() || '';
 }
 
+function surnameIdentity(value) {
+    return fold(surnameKey(publisherProfile(value).fullName));
+}
+
+function choosePublisherColumnSplit(values, columns = 2) {
+    if (columns < 2 || values.length < 2) return values.length;
+
+    const target = Math.ceil(values.length / columns);
+    let before = target;
+    let after = target;
+
+    while (before > 0 && before < values.length && surnameIdentity(values[before - 1]) === surnameIdentity(values[before])) {
+        before--;
+    }
+    while (after > 0 && after < values.length && surnameIdentity(values[after - 1]) === surnameIdentity(values[after])) {
+        after++;
+    }
+
+    if (before === 0) return after;
+    if (after >= values.length) return before;
+
+    const beforeDistance = target - before;
+    const afterDistance = after - target;
+    return beforeDistance < afterDistance ? before : after;
+}
+
+function layoutPublisherColumns() {
+    const list = document.getElementById('publishers-list');
+    if (!list) return;
+
+    const allRows = [...list.children];
+    allRows.forEach(row => {
+        row.style.gridColumn = '';
+        row.style.gridRow = '';
+    });
+
+    const wide = typeof globalThis.matchMedia === 'function'
+        ? globalThis.matchMedia('(min-width: 640px)').matches
+        : true;
+    if (!wide) return;
+
+    const visibleRows = allRows.filter(row => !row.classList.contains('s13-publisher-search-hidden'));
+    if (visibleRows.length < 2) return;
+
+    const split = choosePublisherColumnSplit(visibleRows.map(publisherNameFromRow), 2);
+    visibleRows.forEach((row, index) => {
+        const secondColumn = index >= split;
+        row.style.gridColumn = secondColumn ? '2' : '1';
+        row.style.gridRow = String(secondColumn ? index - split + 1 : index + 1);
+    });
+}
+
 function sortContainer(container, getName) {
     if (!container || container.dataset.s13Sorting === '1') return;
 
@@ -109,6 +161,7 @@ function sortPublishers() {
         fullName: button.textContent?.trim() || '',
         gender: button.dataset.publisherGender || ''
     }));
+    layoutPublisherColumns();
 }
 
 for (const id of ['publishers-list', 'publisher-picker-list']) {
@@ -118,6 +171,10 @@ for (const id of ['publishers-list', 'publisher-picker-list']) {
     new MutationObserver(() => queueMicrotask(sortPublishers)).observe(container, {
         childList: true
     });
+}
+
+if (typeof globalThis.addEventListener === 'function') {
+    globalThis.addEventListener('resize', () => queueMicrotask(layoutPublisherColumns));
 }
 
 sortPublishers();
