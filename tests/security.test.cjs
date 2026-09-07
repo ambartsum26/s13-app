@@ -52,9 +52,13 @@ const hardeningSource = fs.readFileSync('./app-hardening.js', 'utf8');
 assert.match(hardeningSource, /isAllowedAppUrl/);
 assert.match(hardeningSource, /trustedInlineHandler/);
 assert.match(hardeningSource, /data-s13-blocked-href/);
+assert.match(hardeningSource, /s13BlockUnsafeLink/);
+assert.match(hardeningSource, /runInstaller\('HTML sanitizer'/);
+assert.match(hardeningSource, /runInstaller\('URL guard'/);
 assert.match(hardeningSource, /installPopupAccessibility/);
 assert.match(hardeningSource, /installListboxKeyboardNavigation/);
 assert.match(hardeningSource, /installSessionStorageFallback/);
+console.log('PASS: hardening components fail independently and blocked links stay marked.');
 
 const rules = fs.readFileSync('./firestore.rules', 'utf8');
 assert.match(rules, /request\.auth\.uid == 'fJT9srxZezNyAVC1NO2Rm6jdK4G3'/);
