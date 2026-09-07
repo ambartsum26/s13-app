@@ -85,11 +85,18 @@ assert.ok(fs.existsSync('./vendor/fontawesome/SHA256SUMS'));
 assert.ok(fs.existsSync('./vendor/fontawesome/LICENSE.txt'));
 console.log('PASS: production HTML uses committed local CSS, icons and bundled Firebase application code.');
 
+const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+assert.equal(packageJson.dependencies.firebase, '10.8.0');
+assert.equal(packageJson.devDependencies.esbuild, '0.28.2');
+assert.equal(packageJson.devDependencies.tailwindcss, '3.4.17');
+assert.equal(packageJson.devDependencies['firebase-tools'], '15.29.0');
+assert.ok(fs.existsSync('./package-lock.json'));
+
 const workflow = fs.readFileSync('./.github/workflows/auth-check.yml', 'utf8');
-assert.match(workflow, /firebase-tools@15\.29\.0/);
-assert.doesNotMatch(workflow, /firebase-tools@latest/);
-assert.match(workflow, /tailwindcss@3\.4\.17/);
-assert.match(workflow, /esbuild@0\.28\.2/);
-assert.match(workflow, /firebase@10\.8\.0/);
+assert.match(workflow, /npm ci --ignore-scripts/);
+assert.match(workflow, /npm run build/);
+assert.match(workflow, /npm run check:rules/);
 assert.match(workflow, /sha256sum -c SHA256SUMS/);
-console.log('PASS: CI pins build tools and verifies reproducible local production assets.');
+assert.doesNotMatch(workflow, /firebase-tools@latest/);
+assert.doesNotMatch(workflow, /uses:\s+[^\n]+@v\d/);
+console.log('PASS: tool versions are lockfile-pinned and CI verifies immutable, reproducible production assets.');
