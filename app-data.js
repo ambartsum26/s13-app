@@ -12,6 +12,17 @@ function comparable(record) {
         .map(key => [key, record[key]]));
 }
 
+function comparableField(kind, key, value) {
+    if (key === 'mapUrl' && (kind === 'cities' || kind === 'territories')) return value ?? '';
+    if (kind === 'territories' && key === 'russianSpeakers') return value ?? 0;
+    return value;
+}
+
+function fieldChanged(kind, current, expected, key) {
+    return JSON.stringify(comparableField(kind, key, current?.[key])) !==
+        JSON.stringify(comparableField(kind, key, expected?.[key]));
+}
+
 // Legacy records gain IDs only when their territory is explicitly saved.
 // A changed/ambiguous legacy record is rejected rather than guessed by position.
 export function historyRecordIndex(history, expected) {
@@ -77,14 +88,15 @@ export async function changeHistory(territoryId, change) {
 
 // Update selected fields only if the values shown to the editor are still
 // current. Unrelated changes are preserved, while same-field edits conflict.
+// Optional fields absent in legacy documents compare as their UI defaults.
 export async function updateExistingRecord(kind, id, values, expected) {
     requireOwner();
     const ref = doc(db, kind, id);
     return runTransaction(db, async transaction => {
         requireOwner();
         const snapshot = await transaction.get(ref);
-        if (!snapshot.exists() || Object.keys(expected).some(key =>
-            JSON.stringify(snapshot.data()[key]) !== JSON.stringify(expected[key]))) {
+        const current = snapshot.exists() ? snapshot.data() : null;
+        if (!current || Object.keys(expected).some(key => fieldChanged(kind, current, expected, key))) {
             throw dataError('conflict');
         }
         requireOwner();
@@ -112,8 +124,8 @@ export async function saveUniqueRecord(kind, values, expected = null, remove = f
         const guard = await transaction.get(guardRef);
         if (expected) {
             const current = await transaction.get(ref);
-            if (!current.exists() || Object.keys(values).some(key =>
-                JSON.stringify(current.data()[key]) !== JSON.stringify(expected[key]))) {
+            const currentData = current.exists() ? current.data() : null;
+            if (!currentData || Object.keys(values).some(key => fieldChanged(kind, currentData, expected, key))) {
                 throw dataError('conflict');
             }
         }

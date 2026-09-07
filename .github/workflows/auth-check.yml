@@ -8,10 +8,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: regression-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  auth-tests:
+  quality-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,16 +23,24 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+
+      - name: Set up Java for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Check module syntax
         run: |
           for file in *.js; do node --input-type=module --check < "$file" || exit 1; done
 
-      - name: Run regression tests
+      - name: Compile Firestore rules in emulator
+        run: npx --yes firebase-tools@latest emulators:exec --only firestore --project demo-s13-app "echo Firestore rules compiled"
+
+      - name: Run all regression tests
         run: |
-          node tests/auth.test.cjs
-          node tests/data.test.cjs
-          node tests/export.test.cjs
-          node tests/publisher-sort.test.cjs
-          node tests/search-picker.test.cjs
+          for test in tests/*.test.cjs; do
+            echo "==> $test"
+            node "$test"
+          done
