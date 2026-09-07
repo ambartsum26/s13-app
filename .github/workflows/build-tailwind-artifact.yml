@@ -38,7 +38,11 @@ jobs:
           curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/fontawesome.min.css -o vendor/fontawesome/css/fontawesome.min.css
           curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/solid.min.css -o vendor/fontawesome/css/solid.min.css
           curl --fail --location --retry 3 --silent --show-error https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2 -o vendor/fontawesome/webfonts/fa-solid-900.woff2
-          sha256sum vendor/fontawesome/css/fontawesome.min.css vendor/fontawesome/css/solid.min.css vendor/fontawesome/webfonts/fa-solid-900.woff2
+          curl --fail --location --retry 3 --silent --show-error https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.4.0/LICENSE.txt -o vendor/fontawesome/LICENSE.txt
+          (
+            cd vendor/fontawesome
+            sha256sum css/fontawesome.min.css css/solid.min.css webfonts/fa-solid-900.woff2 LICENSE.txt > SHA256SUMS
+          )
 
       - name: Switch production HTML to local assets
         run: |
@@ -70,6 +74,8 @@ jobs:
           test -s vendor/fontawesome/css/fontawesome.min.css
           test -s vendor/fontawesome/css/solid.min.css
           test -s vendor/fontawesome/webfonts/fa-solid-900.woff2
+          test -s vendor/fontawesome/LICENSE.txt
+          (cd vendor/fontawesome && sha256sum -c SHA256SUMS)
           grep -q 'tailwind.generated.css' index.html
           grep -q 'app.bundle.js' index.html
           grep -q 'vendor/fontawesome/css/solid.min.css' index.html
@@ -80,7 +86,7 @@ jobs:
       - name: Commit generated production assets
         shell: bash
         run: |
-          if git diff --quiet -- index.html tailwind.generated.css app.bundle.js vendor/fontawesome && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1 && git ls-files --error-unmatch vendor/fontawesome/webfonts/fa-solid-900.woff2 >/dev/null 2>&1; then
+          if git diff --quiet -- index.html tailwind.generated.css app.bundle.js vendor/fontawesome && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1 && git ls-files --error-unmatch vendor/fontawesome/SHA256SUMS >/dev/null 2>&1; then
             echo "Production assets are already current."
             exit 0
           fi
