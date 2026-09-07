@@ -1,6 +1,7 @@
 import { startApplication } from './app-core.js';
 import { db } from './app-auth.js';
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import './app-hardening.js';
 import './app-ui.js';
 import './app-popups.js';
 import './app-cards.js';
