@@ -10,7 +10,7 @@
     "build:css": "tailwindcss -c tailwind.config.cjs -i tailwind.input.css -o tailwind.generated.css --minify",
     "build:js": "node scripts/build-production.mjs",
     "build": "npm run build:css && npm run build:js",
-    "test": "for test in tests/*.test.cjs; do node \"$test\" || exit 1; done",
+    "test": "node scripts/run-tests.mjs",
     "check:rules": "firebase emulators:exec --only firestore --project demo-s13-app \"echo Firestore rules compiled\""
   },
   "dependencies": {
