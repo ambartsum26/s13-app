@@ -26,20 +26,37 @@ jobs:
       - name: Build static Tailwind CSS
         run: npx --yes tailwindcss@3.4.17 -c tailwind.config.cjs -i tailwind.input.css -o tailwind.generated.css --minify
 
-      - name: Verify generated stylesheet
+      - name: Replace production Play CDN with local CSS
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('index.html')
+          source = path.read_text()
+          old = '''    <script src="https://cdn.tailwindcss.com"></script>\n    <script>\n        tailwind.config = { darkMode: 'class' };\n    </script>'''
+          new = '    <link rel="stylesheet" href="./tailwind.generated.css">'
+          if old in source:
+              source = source.replace(old, new, 1)
+              path.write_text(source)
+          elif 'tailwind.generated.css' not in source:
+              raise SystemExit('Expected Tailwind CDN block not found')
+          PY
+
+      - name: Verify production assets
         run: |
           test -s tailwind.generated.css
-          ! grep -q "cdn.tailwindcss.com" tailwind.generated.css
+          grep -q 'tailwind.generated.css' index.html
+          ! grep -q 'cdn.tailwindcss.com' index.html
+          ! grep -q 'cdn.tailwindcss.com' tailwind.generated.css
 
-      - name: Commit generated stylesheet
+      - name: Commit generated production assets
         shell: bash
         run: |
-          if git diff --quiet -- tailwind.generated.css && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1; then
-            echo "Generated stylesheet is already current."
+          if git diff --quiet -- index.html tailwind.generated.css && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1; then
+            echo "Production assets are already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tailwind.generated.css
-          git commit -m "Build static Tailwind stylesheet"
+          git add index.html tailwind.generated.css
+          git commit -m "Use static Tailwind stylesheet in production"
           git push origin HEAD:hardening/repo-10-of-10
