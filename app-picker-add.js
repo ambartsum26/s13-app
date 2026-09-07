@@ -11,6 +11,10 @@ const text = {
         title: 'Добавить возвещателя',
         field: 'Имя и фамилия',
         placeholder: 'Имя ФАМИЛИЯ',
+        gender: 'Пол',
+        chooseGender: 'Выберите пол возвещателя',
+        male: 'Мужчина',
+        female: 'Женщина',
         exists: 'Такой возвещатель уже есть в базе.',
         failed: 'Не удалось добавить возвещателя. Проверьте подключение и повторите.'
     },
@@ -19,6 +23,10 @@ const text = {
         title: 'Ajouter un proclamateur',
         field: 'Prénom et nom',
         placeholder: 'Prénom NOM',
+        gender: 'Sexe',
+        chooseGender: 'Sélectionnez le sexe du proclamateur',
+        male: 'Homme',
+        female: 'Femme',
         exists: 'Ce proclamateur existe déjà dans la base.',
         failed: 'Impossible d’ajouter le proclamateur. Vérifiez la connexion et réessayez.'
     }
@@ -32,21 +40,25 @@ function normalize(value) {
     return String(value || '').trim().replace(/\s+/g, ' ');
 }
 
-function latinFold(value) {
-    return String(value || '')
+const CYRILLIC_TO_LATIN = {
+    а:'a', б:'b', в:'v', г:'g', ґ:'g', д:'d', е:'e', ё:'e', є:'ye', ж:'zh', з:'z',
+    и:'i', і:'i', ї:'i', й:'i', к:'k', л:'l', м:'m', н:'n', о:'o', п:'p', р:'r',
+    с:'s', т:'t', у:'u', ф:'f', х:'kh', ц:'ts', ч:'ch', ш:'sh', щ:'shch',
+    ъ:'', ы:'y', ь:'', э:'e', ю:'yu', я:'ya'
+};
+
+function searchWords(value) {
+    const folded = String(value || '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLocaleLowerCase('en')
-        .replace(/[^a-z]/g, '');
+        .replace(/[а-яёіїєґ]/g, letter => CYRILLIC_TO_LATIN[letter] ?? letter)
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    return folded ? folded.split(/\s+/) : [];
 }
 
-function publisherMatchScore(name, query) {
-    const rawQuery = String(query || '').trim();
-    if (!rawQuery) return 0;
-
-    const needle = latinFold(rawQuery);
-    const haystack = latinFold(name);
-    if (!needle || !haystack) return Number.POSITIVE_INFINITY;
+function wordMatchScore(haystack, needle) {
     if (haystack === needle) return 0;
     if (haystack.startsWith(needle)) return 10 + (haystack.length - needle.length) / 100;
 
@@ -57,7 +69,6 @@ function publisherMatchScore(name, query) {
     let first = -1;
     let previous = -1;
     let gaps = 0;
-
     for (const letter of needle) {
         const next = haystack.indexOf(letter, cursor + 1);
         if (next < 0) return Number.POSITIVE_INFINITY;
@@ -66,8 +77,27 @@ function publisherMatchScore(name, query) {
         previous = next;
         cursor = next;
     }
-
     return 1000 + first * 10 + gaps;
+}
+
+function publisherMatchScore(name, query) {
+    const rawQuery = String(query || '').trim();
+    if (!rawQuery) return 0;
+
+    const needles = searchWords(rawQuery);
+    const haystacks = searchWords(name);
+    if (!needles.length || !haystacks.length) return Number.POSITIVE_INFINITY;
+
+    const joined = haystacks.join('');
+    let score = 0;
+    for (const needle of needles) {
+        const bestWord = Math.min(...haystacks.map(word => wordMatchScore(word, needle)));
+        const bestJoined = wordMatchScore(joined, needle) + 200;
+        const best = Math.min(bestWord, bestJoined);
+        if (!Number.isFinite(best)) return Number.POSITIVE_INFINITY;
+        score += best;
+    }
+    return score;
 }
 
 function publisherMatches(name, query) {
@@ -87,53 +117,38 @@ function updateButtonText() {
     if (label) label.textContent = dictionary().button;
 }
 
-function selectWhenAvailable(fullName) {
-    const list = $('publisher-picker-list');
-    if (!list) return;
-
-    const expected = normalize(fullName).toLocaleLowerCase();
-    const trySelect = () => {
-        const button = [...list.querySelectorAll('button')].find(item =>
-            normalize(item.textContent).toLocaleLowerCase() === expected
-        );
-        if (!button) return false;
-        button.click();
-        return true;
-    };
-
-    if (trySelect()) return;
-
-    const observer = new MutationObserver(() => {
-        if (trySelect()) observer.disconnect();
-    });
-    observer.observe(list, { childList: true });
-    setTimeout(() => observer.disconnect(), 8000);
-}
-
 async function addPublisherFromPicker() {
     requireOwner();
     const d = dictionary();
+    const pickerSession = window.currentPublisherPickerSession?.();
+    if (pickerSession == null) return;
     const search = normalize($('publisher-picker-search')?.value);
-    const values = await window.requestAppFields?.(d.title, [{
-        label: d.field,
-        value: search,
-        placeholder: d.placeholder
-    }]);
+    const values = await window.requestAppFields?.(d.title, [
+        { label: d.field, value: search, placeholder: d.placeholder },
+        { label: d.gender, type: 'select', options: [
+            { value: '', label: d.chooseGender },
+            { value: 'male', label: d.male },
+            { value: 'female', label: d.female }
+        ] }
+    ]);
 
     const fullName = normalize(values?.[0]);
     if (!fullName) return;
+    const gender = values[1];
+    if (!['male', 'female'].includes(gender)) {
+        alert(d.chooseGender);
+        return;
+    }
 
     try {
         const id = await saveUniqueRecord('publishers', {
             fullName,
             nameKey: fullName.toLocaleLowerCase(),
+            gender,
             createdAt: today()
         });
 
-        const input = $('publisher-picker-search');
-        if (input) input.value = fullName;
-        window.renderPicker?.();
-        selectWhenAvailable(fullName);
+        window.selectPublisherForPickerSession?.(pickerSession, { id, fullName, gender });
         return id;
     } catch (error) {
         if (error?.code === 's13/publisherExists') {
@@ -288,9 +303,9 @@ let publisherCache = [];
 let stopPublisherCache = null;
 
 function publisherComparator(a, b) {
-    const compare = window.comparePublisherNames;
+    const compare = window.comparePublisherRecords;
     return typeof compare === 'function'
-        ? compare(a.fullName, b.fullName)
+        ? compare(a, b)
         : a.fullName.localeCompare(b.fullName, 'fr', { sensitivity: 'base' });
 }
 
@@ -308,7 +323,11 @@ function syncPublisherCache() {
 
     stopPublisherCache = onSnapshot(collection(db, 'publishers'), snapshot => {
         publisherCache = snapshot.docs
-            .map(item => ({ id: item.id, fullName: normalize(item.data()?.fullName) }))
+            .map(item => ({
+                id: item.id,
+                fullName: normalize(item.data()?.fullName),
+                gender: item.data()?.gender || ''
+            }))
             .filter(item => item.fullName)
             .sort(publisherComparator);
 
@@ -341,6 +360,12 @@ function dialogMatches(queryText) {
         .filter(item => Number.isFinite(item.score))
         .sort((a, b) => a.score - b.score || publisherComparator(a, b))
         .slice(0, 10);
+}
+
+function scheduleSuggestionClose(panel) {
+    setTimeout(() => {
+        if (!panel.contains(document.activeElement)) panel.classList.remove('is-open');
+    }, 120);
 }
 
 function installDialogAutocomplete() {
@@ -399,7 +424,7 @@ function installDialogAutocomplete() {
         event.preventDefault();
         first.focus();
     });
-    input.addEventListener('blur', () => setTimeout(() => panel.classList.remove('is-open'), 120));
+    input.addEventListener('blur', () => scheduleSuggestionClose(panel));
 
     render();
 }

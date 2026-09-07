@@ -95,7 +95,7 @@ function application(store) {
         requireOwner() {}, isOwner: () => true, document: ui.document, alert: text => alerts.push(text) });
     context.window = context;
     vm.runInContext('(function(){' + strip(fs.readFileSync('app-data.js', 'utf8')) +
-        ';Object.assign(globalThis,{changeHistory,historyRecordIndex,saveUniqueRecord,dataError});})()', context);
+        ';Object.assign(globalThis,{changeHistory,historyRecordIndex,validateHistory,saveUniqueRecord,updateExistingRecord,dataError});})()', context);
     vm.runInContext('(function(){' + strip(fs.readFileSync('app-core.js', 'utf8')) +
         ';globalThis.evaluateCore=code=>eval(code);})()', context);
     const seed = history => context.evaluateCore(`territories=${JSON.stringify([{ id: 'T', number: '1', history }])};historyTerritoryId='T';`);
@@ -112,7 +112,7 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
     const old = record('Original');
     store.put('territories/T', { number: '1', history: [old] }); a.seed([old]);
     const editing = a.c.editHistory(0);
-    store.put('territories/T', { number: '1', history: [old, record('Second tab')] });
+    store.put('territories/T', { number: '1', history: [old, record('Second tab', '2020-03-01', '2020-04-01')] });
     a.c.evaluateCore("dialogResolve(['Edited','01.01.2020','01.02.2020'])");
     await editing;
     assert.deepEqual(history(store).map(row => row.publisher), ['Edited', 'Second tab']);
@@ -148,7 +148,7 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
         app.c.evaluateCore("publishers=[{id:'P',fullName:'Publisher'}]");
     }
     const firstIssue = a.c.issueTerritory('T'), secondIssue = b.c.issueTerritory('T');
-    for (const app of [a, b]) app.c.evaluateCore("pickerResolve(publishers[0])");
+    for (const app of [a, b]) app.c.evaluateCore("pickerResolve.resolve(publishers[0])");
     await Promise.all([firstIssue, secondIssue]);
     assert.equal(history(store).length, 1);
     assert.equal(a.alerts.length + b.alerts.length, 1);
@@ -174,6 +174,68 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
     assert.equal(territoryResults.filter(result => result.status === 'fulfilled').length, 1);
     await a.c.saveUniqueRecord('territories', { cityId: 'Other', number: '7', history: [] });
     console.log('PASS: territory number uniqueness is scoped to the city.');
+
+    store.put('cities/C', { name: 'Original', mapUrl: 'old-map' });
+    const cityNameResults = await Promise.allSettled([a, b].map((app, index) =>
+        app.c.updateExistingRecord('cities', 'C', { name: `Name ${index}` }, { name: 'Original' })));
+    assert.equal(cityNameResults.filter(result => result.status === 'fulfilled').length, 1);
+    assert.equal(cityNameResults.find(result => result.status === 'rejected').reason.code, 's13/conflict');
+
+    store.put('cities/C', { name: 'Original', mapUrl: 'old-map' });
+    await Promise.all([
+        a.c.updateExistingRecord('cities', 'C', { name: 'Renamed' }, { name: 'Original' }),
+        b.c.updateExistingRecord('cities', 'C', { mapUrl: 'new-map' }, { mapUrl: 'old-map' })
+    ]);
+    assert.deepEqual(store.data.get('cities/C'), { name: 'Renamed', mapUrl: 'new-map' });
+    console.log('PASS: same city field conflicts while unrelated city edits are merged.');
+
+    const earlier = { id: 'H1', ...record('Earlier', '2025-01-01', '2025-02-01') };
+    const later = { id: 'H2', ...record('Later', '2025-03-01', '2025-04-01') };
+    store.put('territories/T', { history: [earlier, later] });
+    a.seed([earlier, later]);
+    const overlapEdit = a.c.editHistory(0);
+    a.c.evaluateCore("dialogResolve(['Earlier','01.01.2025','15.03.2025'])");
+    await overlapEdit;
+    assert.equal(history(store)[0].returnedAt, '2025-02-01');
+    assert.match(a.alerts.pop(), /пересекаются/);
+
+    const broken = { id: 'BROKEN', publisher: 'Broken', issuedAt: 'not-a-date', returnedAt: null };
+    store.put('territories/T', { history: [broken] });
+    a.seed([broken]);
+    await a.c.returnTerritory('T');
+    assert.equal(history(store)[0].returnedAt, null);
+    assert.match(a.alerts.pop(), /дату/);
+    assert.doesNotThrow(() => a.c.evaluateCore("territories=[{id:'M',number:'9',history:{legacy:true}}];renderTerritories()"));
+    console.log('PASS: overlapping and invalid dates are rejected; malformed legacy history does not break rendering.');
+
+    const linked = { id: 'LINK', ...record('Old name', '2025-01-01', '2025-02-01') };
+    store.put('territories/T', { history: [linked] });
+    store.put('publishers/P2', { fullName: 'Petro HRYTSYK', gender: 'male' });
+    a.seed([linked]);
+    a.c.evaluateCore("publishers=[{id:'P2',fullName:'Petro HRYTSYK',gender:'male'}]");
+    const linkEdit = a.c.editHistory(0);
+    a.c.evaluateCore("dialogResolve(['Petro HRYTSYK','01.01.2025','01.02.2025'])");
+    await linkEdit;
+    assert.equal(history(store)[0].publisherId, 'P2');
+    console.log('PASS: choosing an existing publisher while editing history preserves its database ID.');
+
+    store.put('territories/A', { history: [] });
+    store.put('territories/B', { history: [] });
+    store.put('publishers/NEW', { fullName: 'New Person', gender: 'male' });
+    a.c.evaluateCore("territories=[{id:'A',number:'1',history:[]},{id:'B',number:'2',history:[]}];publishers=[{id:'NEW',fullName:'New Person',gender:'male'}]");
+    const cancelledIssue = a.c.issueTerritory('A');
+    const stalePickerSession = a.c.currentPublisherPickerSession();
+    a.c.closePicker();
+    await cancelledIssue;
+    const currentIssue = a.c.issueTerritory('B');
+    const currentPickerSession = a.c.currentPublisherPickerSession();
+    assert.notEqual(currentPickerSession, stalePickerSession);
+    assert.equal(a.c.selectPublisherForPickerSession(stalePickerSession, { id: 'NEW', fullName: 'New Person', gender: 'male' }), false);
+    a.c.selectPublisherForPickerSession(currentPickerSession, { id: 'NEW', fullName: 'New Person', gender: 'male' });
+    await currentIssue;
+    assert.equal(store.data.get('territories/A').history.length, 0);
+    assert.equal(store.data.get('territories/B').history.length, 1);
+    console.log('PASS: a delayed publisher selection cannot affect a newer territory picker.');
 
     // Real render function: an unrelated update must preserve DOM identity.
     a.c.evaluateCore("territories=[{id:'A',number:'1',history:[]},{id:'B',number:'2',history:[]}];renderTerritories()");

@@ -13,8 +13,9 @@ const context = vm.createContext({
     queueMicrotask() {}
 });
 
-vm.runInContext(`${source}\nglobalThis.__compareNames = compareNames;`, context);
+vm.runInContext(`${source}\nglobalThis.__compareNames = compareNames; globalThis.__comparePublishers = comparePublishers;`, context);
 const compareNames = context.__compareNames;
+const comparePublishers = context.__comparePublishers;
 
 const names = [
     'Khachatur MADUNTSEV',
@@ -101,4 +102,10 @@ assert.ok(actual.indexOf('Petro HRYTSYK') < actual.indexOf('Nadia HRYTSYK'));
 assert.ok(actual.indexOf('Roman DRANCHUK') < actual.indexOf('Nataliia DRANCHUK'));
 assert.ok(actual.indexOf('Serhii TKACHENKO') < actual.indexOf('Irina TKACHENKO'));
 
-console.log('PASS: publishers are sorted by surname, with men first when surnames match.');
+const newPublishers = [
+    { fullName: 'Anna IVANOV', gender: 'female' },
+    { fullName: 'Sergei IVANOV', gender: 'male' }
+].sort(comparePublishers);
+assert.deepEqual(newPublishers.map(item => item.fullName), ['Sergei IVANOV', 'Anna IVANOV']);
+
+console.log('PASS: publishers are sorted by surname, with stored gender supporting new names.');

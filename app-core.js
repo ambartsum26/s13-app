@@ -1,9 +1,8 @@
-import { changeHistory, historyRecordIndex, saveUniqueRecord, dataError } from './app-data.js';
+import { changeHistory, historyRecordIndex, saveUniqueRecord, updateExistingRecord, dataError } from './app-data.js';
 import { db, isOwner, requireOwner, observeOwner } from './app-auth.js';
 import {
     collection,
     addDoc,
-    updateDoc,
     doc,
     onSnapshot,
     query,
@@ -57,7 +56,12 @@ const I = {
         anotherOpen: "У этого участка уже есть другая открытая выдача.",
         invalidDate: "Проверьте дату. Используйте формат ДД.ММ.ГГГГ.",
         returnBeforeIssue: "Дата сдачи не может быть раньше даты выдачи.",
+        historyOverlap: "Периоды выдачи этого участка пересекаются. Проверьте даты выдачи и сдачи.",
         duplicateTerritory: "Участок с таким номером уже есть в этом городе.",
+        gender: "Пол",
+        male: "Мужчина",
+        female: "Женщина",
+        chooseGender: "Выберите пол возвещателя.",
         appError: "Ошибка приложения",
         conflict: "Эту запись уже изменили в другой вкладке. Откройте её заново и повторите действие.",
         saveError: "Не удалось сохранить изменения. Проверьте подключение к интернету и повторите действие. Если ошибка повторяется, проверьте доступ к базе."
@@ -107,7 +111,12 @@ const I = {
         anotherOpen: "Ce territoire a déjà une autre attribution en cours.",
         invalidDate: "Vérifiez la date. Utilisez le format JJ/MM/AAAA.",
         returnBeforeIssue: "La date de retour ne peut pas être antérieure à la date d’attribution.",
+        historyOverlap: "Les périodes d’attribution de ce territoire se chevauchent. Vérifiez les dates.",
         duplicateTerritory: "Un territoire portant ce numéro existe déjà dans cette ville.",
+        gender: "Sexe",
+        male: "Homme",
+        female: "Femme",
+        chooseGender: "Sélectionnez le sexe du proclamateur.",
         appError: "Erreur de l’application",
         conflict: "Cette entrée a changé dans une autre fenêtre. Rouvrez-la et réessayez.",
         saveError: "Impossible d’enregistrer les modifications. Vérifiez votre connexion et réessayez. Si l’erreur persiste, vérifiez l’accès à la base."
@@ -210,11 +219,15 @@ function daysBetween(from, to) {
 }
 
 function latestCompleted(t) {
-    const completed = (t.history || []).filter(h => parseDate(h?.returnedAt));
+    const completed = historyOf(t).filter(h => parseDate(h?.returnedAt));
     return completed.reduce(
         (best, h) => !best || parseDate(h.returnedAt) > parseDate(best.returnedAt) ? h : best,
         null
     );
+}
+
+function historyOf(territory) {
+    return Array.isArray(territory?.history) ? territory.history : [];
 }
 
 function activeHistory(t) {
@@ -362,11 +375,20 @@ function dialog(title, fields) {
             label.className = 'text-[10px] uppercase text-slate-400 font-bold';
             label.textContent = field.label;
 
-            const input = document.createElement('input');
+            const input = document.createElement(field.type === 'select' ? 'select' : 'input');
             input.id = `dlg-${index}`;
-            input.value = field.value || '';
-            input.placeholder = field.placeholder || '';
             input.className = 'w-full h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 text-xs focus:outline-none focus:border-indigo-500';
+            if (field.type === 'select') {
+                (field.options || []).forEach(option => {
+                    const item = document.createElement('option');
+                    item.value = option.value;
+                    item.textContent = option.label;
+                    input.append(item);
+                });
+            } else {
+                input.placeholder = field.placeholder || '';
+            }
+            input.value = field.value || '';
 
             wrapper.append(label, input);
             $('dialog-fields').append(wrapper);
@@ -385,7 +407,7 @@ window.closeDialog = ok => {
     dialogResolve = null;
     $('dialog-modal').classList.add('hidden');
     $('dialog-modal').classList.remove('flex');
-    resolve?.(ok ? [...$('dialog-fields').querySelectorAll('input')].map(x => x.value) : null);
+    resolve?.(ok ? [...$('dialog-fields').querySelectorAll('input, select, textarea')].map(x => x.value) : null);
 };
 
 let confirmResolve = null;
@@ -464,7 +486,7 @@ window.renameCity = async () => {
     if (!city) return;
     const values = await dialog(tr('renameCity'), [{ label: tr('renameCity'), value: city.name }]);
     if (values?.[0]?.trim()) {
-        await updateDoc(doc(db, 'cities', city.id), { name: values[0].trim() });
+        await updateExistingRecord('cities', city.id, { name: values[0].trim() }, { name: city.name });
     }
 };
 
@@ -473,7 +495,7 @@ window.editCityMap = async () => {
     if (!city) return;
     const values = await dialog(tr('cityMap'), [{ label: tr('map'), value: city.mapUrl || '' }]);
     if (values) {
-        await updateDoc(doc(db, 'cities', city.id), { mapUrl: values[0].trim() });
+        await updateExistingRecord('cities', city.id, { mapUrl: values[0].trim() }, { mapUrl: city.mapUrl || '' });
     }
 };
 
@@ -751,7 +773,11 @@ window.returnTerritory = async id => {
 
     const today = parseDate(dateStr());
     const issued = parseDate(active.record.issuedAt);
-    if (issued && today < issued) {
+    if (!issued) {
+        alert(tr('invalidDate'));
+        return;
+    }
+    if (today < issued) {
         alert(tr('returnBeforeIssue'));
         return;
     }
@@ -770,11 +796,12 @@ window.showHistory = id => {
     setText('history-title', `${tr('history')} №${t.number}`);
     $('history-list').innerHTML = '';
 
-    if (!(t.history || []).length) {
+    const history = historyOf(t);
+    if (!history.length) {
         $('history-list').innerHTML = `<p class="text-xs text-slate-400 italic">${tr('empty')}</p>`;
     }
 
-    (t.history || []).forEach((h, i) => {
+    history.forEach((h, i) => {
         const row = document.createElement('div');
         row.className = 'bg-slate-950 border border-slate-800 rounded-2xl p-3 flex justify-between gap-2';
         row.innerHTML = `
@@ -801,7 +828,7 @@ window.closeHistory = () => {
 
 window.editHistory = async i => {
     const t = territories.find(x => x.id === historyTerritoryId);
-    const h = t?.history?.[i];
+    const h = historyOf(t)[i];
     if (!h) return;
 
     const values = await dialog(`${tr('history')} #${i + 1}`, [
@@ -812,6 +839,7 @@ window.editHistory = async i => {
     if (!values) return;
 
     const publisherName = values[0].trim() || h.publisher;
+    const selectedPublisher = publishers.find(item => norm(item.fullName) === norm(publisherName));
     const issuedAt = inputDate(values[1]);
     const returnedRaw = values[2].trim();
     const returnedAt = returnedRaw ? inputDate(returnedRaw) : null;
@@ -826,15 +854,25 @@ window.editHistory = async i => {
         return;
     }
 
-    await changeHistory(t.id, history => {
+    await changeHistory(t.id, async (history, current, transaction) => {
         const index = historyRecordIndex(history, h);
         if (!returnedAt && history.some((record, other) => other !== index && !record.returnedAt)) {
             throw dataError('anotherOpen');
         }
+        let savedPublisherName = publisherName;
+        let savedPublisherId = norm(publisherName) === norm(h.publisher) ? (h.publisherId || null) : null;
+        if (selectedPublisher) {
+            const latestPublisher = await transaction.get(doc(db, 'publishers', selectedPublisher.id));
+            if (!latestPublisher.exists() || norm(latestPublisher.data().fullName) !== norm(publisherName)) {
+                throw dataError('conflict');
+            }
+            savedPublisherName = latestPublisher.data().fullName;
+            savedPublisherId = selectedPublisher.id;
+        }
         history[index] = {
             ...history[index],
-            publisherId: norm(publisherName) === norm(h.publisher) ? (h.publisherId || null) : null,
-            publisher: publisherName,
+            publisherId: savedPublisherId,
+            publisher: savedPublisherName,
             issuedAt,
             returnedAt
         };
@@ -843,12 +881,13 @@ window.editHistory = async i => {
 
 window.deleteHistory = async i => {
     const t = territories.find(x => x.id === historyTerritoryId);
-    if (!t?.history?.[i]) return;
+    const selected = historyOf(t)[i];
+    if (!selected) return;
 
-    if (!await confirmBox(`${lang === 'fr' ? 'Supprimer' : 'Удалить'} #${i + 1} (${t.history[i].publisher})?`)) return;
+    if (!await confirmBox(`${lang === 'fr' ? 'Supprimer' : 'Удалить'} #${i + 1} (${selected.publisher})?`)) return;
 
     await changeHistory(t.id, history => {
-        history.splice(historyRecordIndex(history, t.history[i]), 1);
+        history.splice(historyRecordIndex(history, selected), 1);
     });
 };
 
@@ -886,6 +925,7 @@ function renderPublishers() {
         .filter(p => (p.fullName || '').toLocaleLowerCase().includes(q))
         .forEach(p => {
             const row = document.createElement('div');
+            row.dataset.publisherGender = p.gender || window.publisherGenderForName?.(p.fullName) || '';
             row.className = 'bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 flex justify-between items-center';
             row.innerHTML = `
                 <b>${esc(p.fullName)}</b>
@@ -899,9 +939,21 @@ function renderPublishers() {
 window.renderPublishers = renderPublishers;
 
 window.addPublisher = async () => {
-    const values = await dialog(tr('addPublisher'), [{ label: tr('publishers'), placeholder: 'Иван Иванов' }]);
+    const values = await dialog(tr('addPublisher'), [
+        { label: tr('publishers'), placeholder: 'Иван Иванов' },
+        { label: tr('gender'), type: 'select', options: [
+            { value: '', label: tr('chooseGender') },
+            { value: 'male', label: tr('male') },
+            { value: 'female', label: tr('female') }
+        ] }
+    ]);
     const fullName = values?.[0]?.trim().replace(/\s+/g, ' ');
     if (!fullName) return;
+    const gender = values[1];
+    if (!['male', 'female'].includes(gender)) {
+        alert(tr('chooseGender'));
+        return;
+    }
 
     if (publishers.some(p => norm(p.fullName) === norm(fullName))) {
         alert(tr('publisherExists'));
@@ -911,6 +963,7 @@ window.addPublisher = async () => {
     await saveUniqueRecord('publishers', {
         fullName,
         nameKey: norm(fullName),
+        gender,
         createdAt: dateStr()
     });
 };
@@ -921,10 +974,22 @@ window.editPublisher = async id => {
 
     const values = await dialog(
         lang === 'fr' ? 'Modifier le proclamateur' : 'Изменить возвещателя',
-        [{ label: tr('publishers'), value: p.fullName }]
+        [
+            { label: tr('publishers'), value: p.fullName },
+            { label: tr('gender'), type: 'select', value: p.gender || window.publisherGenderForName?.(p.fullName) || '', options: [
+                { value: '', label: tr('chooseGender') },
+                { value: 'male', label: tr('male') },
+                { value: 'female', label: tr('female') }
+            ] }
+        ]
     );
     const fullName = values?.[0]?.trim().replace(/\s+/g, ' ');
     if (!fullName) return;
+    const gender = values[1];
+    if (!['male', 'female'].includes(gender)) {
+        alert(tr('chooseGender'));
+        return;
+    }
 
     if (publishers.some(x => x.id !== id && norm(x.fullName) === norm(fullName))) {
         alert(tr('publisherExists'));
@@ -933,7 +998,8 @@ window.editPublisher = async id => {
 
     await saveUniqueRecord('publishers', {
         fullName,
-        nameKey: norm(fullName)
+        nameKey: norm(fullName),
+        gender
     }, p);
 };
 
@@ -947,9 +1013,10 @@ window.deletePublisher = async id => {
 };
 
 let pickerResolve = null;
+let pickerSession = 0;
 function pickPublisher() {
     return new Promise(resolve => {
-        pickerResolve = resolve;
+        pickerResolve = { resolve, session: ++pickerSession };
         $('publisher-picker-search').value = '';
         renderPicker();
         $('publisher-picker-modal').classList.remove('hidden');
@@ -967,22 +1034,28 @@ function renderPicker() {
         .filter(p => (p.fullName || '').toLocaleLowerCase().includes(q))
         .forEach(p => {
             const button = document.createElement('button');
+            const session = pickerResolve?.session;
+            button.dataset.publisherGender = p.gender || window.publisherGenderForName?.(p.fullName) || '';
             button.className = 'w-full text-left p-3 rounded-xl bg-slate-950 hover:bg-indigo-950 border border-slate-800';
             button.textContent = p.fullName;
-            button.onclick = () => closePicker(p);
+            button.onclick = () => closePicker(p, session);
             list.append(button);
         });
 }
 window.renderPicker = renderPicker;
 
-function closePicker(p) {
-    const resolve = pickerResolve;
+function closePicker(p, session = pickerResolve?.session) {
+    if (!pickerResolve || pickerResolve.session !== session) return false;
+    const pending = pickerResolve;
     pickerResolve = null;
     $('publisher-picker-modal').classList.add('hidden');
     $('publisher-picker-modal').classList.remove('flex');
-    resolve?.(p || null);
+    pending.resolve(p || null);
+    return true;
 }
 window.closePicker = () => closePicker(null);
+window.currentPublisherPickerSession = () => pickerResolve?.session ?? null;
+window.selectPublisherForPickerSession = (session, publisher) => closePicker(publisher, session);
 
 function scheduleMidnight() {
     const now = new Date();

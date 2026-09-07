@@ -38,24 +38,46 @@ function firstNameKey(fullName) {
     return nameParts(fullName)[0] || '';
 }
 
-function genderRank(fullName) {
-    return MALE_FIRST_NAMES.has(fold(firstNameKey(fullName))) ? 0 : 1;
+function publisherProfile(value) {
+    return typeof value === 'string'
+        ? { fullName: value, gender: '' }
+        : { fullName: value?.fullName || '', gender: value?.gender || '' };
+}
+
+function publisherGenderForName(fullName) {
+    return MALE_FIRST_NAMES.has(fold(firstNameKey(fullName))) ? 'male' : '';
+}
+
+function genderRank(value) {
+    const publisher = publisherProfile(value);
+    const gender = publisher.gender || publisherGenderForName(publisher.fullName);
+    if (gender === 'male') return 0;
+    if (gender === 'female') return 1;
+    return 2;
+}
+
+function comparePublishers(a, b) {
+    const left = publisherProfile(a);
+    const right = publisherProfile(b);
+    const surnameCompare = surnameKey(left.fullName).localeCompare(surnameKey(right.fullName), 'fr', { sensitivity: 'base' });
+    if (surnameCompare) return surnameCompare;
+
+    const genderCompare = genderRank(left) - genderRank(right);
+    if (genderCompare) return genderCompare;
+
+    const firstNameCompare = firstNameKey(left.fullName).localeCompare(firstNameKey(right.fullName), 'fr', { sensitivity: 'base' });
+    if (firstNameCompare) return firstNameCompare;
+
+    return left.fullName.localeCompare(right.fullName, 'fr', { sensitivity: 'base' });
 }
 
 function compareNames(a, b) {
-    const surnameCompare = surnameKey(a).localeCompare(surnameKey(b), 'fr', { sensitivity: 'base' });
-    if (surnameCompare) return surnameCompare;
-
-    const genderCompare = genderRank(a) - genderRank(b);
-    if (genderCompare) return genderCompare;
-
-    const firstNameCompare = firstNameKey(a).localeCompare(firstNameKey(b), 'fr', { sensitivity: 'base' });
-    if (firstNameCompare) return firstNameCompare;
-
-    return String(a || '').localeCompare(String(b || ''), 'fr', { sensitivity: 'base' });
+    return comparePublishers(a, b);
 }
 
 globalThis.comparePublisherNames = compareNames;
+globalThis.comparePublisherRecords = comparePublishers;
+globalThis.publisherGenderForName = publisherGenderForName;
 
 function publisherNameFromRow(row) {
     return row.querySelector('b')?.textContent?.trim() || row.textContent?.trim() || '';
@@ -79,8 +101,14 @@ function sortContainer(container, getName) {
 }
 
 function sortPublishers() {
-    sortContainer(document.getElementById('publishers-list'), publisherNameFromRow);
-    sortContainer(document.getElementById('publisher-picker-list'), button => button.textContent?.trim() || '');
+    sortContainer(document.getElementById('publishers-list'), row => ({
+        fullName: publisherNameFromRow(row),
+        gender: row.dataset.publisherGender || ''
+    }));
+    sortContainer(document.getElementById('publisher-picker-list'), button => ({
+        fullName: button.textContent?.trim() || '',
+        gender: button.dataset.publisherGender || ''
+    }));
 }
 
 for (const id of ['publishers-list', 'publisher-picker-list']) {

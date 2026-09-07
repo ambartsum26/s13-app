@@ -31,3 +31,4 @@ jobs:
           node tests/data.test.cjs
           node tests/export.test.cjs
           node tests/publisher-sort.test.cjs
+          node tests/search-picker.test.cjs

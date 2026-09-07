@@ -23,6 +23,36 @@ export function historyRecordIndex(history, expected) {
     return matches[0].index;
 }
 
+function validIsoDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+    const [year, month, day] = value.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+// A territory cannot be assigned to two people during overlapping periods.
+// Same-day return/reassignment is allowed; invalid legacy dates must be fixed
+// before another history change can be saved.
+export function validateHistory(history) {
+    const periods = history.map(record => {
+        if (!record || !validIsoDate(record.issuedAt) ||
+            (record.returnedAt && !validIsoDate(record.returnedAt))) {
+            throw dataError('invalidDate');
+        }
+        if (record.returnedAt && record.returnedAt < record.issuedAt) {
+            throw dataError('returnBeforeIssue');
+        }
+        return { start: record.issuedAt, end: record.returnedAt || null };
+    }).sort((a, b) => a.start.localeCompare(b.start));
+
+    for (let index = 1; index < periods.length; index++) {
+        const previous = periods[index - 1];
+        if (!previous.end || previous.end > periods[index].start) {
+            throw dataError('historyOverlap');
+        }
+    }
+}
+
 export async function changeHistory(territoryId, change) {
     requireOwner();
     const ref = doc(db, 'territories', territoryId);
@@ -34,6 +64,7 @@ export async function changeHistory(territoryId, change) {
         if (territory.history != null && !Array.isArray(territory.history)) throw dataError('conflict');
         const history = (territory.history || []).map(record => ({ ...record }));
         await change(history, territory, transaction);
+        validateHistory(history);
         const ids = new Set();
         for (const record of history) {
             if (!record.id || ids.has(record.id)) record.id = crypto.randomUUID();
@@ -41,6 +72,24 @@ export async function changeHistory(territoryId, change) {
         }
         requireOwner();
         transaction.update(ref, { history });
+    });
+}
+
+// Update selected fields only if the values shown to the editor are still
+// current. Unrelated changes are preserved, while same-field edits conflict.
+export async function updateExistingRecord(kind, id, values, expected) {
+    requireOwner();
+    const ref = doc(db, kind, id);
+    return runTransaction(db, async transaction => {
+        requireOwner();
+        const snapshot = await transaction.get(ref);
+        if (!snapshot.exists() || Object.keys(expected).some(key =>
+            JSON.stringify(snapshot.data()[key]) !== JSON.stringify(expected[key]))) {
+            throw dataError('conflict');
+        }
+        requireOwner();
+        transaction.update(ref, values);
+        return id;
     });
 }
 

@@ -301,7 +301,7 @@ button:disabled { opacity:.42 !important; cursor:not-allowed !important; transfo
 .territory-card .waiting-return-line { color:rgba(255,255,255,.92) !important; font-size:10px !important; }
 
 #publishers-title { color:#fff !important; font-size:1.16rem !important; font-weight:950 !important; letter-spacing:-.015em !important; }
-#publishers-search, #publisher-picker-search, #dialog-fields input {
+#publishers-search, #publisher-picker-search, #dialog-fields input, #dialog-fields select {
     height:42px !important;
     border:none !important;
     outline:none !important;
@@ -310,7 +310,7 @@ button:disabled { opacity:.42 !important; cursor:not-allowed !important; transfo
     color:#fff !important;
     box-shadow:none !important;
 }
-#publishers-search:focus, #publisher-picker-search:focus, #dialog-fields input:focus { background:#20202a !important; box-shadow:0 0 0 3px rgba(49,209,127,.10) !important; }
+#publishers-search:focus, #publisher-picker-search:focus, #dialog-fields input:focus, #dialog-fields select:focus { background:#20202a !important; box-shadow:0 0 0 3px rgba(49,209,127,.10) !important; }
 #publishers-list {
     display:grid !important;
     grid-template-columns:1fr !important;

@@ -41,6 +41,7 @@ const flush = () => new Promise(resolve=>setImmediate(resolve));
  console.log('PASS: no pre-login reads, stale initial load ignored, all three subscriptions stopped, cached UI data cleared.');
  const html=fs.readFileSync('./index.html','utf8');const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);assert.equal(ids.length,new Set(ids).size);
  assert.match(html,/body data-auth-state="locked"/);
+ assert.match(html,/#auth-panel \[hidden\]\s*\{\s*display:\s*none\s*!important/);
  const rules=fs.readFileSync('./firestore.rules','utf8');assert.match(rules,/request.auth != null/);assert.match(rules,/fJT9srxZezNyAVC1NO2Rm6jdK4G3/);assert.doesNotMatch(rules,/if true/);
  console.log('PASS: locked initial HTML, unique IDs, owner UID matches rule source. Rules still need server simulator validation.');
 })().catch(e=>{console.error(e);process.exitCode=1});
