@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,14 +23,11 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install pinned build dependencies
-        run: npm install --no-save --package-lock=false esbuild@0.28.2 firebase@10.8.0
+      - name: Install locked toolchain
+        run: npm install --ignore-scripts
 
-      - name: Build static Tailwind CSS
-        run: npx --yes tailwindcss@3.4.17 -c tailwind.config.cjs -i tailwind.input.css -o tailwind.generated.css --minify
-
-      - name: Build local production JavaScript
-        run: node scripts/build-production.mjs
+      - name: Build production CSS and JavaScript
+        run: npm run build
 
       - name: Vendor Font Awesome solid assets
         run: |
@@ -69,6 +66,7 @@ jobs:
 
       - name: Verify production assets
         run: |
+          test -s package-lock.json
           test -s tailwind.generated.css
           test -s app.bundle.js
           test -s vendor/fontawesome/css/fontawesome.min.css
@@ -83,15 +81,15 @@ jobs:
           ! grep -q 'cdnjs.cloudflare.com' index.html
           ! grep -q 'gstatic.com/firebasejs' app.bundle.js
 
-      - name: Commit generated production assets
+      - name: Commit locked production assets
         shell: bash
         run: |
-          if git diff --quiet -- index.html tailwind.generated.css app.bundle.js vendor/fontawesome && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1 && git ls-files --error-unmatch vendor/fontawesome/SHA256SUMS >/dev/null 2>&1; then
-            echo "Production assets are already current."
+          if git diff --quiet -- package-lock.json index.html tailwind.generated.css app.bundle.js vendor/fontawesome && git ls-files --error-unmatch package-lock.json >/dev/null 2>&1 && git ls-files --error-unmatch tailwind.generated.css >/dev/null 2>&1 && git ls-files --error-unmatch app.bundle.js >/dev/null 2>&1 && git ls-files --error-unmatch vendor/fontawesome/SHA256SUMS >/dev/null 2>&1; then
+            echo "Production assets and lockfile are already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html tailwind.generated.css app.bundle.js vendor/fontawesome
-          git commit -m "Build self-contained production assets"
+          git add package-lock.json index.html tailwind.generated.css app.bundle.js vendor/fontawesome
+          git commit -m "Lock reproducible production assets"
           git push origin HEAD:hardening/repo-10-of-10
