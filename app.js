@@ -5,7 +5,6 @@ import './app-ui.js';
 import './app-popups.js';
 import './app-cards.js';
 import './app-filters.js';
-import './app-publisher-roster.js';
 import './app-publisher-sort.js';
 import './app-picker-add.js';
 import './s13-export.js';
