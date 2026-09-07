@@ -32,8 +32,8 @@ function installSessionStorageFallback() {
                     get: () => fallback
                 });
             } catch {
-                // The fallback is still used by this module even if the browser
-                // does not let us shadow Window.sessionStorage.
+                // Keep using the in-memory object inside this module even if
+                // the browser refuses to shadow Window.sessionStorage.
             }
         }
         return fallback;
@@ -41,6 +41,16 @@ function installSessionStorageFallback() {
 }
 
 const session = installSessionStorageFallback();
+
+function runInstaller(name, installer) {
+    try {
+        installer();
+        return true;
+    } catch (error) {
+        console.warn(`S13 hardening: ${name} unavailable`, error?.message || 'unknown');
+        return false;
+    }
+}
 
 function installCriticalUtilityFallback() {
     const style = document.createElement('style');
@@ -116,7 +126,9 @@ function installInnerHtmlGuard() {
                 }
 
                 if (name === 'style') {
-                    const trustedJw = element.tagName === 'SPAN' && element.textContent.trim() === 'JW' && element.getAttribute('aria-hidden') === 'true';
+                    const trustedJw = element.tagName === 'SPAN'
+                        && element.textContent.trim() === 'JW'
+                        && element.getAttribute('aria-hidden') === 'true';
                     if (!trustedJw) element.removeAttribute(attribute.name);
                     return;
                 }
@@ -153,6 +165,12 @@ function installAnchorGuard() {
     const descriptor = Object.getOwnPropertyDescriptor(HTMLAnchorElement.prototype, 'href');
     if (!descriptor?.get || !descriptor?.set || descriptor.configurable === false) return;
 
+    const block = link => {
+        descriptor.set.call(link, '#');
+        link.dataset.s13BlockedHref = '1';
+        link.setAttribute('aria-disabled', 'true');
+    };
+
     Object.defineProperty(HTMLAnchorElement.prototype, 'href', {
         configurable: true,
         enumerable: descriptor.enumerable,
@@ -165,12 +183,11 @@ function installAnchorGuard() {
                 if (this.target === '_blank') this.rel = 'noopener noreferrer';
                 return;
             }
-
-            descriptor.set.call(this, '#');
-            this.dataset.s13BlockedHref = '1';
-            this.setAttribute('aria-disabled', 'true');
+            block(this);
         }
     });
+
+    window.s13BlockUnsafeLink = block;
 
     document.addEventListener('click', event => {
         const link = event.target.closest?.('a[data-s13-blocked-href="1"]');
@@ -185,7 +202,13 @@ function secureBlankLinks(root = document) {
         link.rel = 'noopener noreferrer';
         const raw = link.getAttribute('href');
         if (raw && !isAllowedAppUrl(raw, location.href)) {
-            link.href = '#';
+            if (typeof window.s13BlockUnsafeLink === 'function') {
+                window.s13BlockUnsafeLink(link);
+            } else {
+                link.setAttribute('href', '#');
+                link.dataset.s13BlockedHref = '1';
+                link.setAttribute('aria-disabled', 'true');
+            }
         }
     });
 }
@@ -277,7 +300,9 @@ function installPopupAccessibility() {
         if (target instanceof HTMLElement && !target.closest('.s13-popup-overlay')) lastActivator = target;
     }, true);
     document.addEventListener('keydown', event => {
-        if ((event.key === 'Enter' || event.key === ' ') && event.target instanceof HTMLElement && !event.target.closest('.s13-popup-overlay')) {
+        if ((event.key === 'Enter' || event.key === ' ')
+            && event.target instanceof HTMLElement
+            && !event.target.closest('.s13-popup-overlay')) {
             lastActivator = event.target;
         }
     }, true);
@@ -380,10 +405,10 @@ function installCityIdNavigation() {
     }, true);
 }
 
-installCriticalUtilityFallback();
-installInnerHtmlGuard();
-installAnchorGuard();
-installBlankLinkObserver();
-installListboxKeyboardNavigation();
-installPopupAccessibility();
-queueMicrotask(installCityIdNavigation);
+runInstaller('critical CSS fallback', installCriticalUtilityFallback);
+runInstaller('HTML sanitizer', installInnerHtmlGuard);
+runInstaller('URL guard', installAnchorGuard);
+runInstaller('blank-link guard', installBlankLinkObserver);
+runInstaller('listbox keyboard navigation', installListboxKeyboardNavigation);
+runInstaller('popup accessibility', installPopupAccessibility);
+queueMicrotask(() => runInstaller('city ID navigation', installCityIdNavigation));
