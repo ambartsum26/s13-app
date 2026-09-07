@@ -93,7 +93,7 @@ function installInnerHtmlGuard() {
     if (!descriptor?.get || !descriptor?.set || descriptor.configurable === false) return;
 
     const blockedTags = new Set([
-        'SCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'BASE', 'META', 'LINK', 'FORM',
+        'SCRIPT', 'STYLE', 'TEMPLATE', 'IFRAME', 'OBJECT', 'EMBED', 'BASE', 'META', 'LINK', 'FORM',
         'IMG', 'SVG', 'MATH', 'VIDEO', 'AUDIO', 'SOURCE', 'TRACK'
     ]);
     const urlAttributes = new Set(['href', 'src', 'xlink:href', 'action', 'formaction']);
