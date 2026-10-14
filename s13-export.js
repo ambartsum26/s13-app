@@ -119,46 +119,6 @@ function currentServiceYear(now = new Date()) {
     return now.getFullYear() + (now.getMonth() >= 8 ? 1 : 0);
 }
 
-function serviceYearFromIsoDate(value) {
-    const date = parseIsoDate(value);
-    if (!date) return null;
-    return date.getFullYear() + (date.getMonth() >= 8 ? 1 : 0);
-}
-
-function availableServiceYears(territories, now = new Date()) {
-    const current = currentServiceYear(now);
-    let earliest = current;
-    let latest = current;
-    let hasHistory = false;
-
-    territories.forEach(territory => {
-        const history = Array.isArray(territory.history) ? territory.history : [];
-        history.forEach(record => {
-            if (!parseIsoDate(record?.issuedAt) || (record.returnedAt && !parseIsoDate(record.returnedAt))) {
-                throw new Error('invalid-history-date');
-            }
-
-            const issuedYear = serviceYearFromIsoDate(record.issuedAt);
-            const returnedYear = record.returnedAt ? serviceYearFromIsoDate(record.returnedAt) : current;
-            earliest = Math.min(earliest, issuedYear);
-            latest = Math.max(latest, returnedYear || issuedYear);
-            hasHistory = true;
-        });
-    });
-
-    if (!hasHistory) return [current];
-
-    const years = [];
-    for (let year = latest; year >= earliest; year--) years.push(year);
-    return years;
-}
-
-function serviceYearOptionLabel(year, isFr) {
-    return isFr
-        ? `${year} — sept. ${year - 1} à août ${year}`
-        : `${year} — сент. ${year - 1} → авг. ${year}`;
-}
-
 function forServiceYear(territories, year) {
     const start = `${year - 1}-09-01`;
     const end = `${year}-09-01`;
@@ -438,45 +398,27 @@ window.exportOfficialRegister = async () => {
     if (exporting) return;
     exporting = true;
     const isFr = document.documentElement.lang === 'fr';
-
     try {
         requireOwner();
-
+        const values = await window.requestAppFields('S-13', [{
+            label: isFr ? 'Année de service (septembre–août)' : 'Служебный год (сентябрь–август)',
+            value: String(currentServiceYear())
+        }]);
+        if (!values) return;
+        const rawYear = values[0].trim();
+        const year = Number(rawYear);
+        if (!/^\d{4}$/.test(rawYear) || year < 1900 || year > 9998) {
+            alert(isFr ? 'Saisissez une année à quatre chiffres.' : 'Введите год четырьмя цифрами.');
+            return;
+        }
+        requireOwner();
         const city = await resolveActiveCity();
         if (!city) {
-            alert(isFr ? 'Sélectionnez d’abord une ville.' : 'Сначала выберите город.');
+            alert('Sélectionnez d’abord une ville.');
             return;
         }
 
         const territories = await loadTerritories(city.id);
-        requireOwner();
-
-        const years = availableServiceYears(territories);
-        const earliestYear = years.at(-1);
-        const currentYear = currentServiceYear();
-        const defaultYear = years.includes(currentYear) ? currentYear : years[0];
-
-        const values = await window.requestAppFields('S-13', [{
-            label: isFr
-                ? `Année de service (données disponibles depuis ${earliestYear})`
-                : `Служебный год (записи доступны с ${earliestYear})`,
-            type: 'select',
-            value: String(defaultYear),
-            options: years.map(year => ({
-                value: String(year),
-                label: serviceYearOptionLabel(year, isFr)
-            }))
-        }]);
-
-        if (!values) return;
-
-        const rawYear = values[0].trim();
-        const year = Number(rawYear);
-        if (!/^\d{4}$/.test(rawYear) || !years.includes(year)) {
-            alert(isFr ? 'Sélectionnez une année disponible.' : 'Выберите доступный год.');
-            return;
-        }
-
         requireOwner();
         const html = makeDocument(city, forServiceYear(territories, year), year);
         const blob = new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' });
