@@ -55,7 +55,10 @@ async function seedGroup(groupId, ownerUid) {
         body: JSON.stringify({
             fields: {
                 custodianUid: { stringValue: ownerUid },
-                schemaVersion: { integerValue: '1' }
+                schemaVersion: { integerValue: '2' },
+                status: { stringValue: 'active' },
+                revision: { integerValue: '0' },
+                handoverId: { stringValue: '' }
             }
         })
     });
