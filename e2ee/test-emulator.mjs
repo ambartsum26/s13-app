@@ -12,6 +12,8 @@ import {
     getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, deleteDoc, getDocs, collection
 } from 'firebase/firestore';
 import { createGroupVault, encryptDocument, recoverGroupVault, decryptDocument } from './crypto.js';
+import { createEncryptedTerritoryService } from './territory-service.js';
+import { createGroupFirestoreTransport } from './firestore-transport.js';
 
 const projectId = 'demo-s13-e2ee';
 const emulatorEnv = process.env.FIRESTORE_EMULATOR_HOST;
@@ -139,8 +141,49 @@ try {
     await denied(() => getDocs(collection(first.db, 'e2eeGroups')), 'bulk enumeration of groups');
     console.log('PASS: plaintext/mismatched records, group creation and deletes are rejected.');
 
+    // Encrypted application operations through REAL Firestore transactions.
+    const contextFor = (collectionName, documentId) => ({
+        groupId: 'group-a', collection: collectionName, documentId
+    });
+    const cityRef = doc(first.db, 'e2eeGroups', 'group-a', 'cities', 'test-city');
+    const publisherRef = doc(first.db, 'e2eeGroups', 'group-a', 'publishers', 'test-person');
+    await setDoc(cityRef, await encryptDocument(vaultA.key,
+        contextFor('cities', 'test-city'), { name: 'Ville Fictive' }));
+    await setDoc(publisherRef, await encryptDocument(vaultA.key,
+        contextFor('publishers', 'test-person'), { fullName: 'Émile Fictif' }));
+    const adapter = createGroupFirestoreTransport({
+        auth: first.auth, db: first.db, groupId: 'group-a',
+        custodianUid: firstCredential.user.uid
+    });
+    const encryptedService = createEncryptedTerritoryService({
+        groupId: 'group-a', key: vaultA.key, transport: adapter
+    });
+    assert.equal((await encryptedService.searchPublishers('emile')).length, 1);
+
+    // The existing sample was returned 2026-10-12, so 2027-10-12 is allowed.
+    await encryptedService.issueTerritory({
+        territoryId: 'sample-01', publisherId: 'test-person',
+        issuedAt: '2027-10-12', historyId: 'new-issue'
+    });
+    const beforeReturn = await encryptedService.prepareS13({
+        cityId: 'test-city', serviceYear: 2028
+    });
+    // Territory must be assigned to the city to appear in annual report.
+    assert.equal(beforeReturn.territories.length, 0);
+
+    await encryptedService.returnTerritory({
+        territoryId: 'sample-01', returnedAt: '2027-11-01'
+    });
+    const saved = (await getDoc(refA)).data();
+    assert.ok(!JSON.stringify(saved).includes('Émile Fictif'));
+    assert.ok(!JSON.stringify(saved).includes('2027-10-12'));
+    assert.equal((await decryptDocument(vaultA.key, pathA, saved)).history.length, 2);
+    console.log('PASS: encrypted publisher search and transactional issue/return use real Firestore.');
+
     await signOut(first.auth);
     await denied(() => getDoc(refA), 'read after sign-out');
+    await assert.rejects(() => encryptedService.searchPublishers('emile'), /Group session is not authorized/);
+    adapter.close();
     console.log('PASS: sign-out revokes Firestore access.');
 } finally {
     await Promise.allSettled(apps.map(deleteApp));
