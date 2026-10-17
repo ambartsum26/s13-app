@@ -72,7 +72,7 @@ const assert = require('node:assert/strict');
     }, first.recoveryCode));
     await assert.rejects(() => recoverGroupVault({
         ...first.recoveryEnvelope,
-        wrappedKey: first.recoveryEnvelope.wrappedKey.slice(0, -1) + 'A'
+        wrappedKey: ((first.recoveryEnvelope.wrappedKey[0] === 'A' ? 'B' : 'A') + first.recoveryEnvelope.wrappedKey.slice(1))
     }, first.recoveryCode));
     await assert.rejects(() => globalThis.crypto.subtle.exportKey('raw', recovered));
     console.log('PASS: offline recovery works; wrong recovery codes and modified envelopes fail.');
