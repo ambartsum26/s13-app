@@ -136,6 +136,14 @@ export function createEncryptedTerritoryService({ groupId, key, transport }) {
         return Promise.all(rows.map(row => unseal(kind, requireId(row.id), row.envelope)));
     }
 
+    async function listTerritoriesForCity(cityId) {
+        requireId(cityId);
+        const all = await list('territories');
+        const matched = all.filter(territory => territory.cityId === cityId);
+        matched.forEach(territory => validateTerritoryHistory(territory.history ?? []));
+        return matched.sort(numberSort);
+    }
+
     return Object.freeze({
         readCity(id) {
             return read('cities', id);
@@ -151,13 +159,7 @@ export function createEncryptedTerritoryService({ groupId, key, transport }) {
             }).sort((a, b) => searchKey(a.fullName).localeCompare(searchKey(b.fullName), 'fr'));
         },
 
-        async listTerritories(cityId) {
-            requireId(cityId);
-            const all = await list('territories');
-            const matched = all.filter(territory => territory.cityId === cityId);
-            matched.forEach(territory => validateTerritoryHistory(territory.history ?? []));
-            return matched.sort(numberSort);
-        },
+        listTerritories: listTerritoriesForCity,
 
         async issueTerritory({ territoryId, publisherId, issuedAt, historyId }) {
             requireId(territoryId);
@@ -211,7 +213,7 @@ export function createEncryptedTerritoryService({ groupId, key, transport }) {
             }
             const city = await read('cities', cityId);
             if (!city.name || typeof city.name !== 'string') throw fail('invalidRecord');
-            const territories = await this.listTerritories(cityId);
+            const territories = await listTerritoriesForCity(cityId);
             return {
                 city,
                 territories: forYear(territories, serviceYear),
