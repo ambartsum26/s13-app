@@ -88,6 +88,7 @@ try {
     const pathA = { groupId: 'group-a', collection: 'territories', documentId: 'sample-01' };
     const pathB = { groupId: 'group-b', collection: 'territories', documentId: 'sample-02' };
     const originalA = {
+        cityId: 'test-city',
         number: '12',
         history: [{ publisher: 'Personne Fictive', issuedAt: '2026-09-01', returnedAt: '2026-10-12' }]
     };
@@ -168,8 +169,8 @@ try {
     const beforeReturn = await encryptedService.prepareS13({
         cityId: 'test-city', serviceYear: 2028
     });
-    // Territory must be assigned to the city to appear in annual report.
-    assert.equal(beforeReturn.territories.length, 0);
+    assert.equal(beforeReturn.territories.length, 1);
+    assert.equal(beforeReturn.territories[0].history[0].publisher, 'Émile Fictif');
 
     await encryptedService.returnTerritory({
         territoryId: 'sample-01', returnedAt: '2027-11-01'
