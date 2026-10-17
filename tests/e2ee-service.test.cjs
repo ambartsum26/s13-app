@@ -163,7 +163,7 @@ const vm = require('node:vm');
     console.log('PASS: corrupted ciphertext aborts search/report instead of silently omitting records.');
 
     const otherGroupStore = store('group-b');
-    await assert.rejects(
+    assert.throws(
         () => createEncryptedTerritoryService({
             groupId: 'group-a', key: vaultA.key, transport: otherGroupStore
         }), { code: 's13/invalidTransport' }
