@@ -60,6 +60,12 @@ const assert = require('node:assert/strict');
     await assert.rejects(() => decryptDocument(first.key, path, {
         ...ciphertext, nonce: ((ciphertext.nonce[0] === 'A' ? 'B' : 'A') + ciphertext.nonce.slice(1))
     }));
+    await assert.rejects(() => encryptDocument(first.key, {
+        ...path, groupId: 'synthetic-group-b'
+    }, record));
+    await assert.rejects(() => decryptDocument(first.key, {
+        ...path, groupId: 'synthetic-group-b'
+    }, { ...ciphertext, groupId: 'synthetic-group-b' }));
     console.log('PASS: cross-group access, document swaps and ciphertext tampering are rejected.');
 
     const recovered = await recoverGroupVault(first.recoveryEnvelope, first.recoveryCode);
@@ -76,12 +82,31 @@ const assert = require('node:assert/strict');
     }, first.recoveryCode));
     await assert.rejects(() => globalThis.crypto.subtle.exportKey('raw', recovered));
     console.log('PASS: offline recovery works; wrong recovery codes and modified envelopes fail.');
+ 
+    // A fresh module simulates a new browser session without an in-memory key.
+    // Only the JSON recovery envelope + independently stored code survive.
+    const afterRestart = await import('../e2ee/crypto.js?fresh-session=1');
+    const persistedEnvelope = JSON.parse(JSON.stringify(first.recoveryEnvelope));
+    const persistedEncryptedDocument = JSON.parse(JSON.stringify(ciphertext));
+    await assert.rejects(() => afterRestart.decryptDocument(
+        first.key, path, persistedEncryptedDocument
+    ));
+    const restoredKey = await afterRestart.recoverGroupVault(
+        persistedEnvelope, first.recoveryCode
+    );
+    assert.deepEqual(await afterRestart.decryptDocument(
+        restoredKey, path, persistedEncryptedDocument
+    ), record);
+    console.log('PASS: full recovery after simulated browser restart using offline code.');
 
     await assert.rejects(() => createGroupVault(''));
     await assert.rejects(() => encryptDocument(recovered, {
         groupId: 'synthetic-group-a', collection: 'territories', documentId: '../invalid'
     }, record), /Invalid document identifier/);
     await assert.rejects(() => encryptDocument(recovered, path, null));
+    await assert.rejects(() => encryptDocument(recovered, path, {
+        padding: 'x'.repeat(500_001)
+    }), /too large/);
     console.log('PASS: malformed identifiers and invalid input are rejected.');
 })().catch(error => {
     console.error('FAIL: E2EE prototype regression:', error);
