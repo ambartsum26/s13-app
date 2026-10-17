@@ -1,6 +1,6 @@
 {
   "firestore": {
-    "rules": "e2ee/prototype.rules"
+    "rules": "prototype.rules"
   },
   "emulators": {
     "firestore": {
