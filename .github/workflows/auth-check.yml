@@ -60,5 +60,8 @@ jobs:
       - name: Compile Firestore rules in emulator
         run: npm run check:rules
 
+      - name: Test isolated E2EE group access in Firebase emulators
+        run: npx firebase emulators:exec --config e2ee/firebase-prototype.json --only firestore,auth --project demo-s13-e2ee "node e2ee/test-emulator.mjs"
+
       - name: Run all regression tests
         run: npm test
