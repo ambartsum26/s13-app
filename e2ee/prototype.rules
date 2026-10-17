@@ -1,0 +1,112 @@
+// EXPERIMENTAL ONLY. DO NOT DEPLOY TO THE PRODUCTION FIREBASE PROJECT.
+// Each group has exactly one custodian. Group provisioning is out-of-band and
+// must be implemented by trusted administration; browser group creation is denied.
+// E2EE restricts plaintext exposure; Security Rules still enforce server-side ACLs.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function groupPath(groupId) {
+      return /databases/$(database)/documents/e2eeGroups/$(groupId);
+    }
+
+    function isCustodian(groupId) {
+      return signedIn()
+        && exists(groupPath(groupId))
+        && get(groupPath(groupId)).data.custodianUid == request.auth.uid;
+    }
+
+    function validGroup(data) {
+      return data.keys().hasAll(['custodianUid', 'schemaVersion'])
+        && data.keys().hasOnly(['custodianUid', 'schemaVersion'])
+        && data.custodianUid is string
+        && data.custodianUid.size() > 0
+        && data.schemaVersion == 1;
+    }
+
+    function validCiphertext(groupId, recordKind, recordId, data) {
+      return data.keys().hasAll([
+          'version', 'kind', 'cipher', 'groupId', 'collection',
+          'documentId', 'nonce', 'ciphertext'
+        ])
+        && data.keys().hasOnly([
+          'version', 'kind', 'cipher', 'groupId', 'collection',
+          'documentId', 'nonce', 'ciphertext'
+        ])
+        && data.version == 1
+        && data.kind == 's13-encrypted-document'
+        && data.cipher == 'AES-256-GCM'
+        && data.groupId == groupId
+        && data.collection == recordKind
+        && data.documentId == recordId
+        && data.nonce is string
+        && data.nonce.matches('^[A-Za-z0-9_-]{16}$')
+        && data.ciphertext is string
+        && data.ciphertext.size() >= 22
+        && data.ciphertext.size() <= 700000
+        && data.ciphertext.matches('^[A-Za-z0-9_-]+$');
+    }
+
+    function validRecovery(groupId, data) {
+      return data.keys().hasAll([
+          'version', 'kind', 'groupId', 'kdf',
+          'cipher', 'salt', 'nonce', 'wrappedKey'
+        ])
+        && data.keys().hasOnly([
+          'version', 'kind', 'groupId', 'kdf',
+          'cipher', 'salt', 'nonce', 'wrappedKey'
+        ])
+        && data.version == 1
+        && data.kind == 's13-group-recovery'
+        && data.groupId == groupId
+        && data.kdf == 'HKDF-SHA256'
+        && data.cipher == 'AES-256-GCM'
+        && data.salt is string
+        && data.salt.matches('^[A-Za-z0-9_-]{43}$')
+        && data.nonce is string
+        && data.nonce.matches('^[A-Za-z0-9_-]{16}$')
+        && data.wrappedKey is string
+        && data.wrappedKey.matches('^[A-Za-z0-9_-]{64}$');
+    }
+
+    match /e2eeGroups/{groupId} {
+      // No self-registration or automatic transfer of custodianship.
+      // A trusted, separately reviewed provisioning flow is still required.
+      allow create, update, delete: if false;
+      allow get: if isCustodian(groupId) && validGroup(resource.data);
+      allow list: if false;
+
+      match /recovery/{recordId} {
+        allow get: if recordId == 'current' && isCustodian(groupId);
+        allow list: if false;
+        allow create: if recordId == 'current' && isCustodian(groupId)
+          && validRecovery(groupId, request.resource.data);
+        allow update: if recordId == 'current' && isCustodian(groupId)
+          && validRecovery(groupId, request.resource.data);
+        allow delete: if false;
+      }
+
+      match /{recordKind}/{recordId} {
+        allow get, list: if isCustodian(groupId)
+          && (recordKind == 'cities'
+              || recordKind == 'territories'
+              || recordKind == 'publishers'
+              || recordKind == 'addressMarkers');
+        allow create, update: if isCustodian(groupId)
+          && (recordKind == 'cities'
+              || recordKind == 'territories'
+              || recordKind == 'publishers'
+              || recordKind == 'addressMarkers')
+          && validCiphertext(groupId, recordKind, recordId, request.resource.data);
+        allow delete: if false; // Retention and archive rules require separate approval.
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
