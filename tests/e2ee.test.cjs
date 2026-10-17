@@ -55,11 +55,10 @@ const assert = require('node:assert/strict');
         ...path, documentId: 'demo-002'
     }, ciphertext));
     await assert.rejects(() => decryptDocument(first.key, path, {
-        ...ciphertext, ciphertext: ciphertext.ciphertext.slice(0, -1) +
-            (ciphertext.ciphertext.endsWith('A') ? 'B' : 'A')
+        ...ciphertext, ciphertext: ((ciphertext.ciphertext[0] === 'A' ? 'B' : 'A') + ciphertext.ciphertext.slice(1))
     }));
     await assert.rejects(() => decryptDocument(first.key, path, {
-        ...ciphertext, nonce: ciphertext.nonce.slice(0, -1) + 'A'
+        ...ciphertext, nonce: ((ciphertext.nonce[0] === 'A' ? 'B' : 'A') + ciphertext.nonce.slice(1))
     }));
     console.log('PASS: cross-group access, document swaps and ciphertext tampering are rejected.');
 
