@@ -62,6 +62,15 @@ function normalized(value) {
     return String(value ?? '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
+function validIsoDate(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const [year, month, day] = value.split('-').map(Number);
+    if (year < 1900 || year > 9998) return false;
+    const d = new Date(Date.UTC(year, month - 1, day));
+    return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 &&
+        d.getUTCDate() === day;
+}
+
 function inspect(snapshot, expectedCounts = null) {
     if (!Array.isArray(snapshot) || snapshot.length === 0 || snapshot.length > MAX_ROWS) {
         failure('empty snapshot or more than 400 records');
@@ -114,15 +123,25 @@ function inspect(snapshot, expectedCounts = null) {
         const history = territory.history ?? [];
         if (!Array.isArray(history)) failure('invalid history list');
         historyEntries += history.length;
+        const periods = [];
         for (const row of history) {
             if (!row || typeof row !== 'object' || Array.isArray(row) ||
                 typeof row.publisher !== 'string' ||
-                typeof row.issuedAt !== 'string' ||
-                (row.returnedAt != null && typeof row.returnedAt !== 'string')) {
-                failure('unrecognized history record');
+                !validIsoDate(row.issuedAt) ||
+                (row.returnedAt != null && row.returnedAt !== '' && !validIsoDate(row.returnedAt))) {
+                failure('unrecognized or malformed history record');
             }
-            // A removed legacy publisher is not automatically recreated.
-            // The original history string and publisherId are preserved verbatim.
+            if (row.returnedAt && row.returnedAt < row.issuedAt) {
+                failure('history return precedes issue');
+            }
+            periods.push({ start: row.issuedAt, end: row.returnedAt || null });
+            // Historical assignments referencing removed publishers remain intact.
+        }
+        periods.sort((a, b) => a.start.localeCompare(b.start));
+        for (let i = 1; i < periods.length; i++) {
+            if (!periods[i - 1].end || periods[i - 1].end > periods[i].start) {
+                failure('overlapping assignment periods');
+            }
         }
     }
     if (expectedCounts) {
@@ -203,6 +222,7 @@ export function inspectLegacySnapshot(snapshot, expectedCounts) {
  */
 export async function prepareMigrationPreview({ groupId, snapshot, expectedCounts }) {
     if (!groupIdValid(groupId)) failure('invalid group ID');
+    if (!expectedCounts) failure('independent collection inventory required');
     const inventory = inspect(snapshot, expectedCounts);
     const vault = await createGroupVault(groupId);
     const encryptedRecords = [];
