@@ -123,10 +123,10 @@ try {
     assert.equal(replacement.encryptedRecords.length, documents.length);
 
     const cutover = createEmulatorCutover({ host, projectId });
-    await assert.rejects(() => createEmulatorCutover({
+    assert.throws(() => createEmulatorCutover({
         host: 'real.firebaseio.com:443', projectId
     }), /local demo/);
-    await assert.rejects(() => createEmulatorCutover({
+    assert.throws(() => createEmulatorCutover({
         host, projectId: 'some-real-firebase-project'
     }), /local demo/);
 
