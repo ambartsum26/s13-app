@@ -38,7 +38,7 @@ export function createE2eeSession({
     }
 
     function check(session, token) {
-        if (!authorized() || current !== session || revision !== token) {
+        if (!session || !authorized() || current !== session || revision !== token) {
             throw unauthorized();
         }
     }
