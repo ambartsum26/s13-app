@@ -191,21 +191,24 @@ export async function encryptDocument(key, context, data) {
     const plaintext = encoder.encode(JSON.stringify(data));
     if (plaintext.length > MAX_PLAINTEXT_BYTES) throw new Error('Document is too large.');
     const nonce = randomBytes(12);
-    const ciphertext = await cryptoApi().subtle.encrypt({
-        name: 'AES-GCM',
-        iv: nonce,
-        additionalData: documentAad(checked),
-        tagLength: 128
-    }, key, plaintext);
-    plaintext.fill(0);
-    return {
-        version: VERSION,
-        kind: 's13-encrypted-document',
-        cipher: 'AES-256-GCM',
-        ...checked,
-        nonce: encodeBase64Url(nonce),
-        ciphertext: encodeBase64Url(new Uint8Array(ciphertext))
-    };
+    try {
+        const ciphertext = await cryptoApi().subtle.encrypt({
+            name: 'AES-GCM',
+            iv: nonce,
+            additionalData: documentAad(checked),
+            tagLength: 128
+        }, key, plaintext);
+        return {
+            version: VERSION,
+            kind: 's13-encrypted-document',
+            cipher: 'AES-256-GCM',
+            ...checked,
+            nonce: encodeBase64Url(nonce),
+            ciphertext: encodeBase64Url(new Uint8Array(ciphertext))
+        };
+    } finally {
+        plaintext.fill(0);
+    }
 }
 
 /** Expected context MUST come from the authorized, independently selected record path. */
