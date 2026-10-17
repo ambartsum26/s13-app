@@ -19,12 +19,25 @@ service cloud.firestore {
         && get(groupPath(groupId)).data.custodianUid == request.auth.uid;
     }
 
+    // Only trusted administration can freeze/transfer ownership. No
+    // browser can change the owner or unfreeze its own data.
     function validGroup(data) {
-      return data.keys().hasAll(['custodianUid', 'schemaVersion'])
-        && data.keys().hasOnly(['custodianUid', 'schemaVersion'])
+      return data.keys().hasAll(['custodianUid', 'schemaVersion', 'status',
+          'revision', 'handoverId'])
+        && data.keys().hasOnly(['custodianUid', 'schemaVersion', 'status',
+          'revision', 'handoverId'])
         && data.custodianUid is string
         && data.custodianUid.size() > 0
-        && data.schemaVersion == 1;
+        && data.schemaVersion == 2
+        && (data.status == 'active' || data.status == 'frozen')
+        && data.revision is int
+        && data.revision >= 0
+        && data.handoverId is string;
+    }
+
+    function canMutate(groupId) {
+      return isCustodian(groupId)
+        && get(groupPath(groupId)).data.status == 'active';
     }
 
     function validCiphertext(groupId, recordKind, recordId, data) {
@@ -82,9 +95,9 @@ service cloud.firestore {
       match /recovery/{recordId} {
         allow get: if recordId == 'current' && isCustodian(groupId);
         allow list: if false;
-        allow create: if recordId == 'current' && isCustodian(groupId)
+        allow create: if recordId == 'current' && canMutate(groupId)
           && validRecovery(groupId, request.resource.data);
-        allow update: if recordId == 'current' && isCustodian(groupId)
+        allow update: if recordId == 'current' && canMutate(groupId)
           && validRecovery(groupId, request.resource.data);
         allow delete: if false;
       }
@@ -95,7 +108,7 @@ service cloud.firestore {
               || recordKind == 'territories'
               || recordKind == 'publishers'
               || recordKind == 'addressMarkers');
-        allow create, update: if isCustodian(groupId)
+        allow create, update: if canMutate(groupId)
           && (recordKind == 'cities'
               || recordKind == 'territories'
               || recordKind == 'publishers'
