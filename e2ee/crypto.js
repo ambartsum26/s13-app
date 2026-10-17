@@ -11,6 +11,7 @@ const RECOVERY_PREFIX = 'S13R1-';
 const MAX_PLAINTEXT_BYTES = 500_000;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
+const keyGroupIds = new WeakMap();
 
 function cryptoApi() {
     const api = globalThis.crypto;
@@ -79,16 +80,19 @@ function recoveryAad(groupId) {
     return encoder.encode(JSON.stringify(['s13-e2ee', 'recovery', VERSION, groupId]));
 }
 
-function checkAesKey(key, usage) {
+function checkAesKey(key, usage, groupId) {
     if (!key || key.type !== 'secret' || key.algorithm?.name !== 'AES-GCM' ||
-        key.algorithm.length !== 256 || !key.usages?.includes(usage)) {
+        key.algorithm.length !== 256 || !key.usages?.includes(usage) ||
+        keyGroupIds.get(key) !== groupId) {
         throw new Error('AES-256-GCM group key required.');
     }
 }
 
-async function importGroupKey(raw) {
-    return cryptoApi().subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 },
+async function importGroupKey(raw, groupId) {
+    const key = await cryptoApi().subtle.importKey('raw', raw, { name: 'AES-GCM', length: 256 },
         false, ['encrypt', 'decrypt']);
+    keyGroupIds.set(key, groupId);
+    return key;
 }
 
 async function deriveRecoveryWrappingKey(recoverySecret, salt, groupId) {
@@ -121,7 +125,7 @@ export async function createGroupVault(groupId) {
             additionalData: recoveryAad(groupId),
             tagLength: 128
         }, wrappingKey, rawKey);
-        const key = await importGroupKey(rawKey);
+        const key = await importGroupKey(rawKey, groupId);
         return {
             key,
             recoveryCode: RECOVERY_PREFIX + encodeBase64Url(recoverySecret),
@@ -172,7 +176,7 @@ export async function recoverGroupVault(recoveryEnvelope, recoveryCode) {
         }, wrappingKey, wrappedKey));
         try {
             if (raw.length !== 32) throw new Error('Invalid group key.');
-            return await importGroupKey(raw);
+            return await importGroupKey(raw, groupId);
         } finally {
             raw.fill(0);
         }
@@ -183,8 +187,8 @@ export async function recoverGroupVault(recoveryEnvelope, recoveryCode) {
 
 /** Encrypt a JSON document; its identity is cryptographically bound as AAD. */
 export async function encryptDocument(key, context, data) {
-    checkAesKey(key, 'encrypt');
     const checked = checkContext(context);
+    checkAesKey(key, 'encrypt', checked.groupId);
     if (data === null || typeof data !== 'object' || Array.isArray(data)) {
         throw new Error('Expected a JSON document object.');
     }
@@ -213,8 +217,8 @@ export async function encryptDocument(key, context, data) {
 
 /** Expected context MUST come from the authorized, independently selected record path. */
 export async function decryptDocument(key, context, envelope) {
-    checkAesKey(key, 'decrypt');
     const checked = checkContext(context);
+    checkAesKey(key, 'decrypt', checked.groupId);
     if (envelope?.version !== VERSION || envelope.kind !== 's13-encrypted-document' ||
         envelope.cipher !== 'AES-256-GCM' || envelope.groupId !== checked.groupId ||
         envelope.collection !== checked.collection || envelope.documentId !== checked.documentId) {
