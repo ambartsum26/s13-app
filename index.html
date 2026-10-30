@@ -2,8 +2,10 @@
 <html lang="ru" id="html-root" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Ассистент по участкам</title>
+    <meta name="theme-color" content="#020617">
+    <meta name="color-scheme" content="dark">
     <style>
         body:not([data-auth-state="owner"]) > :not(#auth-panel):not(script):not(style) { display:none !important; }
         body[data-auth-state="owner"] > #auth-panel { display:none !important; }
@@ -27,20 +29,32 @@
 
     <style>
         * { box-sizing: border-box; }
-        html { background: #020617; }
+        html {
+            background: #020617;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            overscroll-behavior: none;
+        }
         body { overflow-x: hidden; }
+
+        button, a, [role="button"] { touch-action: manipulation; }
+        button, [role="button"], a#map-link {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
 
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .animate-fade-in {
             opacity: 0;
-            animation: fadeInUp .42s ease forwards;
+            animation: fadeInUp .22s cubic-bezier(.23, 1, .32, 1) forwards;
         }
 
         .glass-panel {
@@ -61,7 +75,7 @@
             color: #cbd5e1;
             font-size: .8rem;
             font-weight: 700;
-            transition: all .2s ease;
+            transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
             border: 1px solid rgba(71,85,105,.5);
             background: transparent !important;
             box-shadow: none !important;
@@ -74,7 +88,7 @@
             box-shadow: none !important;
         }
 
-        #cities-container button { transition: all .2s ease; }
+        #cities-container button { transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease; }
 
         .badge {
             display: inline-flex;
@@ -128,15 +142,17 @@
             transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease !important;
         }
 
-        button:not([data-language-toggle]):not(:disabled):hover,
-        a#map-link:hover,
-        a.mini-btn:hover,
-        .copy-map-btn:hover {
-            background: #10b981 !important;
-            border-color: #34d399 !important;
-            color: #ffffff !important;
-            box-shadow: 0 10px 26px rgba(16,185,129,.24) !important;
-            transform: translateY(-1px);
+        @media (hover: hover) and (pointer: fine) {
+            button:not([data-language-toggle]):not(:disabled):hover,
+            a#map-link:hover,
+            a.mini-btn:hover,
+            .copy-map-btn:hover {
+                background: #10b981 !important;
+                border-color: #34d399 !important;
+                color: #ffffff !important;
+                box-shadow: 0 10px 26px rgba(16,185,129,.24) !important;
+                transform: translateY(-1px);
+            }
         }
 
         button:not([data-language-toggle]):focus-visible,
@@ -157,11 +173,13 @@
             border: 1px solid rgba(16,185,129,.72) !important;
         }
 
-        #cities-container button:hover {
-            background: #10b981 !important;
-            color: #fff !important;
-            border-color: #34d399 !important;
-            transform: translateX(2px);
+        @media (hover: hover) and (pointer: fine) {
+            #cities-container button:hover {
+                background: #10b981 !important;
+                color: #fff !important;
+                border-color: #34d399 !important;
+                transform: translateX(2px);
+            }
         }
 
         #grid > article {
@@ -181,9 +199,11 @@
             pointer-events: none;
         }
 
-        #grid > article:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 24px 55px rgba(2,6,23,.36);
+        @media (hover: hover) and (pointer: fine) {
+            #grid > article:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 24px 55px rgba(2,6,23,.36);
+            }
         }
 
         #publishers-list > div {
@@ -193,12 +213,53 @@
             transition: border-color .2s, transform .2s, background-color .2s;
         }
 
-        #publishers-list > div:hover {
-            border-color: rgba(16,185,129,.4);
-            transform: translateY(-1px);
+        @media (hover: hover) and (pointer: fine) {
+            #publishers-list > div:hover {
+                border-color: rgba(16,185,129,.4);
+                transform: translateY(-1px);
+            }
         }
 
         input { color-scheme: dark; }
+
+        button:not(:disabled):active,
+        a#map-link:active,
+        a.mini-btn:active {
+            transform: scale(.97);
+            transition: transform .12s cubic-bezier(.23, 1, .32, 1);
+        }
+
+        #dialog-modal > .glass-panel,
+        #confirm-modal > .glass-panel,
+        #history-modal > .glass-panel,
+        #publisher-picker-modal > .glass-panel {
+            max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        @media (pointer: coarse) {
+            input, textarea, select { font-size: 16px !important; }
+            .square-btn, .copy-map-btn { min-width: 44px; min-height: 44px; }
+            .mini-btn, .action-btn { min-height: 44px; }
+        }
+
+        @media (max-width: 639px) {
+            body {
+                padding-top: calc(.75rem + env(safe-area-inset-top, 0px));
+                padding-bottom: calc(.75rem + env(safe-area-inset-bottom, 0px));
+                padding-left: max(.75rem, env(safe-area-inset-left, 0px));
+                padding-right: max(.75rem, env(safe-area-inset-right, 0px));
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .animate-fade-in { opacity: 1; animation: none; }
+            .sidebar-btn, #cities-container button, #grid > article,
+            #publishers-list > div, button, a#map-link, a.mini-btn {
+                transition: none !important;
+            }
+        }
 
         @media (max-width: 1023px) {
             #sidebar.mobile-open {
@@ -208,9 +269,13 @@
                 left: 1rem;
                 right: 1rem;
                 top: 5.75rem;
+                top: calc(5.75rem + env(safe-area-inset-top, 0px));
                 width: auto;
                 max-height: calc(100vh - 7rem);
+                max-height: calc(100dvh - 7rem - env(safe-area-inset-top, 0px));
                 overflow: auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
                 box-shadow: 0 24px 80px rgba(2,6,23,.72);
             }
         }
@@ -223,7 +288,7 @@
         <h1 id="auth-title">Вход в приложение</h1>
         <form id="auth-form">
             <label id="auth-email-label" for="auth-email">Электронная почта</label>
-            <input id="auth-email" type="email" autocomplete="username" required>
+            <input id="auth-email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required>
             <label id="auth-password-label" for="auth-password">Пароль</label>
             <input id="auth-password" type="password" autocomplete="current-password" required>
             <button id="auth-submit" type="submit">Войти</button>
@@ -236,7 +301,7 @@
     <header class="max-w-[1600px] mx-auto glass-panel rounded-3xl p-4 md:p-5 mb-5 md:mb-6 flex items-center justify-between gap-4">
         <button id="auth-logout" type="button" class="app-section-button"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span id="auth-logout-label">Выйти</span></button>
         <div class="flex items-center gap-3 min-w-0">
-            <button onclick="toggleMobileSidebar()"
+            <button type="button" aria-label="Меню / Menu" onclick="toggleMobileSidebar()"
                     class="lg:hidden w-10 h-10 shrink-0 rounded-xl border text-slate-200">
                 <i class="fa-solid fa-bars"></i>
             </button>
@@ -315,7 +380,7 @@
                         <div><p class="text-[10px] uppercase tracking-[.16em] text-indigo-300/70 font-bold mb-1">База данных</p><h2 id="publishers-title" class="text-xl font-extrabold text-white">Возвещатели</h2><p class="text-xs text-slate-400 mt-0.5"><span id="publishers-count">0</span> <span id="pub-base-label">в базе</span></p></div>
                         <button onclick="addPublisher()" class="h-10 px-4 rounded-xl border text-xs font-bold"><i class="fa-solid fa-user-plus mr-1.5"></i><span id="publisher-add-label">Добавить возвещателя</span></button>
                     </div>
-                    <div class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="publishers-search" oninput="renderPublishers()" class="w-full h-11 bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 text-xs focus:outline-none focus:border-emerald-500 transition shadow-inner" placeholder="Поиск по имени"></div>
+                    <div class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="publishers-search" type="search" enterkeyhint="search" autocomplete="off" oninput="renderPublishers()" class="w-full h-11 bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 text-xs focus:outline-none focus:border-emerald-500 transition shadow-inner" placeholder="Поиск по имени"></div>
                 </div>
                 <div id="publishers-list" class="space-y-2.5"></div>
             </section>
@@ -328,7 +393,7 @@
 
     <div id="history-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-[70]"><div class="glass-panel rounded-3xl max-w-lg w-full p-5 md:p-6"><div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800/80"><h3 id="history-title" class="font-bold text-white"></h3><button onclick="closeHistory()" class="square-btn"><i class="fa-solid fa-xmark"></i></button></div><div id="history-list" class="space-y-2 max-h-[55vh] overflow-y-auto pr-1"></div></div></div>
 
-    <div id="publisher-picker-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-[80]"><div class="glass-panel rounded-3xl max-w-md w-full p-5 md:p-6"><div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800/80"><h3 id="publisher-picker-title" class="font-bold text-white">Выберите возвещателя</h3><button onclick="closePicker()" class="square-btn"><i class="fa-solid fa-xmark"></i></button></div><div class="relative mb-3"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="publisher-picker-search" oninput="renderPicker()" class="w-full h-11 bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 text-xs focus:outline-none focus:border-emerald-500 transition" placeholder="Поиск по имени"></div><div id="publisher-picker-list" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div></div></div>
+    <div id="publisher-picker-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl hidden items-center justify-center p-4 z-[80]"><div class="glass-panel rounded-3xl max-w-md w-full p-5 md:p-6"><div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800/80"><h3 id="publisher-picker-title" class="font-bold text-white">Выберите возвещателя</h3><button onclick="closePicker()" class="square-btn"><i class="fa-solid fa-xmark"></i></button></div><div class="relative mb-3"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i><input id="publisher-picker-search" type="search" enterkeyhint="search" autocomplete="off" oninput="renderPicker()" class="w-full h-11 bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 text-xs focus:outline-none focus:border-emerald-500 transition" placeholder="Поиск по имени"></div><div id="publisher-picker-list" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div></div></div>
 
     <script type="module" src="./app.bundle.js"></script>
     <script type="module" src="./s13-year-select.js"></script>
