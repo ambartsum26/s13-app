@@ -220,6 +220,17 @@
             }
         }
 
+        /* The active pill should share the same center as its RU/FR label.
+           Tailwind's +4px travel otherwise shifts FR past the label center. */
+        #lang-slider,
+        #auth-lang-slider {
+            left: 4px !important;
+        }
+        #lang-slider[class*="translate-x-"],
+        #auth-lang-slider[class*="translate-x-"] {
+            --tw-translate-x: 100% !important;
+        }
+
         input { color-scheme: dark; }
 
         button:not(:disabled):active,
