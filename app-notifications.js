@@ -44,7 +44,7 @@ if (typeof notice.showModal === 'function') {
         #s13-notice button {
             display: block; margin-left: auto; padding: 0 22px;
             min-height: 48px; font-size: 14px; font-weight: 700;
-            background: #20bf72; color: #0f1720; border: 0;
+            background: #20bf72 !important; color: #0f1720 !important; border: 0;
             border-radius: 999px; cursor: pointer;
         }
         #s13-notice button:focus-visible {
@@ -95,6 +95,10 @@ if (typeof notice.showModal === 'function') {
     });
 
     window.alert = text => {
+        // The locked login screen intentionally hides all app-owned overlays.
+        if (document.body.dataset.authState !== 'owner') {
+            return fallbackAlert(text);
+        }
         queue.push(String(text ?? ''));
         showNext();
     };
