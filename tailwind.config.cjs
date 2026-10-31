@@ -2,7 +2,10 @@ module.exports = {
   darkMode: 'class',
   content: [
     './index.html',
-    './*.js'
+    './*.js',
+    // Standalone UX helpers use their own CSS and no Tailwind utilities.
+    '!./app-language-state.js',
+    '!./app-notifications.js'
   ],
   safelist: [
     'hidden',

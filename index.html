@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+    <script>
+        // Read only the language preference. Never store passwords or app data.
+        try {
+            if (localStorage.getItem('s13-ui-language') === 'fr') {
+                document.documentElement.lang = 'fr';
+            }
+        } catch {
+            // Storage may be unavailable in private browsing.
+        }
+    </script>
     <title>Ассистент по участкам</title>
     <meta name="theme-color" content="#020617">
     <meta name="color-scheme" content="dark">
@@ -608,5 +618,7 @@
 
     <script type="module" src="./app.bundle.js"></script>
     <script type="module" src="./s13-year-select.js"></script>
+    <script type="module" src="./app-language-state.js"></script>
+    <script type="module" src="./app-notifications.js"></script>
 </body>
 </html>
