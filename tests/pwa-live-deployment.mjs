@@ -23,7 +23,7 @@ try {
   assert.equal(response.status(), 200, 'Published app homepage is inaccessible');
   const result = await page.evaluate(async () => {
     const link = document.querySelector('link[rel="manifest"]');
-    assert: if (!link) return { error: 'No web app manifest link' };
+    if (!link) return { error: 'No web app manifest link' };
     const manifestResponse = await fetch(link.href, { cache: 'no-store' });
     const manifest = await manifestResponse.json();
 
