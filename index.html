@@ -261,6 +261,135 @@
             }
         }
 
+        /* S13 workstation and iPad layout: responsive to viewport, not user agent. */
+        @media (min-width: 640px) and (max-width: 1199px) {
+            html body #grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+            html body .app-main-wrap,
+            html body .app-main-wrap > main,
+            html body .app-city-controls,
+            html body .app-status-toolbar {
+                min-width: 0;
+            }
+        }
+
+        /* iPad portrait / narrow Split View: names remain legible, not clipped. */
+        @media (min-width: 640px) and (max-width: 899px) {
+            html body #publishers-list {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
+        }
+
+        /* Keep four status values readable, put actions on their own line. */
+        @media (min-width: 640px) and (max-width: 1099px) {
+            html body .app-status-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                flex: 1 1 100% !important;
+                min-width: 0;
+            }
+            html body .app-status-actions {
+                display: flex !important;
+                flex-wrap: wrap;
+                width: 100%;
+                min-width: 0;
+            }
+            html body .app-status-actions > * {
+                justify-content: center;
+                min-width: 0;
+            }
+            html body .app-status-actions > button:first-child {
+                flex: 0 0 48px;
+                width: 48px !important;
+            }
+            html body .app-status-actions > :not(:first-child):not(.hidden) {
+                flex: 1 1 160px;
+            }
+            /* Do not reveal the map link when the selected city has no map. */
+            html body .app-status-actions > .hidden {
+                display: none !important;
+            }
+        }
+
+        @media (min-width: 640px) and (max-width: 759px) {
+            html body .app-city-controls > div:first-child {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+            html body .app-city-controls > div:last-child {
+                display: flex;
+                flex: 1 1 100%;
+                flex-wrap: wrap;
+                min-width: 0;
+                gap: 8px;
+            }
+        }
+
+        /* Desktop cards keep useful reading width instead of crowding. */
+        @media (min-width: 1200px) and (max-width: 1499px) {
+            html body #grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            }
+        }
+        @media (min-width: 1500px) {
+            html body #grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+        }
+        @media (min-width: 1800px) {
+            html body .app-header,
+            html body .app-main-wrap {
+                max-width: 1680px !important;
+            }
+        }
+
+        /* Desktop keyboard users can see where focus is. */
+        html body .app-header button:focus-visible,
+        html body #cities-container button:focus-visible,
+        html body .app-city-controls button:focus-visible,
+        html body .app-status-toolbar button:focus-visible,
+        html body .app-status-toolbar a:focus-visible,
+        html body .status-chip[role="button"]:focus-visible,
+        html body .territory-card button:focus-visible,
+        html body .territory-card a:focus-visible,
+        html body #publishers-list button:focus-visible,
+        html body .s13-popup-overlay button:focus-visible,
+        html body #publishers-search:focus-visible,
+        html body #publisher-picker-search:focus-visible,
+        html body #dialog-fields input:focus-visible,
+        html body #dialog-fields select:focus-visible,
+        html body #dialog-fields textarea:focus-visible {
+            outline: 2px solid var(--dz-green-bright, #31d17f) !important;
+            outline-offset: 2px !important;
+        }
+
+        /* Trackpad and mouse: show when the city strip is horizontally scrollable. */
+        @media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+            html body #cities-container {
+                scrollbar-width: thin !important;
+                scrollbar-color: #747385 transparent !important;
+                padding-bottom: 6px !important;
+            }
+            html body #cities-container::-webkit-scrollbar {
+                display: block !important;
+                height: 5px;
+            }
+            html body #cities-container::-webkit-scrollbar-thumb {
+                background: #747385;
+                border-radius: 999px;
+            }
+        }
+
+        /* Short iPad landscape/desktop windows: modal stays inside the viewport. */
+        @media (min-width: 640px) {
+            html body .s13-popup-overlay > .glass-panel {
+                max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
         @media (max-width: 1023px) {
             #sidebar.mobile-open {
                 display: block;
