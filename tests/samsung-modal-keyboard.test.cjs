@@ -4,16 +4,17 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const css = fs.readFileSync(path.join(__dirname, '..', 'samsung-modal-keyboard.css'), 'utf8');
 const source = fs.readFileSync(path.join(__dirname, '..', 'app-modal-viewport.js'), 'utf8');
 
 // Production bundle stays unchanged. The new module runs separately in the app.
 assert.match(html, /src="\.\/app-modal-viewport\.js"/);
-assert.match(html, /html\.s13-samsung-oneui #dialog-modal #dialog-fields/);
-assert.match(html, /html\.s13-samsung-oneui #publisher-picker-modal #publisher-picker-list/);
-assert.match(html, /html\.s13-samsung-oneui #history-modal #history-list/);
-assert.match(html, /--s13-modal-view-height, 100dvh/);
-assert.match(html, /position: sticky/);
-assert.match(html, /overflow-y: auto !important/);
+assert.match(css, /html\.s13-samsung-oneui #dialog-modal #dialog-fields/);
+assert.match(css, /html\.s13-samsung-oneui #publisher-picker-modal #publisher-picker-list/);
+assert.match(css, /html\.s13-samsung-oneui #history-modal #history-list/);
+assert.match(css, /--s13-modal-view-height, 100dvh/);
+assert.match(css, /position: sticky/);
+assert.match(css, /overflow-y: auto !important/);
 
 const listeners = {};
 const properties = new Map();
