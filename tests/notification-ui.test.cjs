@@ -22,7 +22,7 @@ const document = {
     activeElement: null,
     documentElement: { lang: 'ru' },
     head: { append: node => added.push(node) },
-    body: { append: node => added.push(node) },
+    body: { dataset: { authState: 'owner' }, append: node => added.push(node) },
     createElement(name) {
         const listeners = {};
         const item = {
@@ -75,6 +75,10 @@ assert.equal(title.textContent, 'Information');
 dialog.close();
 assert.equal(dialog.open, false, 'All notices dismissed');
 assert.equal(document.activeElement, originalFocus, 'Focus returned after dismissal');
+document.body.dataset.authState = 'locked';
+window.alert('Login fallback');
+assert.equal(native.at(-1), 'Login fallback', 'Locked login must keep native alert');
+assert.equal(dialog.open, false);
 
 assert.ok(source.includes('width: min(420px, calc(100vw - 28px))'));
 assert.ok(source.includes('max-height: min(78dvh, 560px)'));
