@@ -5,7 +5,8 @@ module.exports = {
     './*.js',
     // Standalone UX helpers use their own CSS and no Tailwind utilities.
     '!./app-language-state.js',
-    '!./app-notifications.js'
+    '!./app-notifications.js',
+    '!./app-pwa.js'
   ],
   safelist: [
     'hidden',

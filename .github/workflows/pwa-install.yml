@@ -1,0 +1,34 @@
+name: Android PWA installability
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pwa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check PWA JavaScript syntax
+        run: |
+          node --check tests/pwa-browser-smoke.mjs
+          node --check app-pwa.js
+          node --check sw.js
+      - name: Install pinned Playwright
+        run: npm install --no-save --ignore-scripts playwright@1.55.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify Chrome installability and real 192/512px icons
+        run: node tests/pwa-browser-smoke.mjs
