@@ -222,9 +222,18 @@
 
         /* The active pill should share the same center as its RU/FR label.
            Tailwind's +4px travel otherwise shifts FR past the label center. */
+        /* Rounded track and active pill on both the login and app screens. */
+        button[data-language-toggle],
+        #auth-panel #auth-language {
+            border-radius: 999px !important;
+        }
         #lang-slider,
         #auth-lang-slider {
             left: 4px !important;
+        }
+        button[data-language-toggle] #lang-slider,
+        #auth-panel #auth-lang-slider {
+            border-radius: 999px !important;
         }
         #lang-slider[class*="translate-x-"],
         #auth-lang-slider[class*="translate-x-"] {
