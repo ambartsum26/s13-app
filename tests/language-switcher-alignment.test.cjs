@@ -10,8 +10,8 @@ const tailwind = fs.readFileSync(path.join(__dirname, '..', 'tailwind.generated.
 assert.match(html, /#lang-slider,\s*#auth-lang-slider\s*\{\s*left:\s*4px !important;/);
 assert.match(html, /#lang-slider\[class\*="translate-x-"\],\s*#auth-lang-slider\[class\*="translate-x-"\]\s*\{\s*--tw-translate-x:\s*100% !important;/);
 // CSS must beat the old dynamic app-ui border radius and the login button's inline radius.
-assert.match(html, /button\\[data-language-toggle\\],\\s*#auth-panel #auth-language\\s*\\{\\s*border-radius:\\s*999px !important;/);
-assert.match(html, /button\\[data-language-toggle\\] #lang-slider,\\s*#auth-panel #auth-lang-slider\\s*\\{\\s*border-radius:\\s*999px !important;/);
+assert.ok(html.includes('button[data-language-toggle],\n        #auth-panel #auth-language {\n            border-radius: 999px !important;'));
+assert.ok(html.includes('button[data-language-toggle] #lang-slider,\n        #auth-panel #auth-lang-slider {\n            border-radius: 999px !important;'));
 assert.match(html, /id="lang-slider"/);
 assert.match(auth, /id="auth-lang-slider"/);
 assert.match(app, /classList\.toggle\('translate-x-\[calc\(100%\+4px\)\]'/);
