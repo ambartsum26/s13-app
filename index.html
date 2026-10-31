@@ -295,10 +295,13 @@
                 min-width: 0;
             }
             html body .app-status-actions > * {
-                display: inline-flex !important;
                 justify-content: center;
                 width: 100% !important;
                 min-width: 0;
+            }
+            /* Do not reveal the map link when the selected city has no map. */
+            html body .app-status-actions > .hidden {
+                display: none !important;
             }
         }
 
