@@ -9,6 +9,7 @@ const source = fs.readFileSync(path.join(__dirname, '..', 'app-modal-viewport.js
 
 // Production bundle stays unchanged. The new module runs separately in the app.
 assert.match(html, /src="\.\/app-modal-viewport\.js"/);
+assert.ok(html.includes('href="./samsung-modal-keyboard.css"'));
 assert.match(css, /html\.s13-samsung-oneui #dialog-modal #dialog-fields/);
 assert.match(css, /html\.s13-samsung-oneui #publisher-picker-modal #publisher-picker-list/);
 assert.match(css, /html\.s13-samsung-oneui #history-modal #history-list/);
