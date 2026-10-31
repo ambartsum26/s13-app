@@ -2117,12 +2117,16 @@ html.s13-samsung-oneui .app-logo {
 }
 
 @media (max-width: 639px) {
+    /* Preserve One UI spacing while respecting Samsung camera cutouts and gesture bars. */
     html.s13-samsung-oneui body {
-        padding: 8px !important;
+        padding-top: max(8px, env(safe-area-inset-top, 0px)) !important;
+        padding-right: max(8px, env(safe-area-inset-right, 0px)) !important;
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
+        padding-left: max(8px, env(safe-area-inset-left, 0px)) !important;
     }
 
     html.s13-samsung-oneui .app-header {
-        top: 6px !important;
+        top: max(6px, env(safe-area-inset-top, 0px)) !important;
         min-height: 64px !important;
         padding: 8px 9px !important;
         border-radius: 24px !important;
@@ -2159,16 +2163,22 @@ html.s13-samsung-oneui .app-logo {
     /* One UI phone dialogs behave like large bottom sheets. */
     html.s13-samsung-oneui .s13-popup-overlay {
         align-items: flex-end !important;
-        padding: 8px !important;
+        padding-top: max(8px, env(safe-area-inset-top, 0px)) !important;
+        padding-right: max(8px, env(safe-area-inset-right, 0px)) !important;
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
+        padding-left: max(8px, env(safe-area-inset-left, 0px)) !important;
     }
 
     html.s13-samsung-oneui .s13-popup-overlay > .glass-panel {
         width: 100% !important;
         max-width: none !important;
-        max-height: calc(100dvh - 16px) !important;
+        max-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
         overflow-y: auto !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         border-radius: 30px 30px 22px 22px !important;
         padding: 18px !important;
+        padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)) !important;
     }
 
     html.s13-samsung-oneui .s13-popup-overlay > .glass-panel::before {
@@ -2184,6 +2194,41 @@ html.s13-samsung-oneui .app-logo {
     html.s13-samsung-oneui #publishers-list > div,
     html.s13-samsung-oneui .publisher-row {
         border-radius: 20px !important;
+    }
+}
+
+/* The narrow Samsung header uses icon actions instead of padded text buttons. */
+@media (max-width: 519px) {
+    html.s13-samsung-oneui .app-header-actions {
+        gap: 6px !important;
+    }
+    html.s13-samsung-oneui .app-header .app-section-button,
+    html.s13-samsung-oneui .app-header #auth-logout {
+        width: 48px !important;
+        min-width: 48px !important;
+        max-width: 48px !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        padding: 0 !important;
+        flex: 0 0 48px;
+    }
+    html.s13-samsung-oneui .app-header .app-section-button span {
+        display: none !important;
+    }
+}
+
+@media (max-width: 359px) {
+    html.s13-samsung-oneui .app-header,
+    html.s13-samsung-oneui .app-header-actions {
+        gap: 4px !important;
+    }
+    html.s13-samsung-oneui .app-logo {
+        width: 34px !important;
+        height: 34px !important;
+        flex-basis: 34px !important;
+    }
+    html.s13-samsung-oneui [data-language-toggle] {
+        width: 78px !important;
     }
 }
 
