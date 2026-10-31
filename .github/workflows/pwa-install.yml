@@ -24,6 +24,7 @@ jobs:
       - name: Check PWA JavaScript syntax
         run: |
           node --check tests/pwa-browser-smoke.mjs
+          node --check tests/pwa-live-deployment.mjs
           node --check app-pwa.js
           node --check sw.js
       - name: Install pinned Playwright
@@ -32,3 +33,5 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify Chrome installability and real 192/512px icons
         run: node tests/pwa-browser-smoke.mjs
+      - name: Verify deployed GitHub Pages PWA from an Android browser profile
+        run: node tests/pwa-live-deployment.mjs
