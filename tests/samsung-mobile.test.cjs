@@ -37,7 +37,7 @@ assert.match(compact, /width: 48px !important/);
 assert.match(compact, /padding: 0 !important/);
 assert.match(compact, /\.app-section-button span/);
 
-const narrow = between(samsungCss, '@media (max-width: 359px)', '/* S13 workstation and iPad layout');
+const narrow = between(html, '@media (max-width: 359px)', '/* S13 workstation and iPad layout');
 assert.match(narrow, /\.app-logo/);
 assert.match(narrow, /width: 34px !important/);
 assert.match(narrow, /width: 78px !important/);
