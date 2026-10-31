@@ -15,6 +15,11 @@ assert.match(css, /html\.s13-samsung-oneui #publisher-picker-modal #publisher-pi
 assert.match(css, /html\.s13-samsung-oneui #history-modal #history-list/);
 assert.match(css, /--s13-modal-view-height, 100dvh/);
 assert.match(css, /position: sticky/);
+// Keep the bottom sheet at its original full popup width in the flex overlay.
+assert.match(css, /flex: 0 0 100% !important/);
+assert.match(css, /width: 100% !important/);
+assert.match(css, /max-width: none !important/);
+assert.match(css, /min-width: 0 !important/);
 assert.match(css, /overflow-y: auto !important/);
 
 const listeners = {};

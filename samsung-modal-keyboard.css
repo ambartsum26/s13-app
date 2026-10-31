@@ -13,6 +13,13 @@
     html.s13-samsung-oneui #publisher-picker-modal > .glass-panel {
         display: flex !important;
         flex-direction: column !important;
+        /* The sheet itself must fill the original popup width.
+           A flex child may otherwise use its intrinsic width. */
+        box-sizing: border-box;
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
         min-height: 0;
         max-height: calc(var(--s13-modal-view-height, 100dvh) - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
         overflow-y: auto !important;
