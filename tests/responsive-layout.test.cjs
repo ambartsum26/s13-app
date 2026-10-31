@@ -31,6 +31,7 @@ const tabletToolbar = section(
 );
 assert.match(tabletToolbar, /\.app-status-grid[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
 assert.match(tabletToolbar, /\.app-status-actions[\s\S]*?width: 100%/);
+assert.match(tabletToolbar, /\.app-status-actions > \.hidden[\s\S]*?display: none !important/);
 
 const desktop = section(
     '@media (min-width: 1200px) and (max-width: 1499px)',
