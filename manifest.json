@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "Ассистент по участкам",
+  "short_name": "Участки",
+  "description": "Учёт участков, городов, выдач и возвещателей",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/vijayrajesh/Kaaise-Whatisthere/53f787d4ae233df1236d600728f705417e026f50/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/vijayrajesh/Kaaise-Whatisthere/53f787d4ae233df1236d600728f705417e026f50/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
