@@ -2,7 +2,9 @@ module.exports = {
   darkMode: 'class',
   content: [
     './index.html',
-    './*.js'
+    './*.js',
+    // Runtime viewport handler has no Tailwind utility classes.
+    '!./app-modal-viewport.js'
   ],
   safelist: [
     'hidden',
