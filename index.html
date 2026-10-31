@@ -301,6 +301,51 @@
             }
         }
 
+        /* Samsung keyboard-safe bottom sheets. Keep actions visible while editing. */
+        @media (max-width: 639px), (max-height: 540px) and (pointer: coarse) {
+            html.s13-samsung-oneui body .s13-popup-overlay {
+                top: var(--s13-modal-view-top, 0px) !important;
+                bottom: auto !important;
+                height: var(--s13-modal-view-height, 100dvh) !important;
+                max-height: var(--s13-modal-view-height, 100dvh) !important;
+                align-items: flex-end !important;
+            }
+            html.s13-samsung-oneui #dialog-modal > .glass-panel,
+            html.s13-samsung-oneui #confirm-modal > .glass-panel,
+            html.s13-samsung-oneui #history-modal > .glass-panel,
+            html.s13-samsung-oneui #publisher-picker-modal > .glass-panel {
+                display: flex !important;
+                flex-direction: column !important;
+                min-height: 0;
+                max-height: calc(var(--s13-modal-view-height, 100dvh) - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+                overflow-y: auto !important;
+                overscroll-behavior: contain;
+            }
+            html.s13-samsung-oneui #dialog-modal #dialog-fields,
+            html.s13-samsung-oneui #publisher-picker-modal #publisher-picker-list,
+            html.s13-samsung-oneui #history-modal #history-list {
+                flex: 1 1 auto;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow-y: auto !important;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
+            }
+            html.s13-samsung-oneui #dialog-modal > .glass-panel > :first-child,
+            html.s13-samsung-oneui #dialog-modal > .glass-panel > :last-child,
+            html.s13-samsung-oneui #publisher-picker-modal > .glass-panel > :first-child,
+            html.s13-samsung-oneui #publisher-picker-modal > .glass-panel > :nth-child(2),
+            html.s13-samsung-oneui #history-modal > .glass-panel > :first-child {
+                flex: 0 0 auto;
+            }
+            html.s13-samsung-oneui #dialog-modal > .glass-panel > :last-child {
+                position: sticky;
+                bottom: 0;
+                z-index: 1;
+                background: inherit;
+            }
+        }
+
         /* Icon-only controls on narrow Samsung phone headers need no text padding. */
         @media (max-width: 519px) {
             html.s13-samsung-oneui body .app-header-actions { gap: 6px !important; }
@@ -599,5 +644,6 @@
 
     <script type="module" src="./app.bundle.js"></script>
     <script type="module" src="./s13-year-select.js"></script>
+    <script type="module" src="./app-modal-viewport.js"></script>
 </body>
 </html>
